@@ -19,6 +19,7 @@ class PeopleController extends Controller
 {
     public function store(Request $request){
         $response = new Response();
+        $personJpa = new Person();
         try {
     
           if (
@@ -52,8 +53,11 @@ class PeopleController extends Controller
           }
     
           $peopleJpa = new People();
-          if($request->doc_type == "RUC"){
-            
+          if($request->doc_type == "RUC" && $request->doc_type == "RUC10"){
+            $peopleJpa->doc_type = $request->doc_type;
+            $peopleJpa->doc_number = $request->doc_number;
+            $peopleJpa->name = $request->name;
+            $peopleJpa->actividad_economica ->actibidad;
           }
 
   
