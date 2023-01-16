@@ -61,16 +61,16 @@ class PeopleController extends Controller
           }
 
   
-          if (
-            isset($request->phone_prefix) &&
-            isset($request->phone_number)
-          ) {
-            $userJpa->phone_prefix = $request->phone_prefix;
-            $userJpa->phone_number = $request->phone_number;
-          }
-          if (isset($request->email)) {
-            $userJpa->email = $request->email;
-          }
+          // if (
+          //   isset($request->phone_prefix) &&
+          //   isset($request->phone_number)
+          // ) {
+          //   $userJpa->phone_prefix = $request->phone_prefix;
+          //   $userJpa->phone_number = $request->phone_number;
+          // }
+          // if (isset($request->email)) {
+          //   $userJpa->email = $request->email;
+          // }
     
           $userJpa->save();
     
