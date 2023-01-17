@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Generated\Address;
-use App\Generated\Business;
-use App\Generated\Contact;
-use App\Generated\Document;
-use App\Generated\Person;
+
 use App\gLibraries\gFetch;
 use App\gLibraries\gStatus;
 use App\gLibraries\gValidate;
@@ -19,7 +15,6 @@ class PeopleController extends Controller
 {
     public function store(Request $request){
         $response = new Response();
-        $personJpa = new Person();
         try {
     
           if (
@@ -43,7 +38,7 @@ class PeopleController extends Controller
             } 
           }
 
-          $userValidation = User::select(['doc_type', 'doc_number'])
+          $userValidation = People::select(['doc_type', 'doc_number'])
           ->where('doc_type', $request->doc_type)
           ->where('doc_number', $request->doc_number)
           ->first();
@@ -53,26 +48,50 @@ class PeopleController extends Controller
           }
     
           $peopleJpa = new People();
-          if($request->doc_type == "RUC" && $request->doc_type == "RUC10"){
-            $peopleJpa->doc_type = $request->doc_type;
-            $peopleJpa->doc_number = $request->doc_number;
-            $peopleJpa->name = $request->name;
-            $peopleJpa->actividad_economica ->actibidad;
+          $peopleJpa->doc_type = $request->doc_type;
+          $peopleJpa->doc_number = $request->doc_number;
+          $peopleJpa->name = $request->name;
+          $peopleJpa->lastname = $request->lastname;
+
+          if($request->birthdate){
+            $peopleJpa->birthdate = $request->birthdate;
           }
 
-  
-          // if (
-          //   isset($request->phone_prefix) &&
-          //   isset($request->phone_number)
-          // ) {
-          //   $userJpa->phone_prefix = $request->phone_prefix;
-          //   $userJpa->phone_number = $request->phone_number;
-          // }
-          // if (isset($request->email)) {
-          //   $userJpa->email = $request->email;
-          // }
-    
-          $userJpa->save();
+          if($request->gender){
+            $peopleJpa->gender = $request->gender;
+          }
+
+          if($request->email){
+            $peopleJpa->email = $request->email;
+          }
+
+          if($request->phone){
+            $peopleJpa->phone = $request->phone;
+          }
+
+          if($request->department){
+            $peopleJpa->department = $request->department;
+          }
+
+          if($request->province){
+            $peopleJpa->province = $request->province;
+          }
+
+          if($request->distric){
+            $peopleJpa->distric = $request->distric;
+          }
+
+          if($request->address){
+            $peopleJpa->address = $request->address;
+          }
+
+          if($request->_branch){
+            $peopleJpa->_branch = $request->_branch;
+          }
+
+          $peopleJpa->status ="1";
+
+          $peopleJpa->save();
     
           $response->setStatus(200);
           $response->setMessage('Usuario agregado correctamente');

@@ -5,13 +5,14 @@ namespace App\Generated;
 class Person
 {
     public int $id;
+    public string $doc_type;
+    public string $doc_number;
     public string $name;
     public string $lastname;
-    public Document $document;
-    public ?string $birth;
+    public string $address;
     public string $gender;
-    public Contact $contact;
-    public Address $address;
+    public string $email;
+    public string $phone;
     public bool $status;
 
     public function toArray(): array
@@ -29,6 +30,26 @@ class Person
     public function setId(int $id): void
     {
         $this->id = $id;
+    }
+
+    public function getDocType(): string
+    {
+        return $this->doc_type;
+    }
+
+    public function setDocType(string $doc_type): void
+    {
+        $this->doc_type = $doc_type;
+    }
+
+    public function getDocNumber(): string
+    {
+        return $this->doc_number;
+    }
+
+    public function setDocNumber(string $doc_number): void
+    {
+        $this->doc_number = $doc_number;
     }
 
     public function getName(): string
@@ -51,24 +72,14 @@ class Person
         $this->lastname = $lastname;
     }
 
-    public function getDocument(): Document
+    public function getAddress(): string
     {
-        return $this->document;
+        return $this->address;
     }
 
-    public function setDocument(Document $document): void
+    public function setAddress(string $address): void
     {
-        $this->document = $document;
-    }
-
-    public function getBirth(): string
-    {
-        return $this->birth;
-    }
-
-    public function setBirth(?string $birth): void
-    {
-        $this->birth = $birth;
+        $this->address = $address;
     }
 
     public function getGender(): string
@@ -81,24 +92,24 @@ class Person
         $this->gender = $gender;
     }
 
-    public function getContact(): Contact
+    public function getEmail(): string
     {
-        return $this->contact;
+        return $this->email;
     }
 
-    public function setContact(Contact $contact): void
+    public function setEmail(string $email): void
     {
-        $this->contact = $contact;
+        $this->email = $email;
     }
 
-    public function getAddress(): Address
+    public function getPhone(): string
     {
-        return $this->address;
+        return $this->phone;
     }
 
-    public function setAddress(Address $address): void
+    public function setPhone(string $phone): void
     {
-        $this->address = $address;
+        $this->phone = $phone;
     }
 
     public function getStatus(): bool
