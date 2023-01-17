@@ -73,8 +73,11 @@ class ViewController extends Controller
             $query = View::orderBy($request->order['column'], $request->order['dir']);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
-            //     $query->whereNotNull('status');
             // }
+
+            if(!$request->all){
+                $query->whereNotNull('status');
+            }
 
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
