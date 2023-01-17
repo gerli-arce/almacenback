@@ -21,7 +21,9 @@ class PeopleController extends Controller
             !isset($request->doc_type) ||
             !isset($request->doc_number) ||
             !isset($request->name) ||
-            !isset($request->lastname)
+            !isset($request->lastname) ||
+            !isset($request->type) ||
+            !isset($request->_branch)
           ) {
             throw new Exception("Error: No deje campos vacíos");
           }
@@ -85,9 +87,8 @@ class PeopleController extends Controller
             $peopleJpa->address = $request->address;
           }
 
-          if($request->_branch){
-            $peopleJpa->_branch = $request->_branch;
-          }
+          $peopleJpa->type = $request->type;
+          $peopleJpa->_branch = $request->_branch;
 
           $peopleJpa->status ="1";
 
@@ -106,3 +107,4 @@ class PeopleController extends Controller
         }
     }
 }
+
