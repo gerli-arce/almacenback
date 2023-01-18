@@ -3,72 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gFetch;
+use App\gLibraries\gJson;
 use App\gLibraries\gStatus;
 use App\gLibraries\gValidate;
-use App\Models\View;
+use App\Models\ViewPermissionsByView;
+use App\Models\Permission;
 use App\Models\Response;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-
-class ViewController extends Controller
+class PermissionsController extends Controller
 {
-
-    public function index (Response $rsponse){
-        $response = new Response();
-        try {
-
-            $viewsJpa = View::whereNotNull('status')->orderBy('view', 'ASC')->get();
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-            $response->setData($viewsJpa->toArray());
-        } catch (\Throwable $th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
     public function store(Request $request){
         $response = new Response();
         try {
     
           if (
-            !isset($request->view) ||
-            !isset($request->path)
+            !isset($request->permission) ||
+            !isset($request->correlative) ||
+            !isset($request->_view)
           ) {
             throw new Exception("Error: No deje campos vacíos");
           }
 
-          $viewValidation = View::select(['view', 'path'])
-          ->where('view', $request->view)
-          ->orWhere('path', $request->path)
+          $permissionValidation = Permission::select(['permission'])
+          ->where('permission', $request->permission)
           ->first();
     
-          if ($viewValidation) {
-            if($viewValidation->view == $request->view){
-                throw new Exception("El nombre de la vista ya existe");
-            }
-            if($viewValidation->path == $request->path){
-                throw new Exception("El path ya existe");
-            }
+          if ($permissionValidation) {
+              throw new Exception("El permiso ya existe.");
           }
     
-          $viewJpa = new View();
-          $viewJpa->view = $request->view;
-          $viewJpa->path = $request->path;
+          $permissionJpa = new Permission();
+          $permissionJpa->permission = $request->permission;
+          $permissionJpa->correlative = $request->correlative;
+          $permissionJpa->_view = $request->_view;
 
           if($request->description){
-            $viewJpa->description = $request->description;
+            $permissionJpa->description = $request->description;
           }
      
-          $viewJpa->status ="1";
+          $permissionJpa->status ="1";
 
-          $viewJpa->save();
+          $permissionJpa->save();
     
           $response->setStatus(200);
           $response->setMessage('Vista agregada correctamente');
@@ -88,9 +65,20 @@ class ViewController extends Controller
         $response = new Response();
         try {
 
-         
+            $query = ViewPermissionsByView::select([
+                'id',
+                'permission',
+                'correlative',
+                'description',
+                'status',
+                'view__id',
+                'view__view',
+                'view__path',
+                'view__description',
+                'view__status'
 
-            $query = View::orderBy($request->order['column'], $request->order['dir']);
+            ])
+            ->orderBy($request->order['column'], $request->order['dir']);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
@@ -105,33 +93,41 @@ class ViewController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'view' || $column == '*') {
-                    $q->where('view', $type, $value);
+                if ($column == 'permission' || $column == '*') {
+                    $q->where('permission', $type, $value);
                 }
-                if ($column == 'path' || $column == '*') {
-                    $q->orWhere('path', $type, $value);
+                if ($column == 'correlative' || $column == '*') {
+                    $q->where('correlative', $type, $value);
+                }
+                if ($column == 'view__view' || $column == '*') {
+                    $q->orWhere('view__view', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-                if ($column == 'status' || $column == '*') {
-                    $q->orWhere('status', $type, $value);
-                }
+               
             });
             $iTotalDisplayRecords = $query->count();
-            $viewsJpa = $query->select('*')
+            $permissionsJpa = $query->select('*')
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
+
+            $permissions = array();
+            foreach ($permissionsJpa as $permissionJpa) {
+                $permission = gJSON::restore($permissionJpa->toArray(), '__');
+                $permissions[] = $permission;
+            }
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(View::count());
-            $response->setData($viewsJpa->toArray());
+            $response->setITotalRecords(Permission::count());
+            $response->setData($permissions);
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'ln '.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -152,45 +148,41 @@ class ViewController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $viewValidation = View::select(['view', 'path'])
+            $PermissionValidation = Permission::select(['permissions.id', 'permissions.permission'])
+                ->where('permission', $request->permission)
                 ->where('id', '!=', $request->id)
-                ->where(function ($q) use ($request) {
-                    $q->where('view', $request->view);
-                    $q->orWhere('path', $request->path);
-                })
                 ->first();
 
-            if ($viewValidation) {
-                if ($viewValidation->view == $request->view) {
-                    throw new Exception("Escoja otro nombre para la vista");
-                }
-                if ($viewValidation->path == $request->path) {
-                    throw new Exception("Escoja otra ruta para esta vista");
-                }
+            if ($PermissionValidation) {
+                throw new Exception("Este permiso ya existe");
             }
 
-            $viewJpa = View::find($request->id);
-            if (!$viewJpa) {
-                throw new Exception("La vista solicitada no existe");
+
+            $permissionJpa = Permission::find($request->id);
+            if (!$permissionJpa) {
+                throw new Exception("El permiso que solicitada no existe");
             }
-            if(isset($request->view)){
-                $viewJpa->view = $request->view;
+            if(isset($request->permission)){
+                $permissionJpa->permission = $request->permission;
             }
-            if(isset($request->path)){
-                $viewJpa->path = $request->path;
+            if(isset($request->correlative)){
+                $permissionJpa->correlative = $request->correlative;
+            }
+            if(isset($request->_view)){
+                $permissionJpa->_view = $request->_view;
             }
             if(isset($request->description)){
-                $viewJpa->description = $request->description;
+                $permissionJpa->description = $request->description;
             }
             
             if(isset($request->status)){
-                $viewJpa->status = $request->status;
+                $permissionJpa->status = $request->status;
             }
 
-            $viewJpa->save();
+            $permissionJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La vista se a actualizado correctamente');
+            $response->setMessage('El permiso se a actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -213,18 +205,17 @@ class ViewController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $viewJpa = View::find($request->id);
+            $permissionJpa = Permission::find($request->id);
 
-            if (!$viewJpa) {
+            if (!$permissionJpa) {
                 throw new Exception("Este reguistro no existe");
             }
 
-            $viewJpa->status = null;
-            $viewJpa->save();
+            $permissionJpa->status = null;
+            $permissionJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La vista se a eliminado correctamente');
-            $response->setData($viewJpa->toArray());
+            $response->setMessage('El permiso se a eliminado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -247,7 +238,7 @@ class ViewController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $viewJpa = View::find($request->id);
+            $viewJpa = Permission::find($request->id);
             if (!$viewJpa) {
                 throw new Exception("Este reguistro no existe");
             }
@@ -255,8 +246,7 @@ class ViewController extends Controller
             $viewJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La vsita a sido restaurado correctamente');
-            $response->setData($viewJpa->toArray());
+            $response->setMessage('El permiso a sido restaurado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
