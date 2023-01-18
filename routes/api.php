@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ViewController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionsController;
 
 /*
@@ -48,3 +50,24 @@ Route::post('/permissions/paginate', [PermissionsController::class, 'paginate'])
 Route::patch('/permissions', [PermissionsController::class, 'update']);
 Route::delete('/permissions', [PermissionsController::class, 'delete']);
 Route::post('/permissions/restore', [PermissionsController::class, 'restore']);
+
+// ROLE
+Route::get('/roles', [RoleController::class, 'index']);
+Route::post('/roles', [RoleController::class, 'store']);
+Route::put('/roles', [RoleController::class, 'update']);
+Route::patch('/roles', [RoleController::class, 'update']);
+Route::delete('/roles', [RoleController::class, 'destroy']);
+Route::post('/roles/restore', [RoleController::class, 'restore']);
+Route::post('/roles/paginate', [RoleController::class, 'paginate']);
+Route::put('/roles/permissions', [RoleController::class, 'permissions']);
+
+
+// USERS
+Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'store']);
+Route::put('/users', [UserController::class, 'update']);
+Route::delete('/users', [UserController::class, 'destroy']);
+Route::post('/users/restore', [UserController::class, 'restore']);
+Route::get('/users/get/{username}', [UserController::class, 'getUser']);
+Route::post('/users/paginate', [UserController::class, 'paginate']);
+Route::post('/users/media', [UserController::class, 'searchByMedia']);

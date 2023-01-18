@@ -21,7 +21,7 @@ class gValidate
         $session = null;
 
         try {
-            if ($request->header('SoDe-Auth-Token') == null || $request->header('SoDe-Auth-User') == null) {
+            if ($request->header('Auth-Token') == null || $request->header('Auth-User') == null) {
                 throw new Exception('Error: Datos de cabecera deben ser enviados');
             }
 
