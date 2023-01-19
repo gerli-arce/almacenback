@@ -2,17 +2,12 @@
 
 namespace App\gLibraries;
 
-use App\Generated\Address;
-use App\Generated\Contact;
-use App\Generated\Document;
-use App\Generated\Person;
-use App\Generated\User;
 use Illuminate\Http\Request;
 use App\Models\ViewUsers;
 use Exception;
 
 class auth{
-    public function val(Request $request, string $view, string $permission):Array
+    public function val(Request $request, string $view, string $permission)
     {
         try {
             if( $request->header('Auth-Token') == null || $request->header('Auth-User') == null){

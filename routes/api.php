@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ViewController;
@@ -23,6 +24,12 @@ use App\Http\Controllers\PermissionsController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
+// SESSION
+Route::post('/session/login', [SessionController::class, 'login']);
+Route::post('/session/logout', [SessionController::class, 'logout']);
+Route::post('/session/verify', [SessionController::class, 'verify']);
 
 // PERSON
 
