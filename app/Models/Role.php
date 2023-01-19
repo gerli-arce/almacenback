@@ -8,7 +8,9 @@ class Role extends Model
 {
     static $rules = [
         'role'=>'require',
+        'priority'=>'require',
         'permissions'=>'require',
+        'description'=>'',
         'status'=>'require'
     ];
 

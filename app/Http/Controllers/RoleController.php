@@ -99,6 +99,7 @@ class RoleController extends Controller
                 throw new Exception('No tienes permisos para listar los roles del sistema');
             }
 
+
             $query = Role::where('roles.priority', '>=', $role->priority)->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {

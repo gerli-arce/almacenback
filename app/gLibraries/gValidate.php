@@ -2,104 +2,99 @@
 
 namespace App\gLibraries;
 
-use App\Generated\Address;
-use App\Generated\Contact;
-use App\Generated\Document;
-use App\Generated\Person;
-use App\Generated\User;
+use App\Models\User;
+use App\gLibraries\gjson;
 use Illuminate\Http\Request;
-use App\Models\ViewUsers;
+use App\Models\Role;
 use Exception;
 
 class gValidate
 {
-    public static function session(Request $request): array
-    {
-        $ok = false;
-        $status = 500;
-        $message = 'Error de autenticación inesperado';
-        $session = null;
 
+    public static function get(Request $request): array
+    {
+        $role = new Role();
+        $status = 200;
+        $message = 'Operación correcta';
+        $userid = null;
         try {
             if ($request->header('Auth-Token') == null || $request->header('Auth-User') == null) {
+                $status = 401;
                 throw new Exception('Error: Datos de cabecera deben ser enviados');
             }
 
-            $userJpa = ViewUsers::select()
-                ->where('auth_token', $request->header('SoDe-Auth-Token'))
-                ->where('username', $request->header('SoDe-Auth-User'))
+            $userJpa = User::select([
+                'users.id',
+                'roles.id AS role.id',
+                'roles.priority AS role.priority',
+                'roles.permissions AS role.permissions',
+                'roles.status AS role.status'
+            ])
+                ->where('auth_token', $request->header('Auth-Token'))
+                ->where('username', $request->header('Auth-User'))
+                ->leftjoin('roles', 'users._role', '=', 'roles.id')
                 ->first();
 
             if (!$userJpa) {
-                throw new Exception('No existe un registro de usuario que coincida con las credenciales enviadas', 404);
+                $status = 403;
+                throw new Exception('La sesión ha expirado o has iniciado sesión en otro dispositivo');
             }
 
-            $session = new User();
-            $session->setId($userJpa->id);
-            $session->setRelativeId($userJpa->relative_id);
-            $session->setUsername($userJpa->username);
-            $session->setPassword($userJpa->password);
-            $session->setAuthToken($userJpa->auth_token);
-            $session->setRecoveryEmail($userJpa->recovery_email);
+            $user = gJSON::restore($userJpa->toArray());
+            $userid = $user['id'];
+            $role->id = $user['role']['id'];
+            $role->priority = $user['role']['priority'];
+            $role->permissions = gJSON::parse($user['role']['permissions']);
+            $role->status = $user['role']['status'];
 
-            $person = new Person();
-            $person->setId($userJpa->person__id);
-            $person->setName($userJpa->person__name);
-            $person->setLastname($userJpa->person__lastname);
-
-            $document = new Document();
-            $document->setType($userJpa->person__document__type);
-            $document->setNumber($userJpa->person__document__number);
-
-            $person->setDocument($document);
-            $person->setBirth($userJpa->person__birthdate);
-            $person->setGender($userJpa->person__gender);
-
-            $contact = new Contact();
-            $contact->setEmail($userJpa->person__email);
-            $contact->setPrefix($userJpa->person__phone__prefix);
-            $contact->setPhone($userJpa->person__phone__number);
-            $contact->setPhonefull($userJpa->person__phone__full);
-
-            $person->setContact($contact);
-
-            $address = new Address();
-            $address->setUbigeo($userJpa->person__ubigeo);
-            $address->setAddress($userJpa->person__address);
-
-            $person->setAddress($address);
-            $person->setStatus($userJpa->person__status);
-
-            $session->setPerson($person);
-            $session->setStatus($userJpa->status);
-
-            if (!$session->getStatus()) {
-                throw new Exception('Este usuario se encuentra inactivo en SoDe', 403);
+            if (!$role->status) {
+                $status = 400;
+                throw new Exception('Tu rol se encuentra deshabilitado');
             }
-
-            if (!$session->getPerson()->getStatus()) {
-                throw new Exception('Esta persona se encuentra inactiva en SoDe', 403);
-            }
-
-            $ok = true;
-            $status = 200;
-            $message = 'Existe una sesión activa';
         } catch (\Throwable $th) {
-            $ok = false;
-            $status = gStatus::get($th->getCode());
-            // $message = $th->getMessage();
-            $message = $th->getMessage() . ' ' . $th->getFile() . ' Ln' . $th->getLine();
-            $session = null;
-        } finally {
-            return [$ok, $status, $message, $session];
+            $status = 400;
+            $message = $th->getMessage();
+            $role = null;
         }
+
+        return [$status, $message, $role, $userid];
     }
 
-    public static function nullOrEmpty(?string $string): bool
+    public static function check(array $permissions, String $view, String $permission): bool
     {
-        if (!isset($string) || $string == null || trim($string) == '') {
-            return false;
+        $permissions = gJSON::flatten($permissions);
+        if (
+            isset($permissions["root"]) ||
+            isset($permissions["admin"]) ||
+            isset($permissions["$view.all"]) ||
+            isset($permissions["$view.$permission"])
+        ) {
+            return true;
         }
-        return true;
+        return false;
+    }
+
+    public static function cleanPermissions(array $permissions, array $before, array $toset): array
+    {
+        $ok = true;
+        $message = 'Operación correcta';
+
+        $after = array();
+        try {
+            $before = gJSON::flatten($before);
+            $toset = gJSON::flatten($toset);
+
+            foreach ($toset as $key => $value) {
+                [$view, $permission] = explode('.', $key);
+                if (gValidate::check($permissions, $view, $permission) || $before[$key]) {
+                    $after[$key] = true;
+                }
+            }
+        } catch (\Throwable $th) {
+            $ok = false;
+            $message = $th->getMessage();
+        }
+
+        return [$ok, $message, gJSON::restore($after)];
     }
 }

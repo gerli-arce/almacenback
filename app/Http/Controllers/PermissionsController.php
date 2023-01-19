@@ -28,6 +28,7 @@ class PermissionsController extends Controller
 
           $permissionValidation = Permission::select(['permission'])
           ->where('permission', $request->permission)
+          ->where('_view', $request->_view)
           ->first();
     
           if ($permissionValidation) {
