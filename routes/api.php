@@ -38,7 +38,11 @@ Route::post('/person', [PeopleController::class, 'store']);
 
 // BRANCH
 
-Route::post('/branch', [BranchController::class, 'store']);
+Route::post('/branches', [BranchController::class, 'store']);
+Route::post('/branches/paginate', [BranchController::class, 'paginate']);
+Route::patch('/branches', [BranchController::class, 'update']);
+Route::delete('/branches', [BranchController::class, 'delete']);
+Route::post('/branches/restore', [BranchController::class, 'restore']);
 
 
 // VIEW

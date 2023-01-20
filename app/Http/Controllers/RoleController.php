@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gFetch;
 use App\gLibraries\gJson;
-use App\gLibraries\gStatus;
 use App\gLibraries\gValidate;
-use App\Models\ViewPermissionsByView;
-use App\Models\Role;
 use App\Models\Response;
+use App\Models\Role;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -20,10 +17,17 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
+            [$status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, 'roles', 'read')) {
+                throw new Exception('No tienes permisos para listar los roles del sistema');
+            }
+
             if (
                 !isset($request->role) ||
-                !isset($request->priority) ||
-                !isset($request->description)
+                !isset($request->priority)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -41,14 +45,17 @@ class RoleController extends Controller
             $roleJpa = new Role();
             $roleJpa->role = $request->role;
             $roleJpa->priority = $request->priority;
-            $roleJpa->description = $request->description;
+            if ($request->description) {
+                $roleJpa->description = $request->description;
+            }
             $roleJpa->permissions = '{}';
+            $roleJpa->status = "1";
             $roleJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El rol se a agregado correctamente');
             $response->setData($roleJpa->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -75,7 +82,7 @@ class RoleController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($roles);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setMessage($th->getMessage());
             $response->setStatus(400);
         } finally {
@@ -98,7 +105,6 @@ class RoleController extends Controller
             if (!gValidate::check($role->permissions, 'roles', 'read')) {
                 throw new Exception('No tienes permisos para listar los roles del sistema');
             }
-
 
             $query = Role::where('roles.priority', '>=', $role->priority)->orderBy($request->order['column'], $request->order['dir']);
 
@@ -143,7 +149,7 @@ class RoleController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Role::count());
             $response->setData($roles);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -160,26 +166,42 @@ class RoleController extends Controller
         try {
 
             if (
-                !isset($request->id) ||
-                !isset($request->role) ||
-                !isset($request->priority) ||
-                !isset($request->description) ||
-                !isset($request->status)
+                !isset($request->id)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $roleValidation = Role::select(['roles.id', 'roles.role'])
-                ->where('role', $request->role)
-                ->where('id', '!=', $request->id)
-                ->first();
-            if ($roleValidation) {
-                throw new Exception("Escoja otro nombre para el rol");
+            [$status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, 'roles', 'update')) {
+                throw new Exception('No tienes permisos para actualizar los roles del sistema');
             }
 
             $roleJpa = Role::find($request->id);
             if (!$roleJpa) {
                 throw new Exception("No se puede actualizar este registro");
+            }
+
+            if ($request->role) {
+                $roleValidation = Role::select(['roles.id', 'roles.role'])
+                    ->where('role', $request->role)
+                    ->where('id', '!=', $request->id)
+                    ->first();
+                if ($roleValidation) {
+                    throw new Exception("Escoja otro nombre para el rol");
+                }
+                $roleJpa->role = $request->role;
+            }
+
+            if ($role->id != $request->id) {
+                if ($request->priority) {
+                    if ($request->priority < $role->priority) {
+                        throw new Exception('No puede asignar un rol superior al suyo, intenta poner un número mayor a ' . $role->priority);
+                    }
+                    $roleJpa->priority = $request->priority;
+                }
             }
 
             if ($roleJpa->priority < $role->priority) {
@@ -190,23 +212,20 @@ class RoleController extends Controller
                 throw new Exception('Los roles que actualices no pueden tener mayor prioridad al tuyo, intenta poner un número mayor a ' . $role->priority);
             }
 
-            $roleJpa->role = $request->role;
-            if ($role->id != $request->id) {
-
-                $roleJpa->priority = $request->priority;
-            }
             $roleJpa->description = $request->description;
 
-            if (gValidate::check($role->permissions, 'views', 'change_status'))
-                if (isset($request->status))
+            if (gValidate::check($role->permissions, 'views', 'change_status')) {
+                if (isset($request->status)) {
                     $roleJpa->status = $request->status;
+                }
+            }
 
             $roleJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El rol ha sido actualizado correctamente');
             $response->setData($roleJpa->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -246,7 +265,7 @@ class RoleController extends Controller
             $response->setStatus(200);
             $response->setMessage('El rol a sido eliminado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -285,7 +304,7 @@ class RoleController extends Controller
             $response->setStatus(200);
             $response->setMessage('El rol a sido restaurado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -304,7 +323,7 @@ class RoleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            
+
             if (!gValidate::check($role->permissions, 'roles', 'update')) {
                 throw new Exception('No tienes permisos para modificar roles en el sistema');
             }
@@ -342,7 +361,7 @@ class RoleController extends Controller
             $response->setStatus(200);
             $response->setMessage('Permisos asignados correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
