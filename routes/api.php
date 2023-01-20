@@ -52,6 +52,7 @@ Route::post('/views/restore', [ViewController::class, 'restore']);
 
 // PERMISSION
 
+Route::get('/permissions', [PermissionsController::class, 'index']);
 Route::post('/permissions', [PermissionsController::class, 'store']);
 Route::post('/permissions/paginate', [PermissionsController::class, 'paginate']);
 Route::patch('/permissions', [PermissionsController::class, 'update']);

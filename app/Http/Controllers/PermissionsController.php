@@ -14,6 +14,44 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 class PermissionsController extends Controller
 {
+    public function index(Request $request){
+        $response = new Response();
+        try {
+
+            $permissionsJpa = ViewPermissionsByView::select([
+                'id',
+                'permission',
+                'correlative',
+                'description',
+                'status',
+                'view__id',
+                'view__view',
+                'view__path',
+                'view__description',
+                'view__status'
+
+            ])->get();
+           
+
+            $permissions = array();
+            foreach ($permissionsJpa as $permissionJpa) {
+                $permission = gJSON::restore($permissionJpa->toArray(), '__');
+                $permissions[] = $permission;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($permissions);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().'ln '.$th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
     public function store(Request $request){
         $response = new Response();
         try {
