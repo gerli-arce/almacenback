@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJson;
+use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Response;
 use Exception;
@@ -10,6 +12,36 @@ use Illuminate\Support\Facades\DB;
 
 class BranchController extends Controller
 {
+
+    public function index(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch ,$status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'branches', 'read')) {
+                throw new Exception('No tienes permisos para listar las sucursales');
+            }
+
+            $branchesJpa = Branch::select(['*'])->whereNotNull('status')->get();
+
+        
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($branchesJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setMessage($th->getMessage());
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();

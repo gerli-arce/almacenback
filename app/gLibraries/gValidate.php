@@ -18,7 +18,7 @@ class gValidate
         $message = 'Operación correcta';
         $userid = null;
         try {
-            if ($request->header('Auth-Token') == null || $request->header('Auth-User') == null) {
+            if ($request->header('Auth-Token') == null || $request->header('Auth-User') == null || $request->header('Auth-Branch') == null) {
                 $status = 401;
                 throw new Exception('Error: Datos de cabecera deben ser enviados');
             }
@@ -47,6 +47,8 @@ class gValidate
             $role->permissions = gJSON::parse($user['role']['permissions']);
             $role->status = $user['role']['status'];
 
+            $branch = $request->header('Auth-Branch');
+
             if (!$role->status) {
                 $status = 400;
                 throw new Exception('Tu rol se encuentra deshabilitado');
@@ -55,19 +57,21 @@ class gValidate
             $status = 400;
             $message = $th->getMessage();
             $role = null;
+            $branch = null;
         }
 
-        return [$status, $message, $role, $userid];
+        return [$branch, $status, $message, $role, $userid];
     }
 
-    public static function check(array $permissions, String $view, String $permission): bool
+    public static function check(array $permissions, string $branch, String $view, String $permission): bool
     {
         $permissions = gJSON::flatten($permissions);
         if (
             isset($permissions["root"]) ||
             isset($permissions["admin"]) ||
-            isset($permissions["$view.all"]) ||
-            isset($permissions["$view.$permission"])
+            isset($permissions["$branch.all"]) ||
+            isset($permissions["$branch.$view.all"]) ||
+            isset($permissions["$branch.$view.$permission"])
         ) {
             return true;
         }

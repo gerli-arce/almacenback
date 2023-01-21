@@ -38,6 +38,7 @@ Route::post('/person', [PeopleController::class, 'store']);
 
 // BRANCH
 
+Route::get('/branches', [BranchController::class, 'index']);
 Route::post('/branches', [BranchController::class, 'store']);
 Route::post('/branches/paginate', [BranchController::class, 'paginate']);
 Route::patch('/branches', [BranchController::class, 'update']);

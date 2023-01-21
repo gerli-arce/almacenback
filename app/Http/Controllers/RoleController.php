@@ -17,11 +17,11 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, 'roles', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'create')) {
                 throw new Exception('No tienes permisos para listar los roles del sistema');
             }
 
@@ -71,7 +71,15 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            $rolesJpa = Role::where('roles.priority', '>=', $role->priority)->get();
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'read')) {
+                throw new Exception('No tienes permisos para listar los roles del sistema');
+            }
+
+            $rolesJpa = Role::where('roles.priority', '>=', $role->priority)->whereNotNull('status')->get();
 
             $roles = array();
             foreach ($rolesJpa as $roleJpa) {
@@ -98,11 +106,11 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, 'roles', 'read')) {
+            if (!gValidate::check($role->permissions,$branch , 'roles', 'read')) {
                 throw new Exception('No tienes permisos para listar los roles del sistema');
             }
 
@@ -171,11 +179,11 @@ class RoleController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, 'roles', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'update')) {
                 throw new Exception('No tienes permisos para actualizar los roles del sistema');
             }
 
@@ -241,11 +249,11 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, 'roles', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'delete_restore')) {
                 throw new Exception('No tienes permisos para eliminar roles en el sistema');
             }
 
@@ -280,11 +288,11 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, 'roles', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'delete_restore')) {
                 throw new Exception('No tienes permisos para restaurar roles en el sistema');
             }
 
@@ -319,12 +327,12 @@ class RoleController extends Controller
         $response = new Response();
         try {
 
-            [$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, 'roles', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'update')) {
                 throw new Exception('No tienes permisos para modificar roles en el sistema');
             }
 
@@ -360,6 +368,31 @@ class RoleController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Permisos asignados correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+    public function saveBranches(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'roles', 'update')) {
+                throw new Exception('No tienes permisos para actualizar los roles del sistema');
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
