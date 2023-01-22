@@ -39,6 +39,7 @@ class ViewController extends Controller
     
           if (
             !isset($request->view) ||
+            !isset($request->correlative) ||
             !isset($request->path)
           ) {
             throw new Exception("Error: No deje campos vacíos");
@@ -47,6 +48,7 @@ class ViewController extends Controller
           $viewValidation = View::select(['view', 'path'])
           ->where('view', $request->view)
           ->orWhere('path', $request->path)
+          ->orWhere('correlative', $request->correlative)
           ->first();
     
           if ($viewValidation) {
@@ -54,12 +56,16 @@ class ViewController extends Controller
                 throw new Exception("El nombre de la vista ya existe");
             }
             if($viewValidation->path == $request->path){
-                throw new Exception("El path ya existe");
+                throw new Exception("La ruta ya existe");
+            }
+            if($viewValidation->correlative == $request->correlative){
+                throw new Exception("El correlativo ya existe");
             }
           }
     
           $viewJpa = new View();
           $viewJpa->view = $request->view;
+          $viewJpa->correlative = $request->correlative;
           $viewJpa->path = $request->path;
 
           if($request->description){
@@ -88,9 +94,8 @@ class ViewController extends Controller
         $response = new Response();
         try {
 
-         
-
-            $query = View::orderBy($request->order['column'], $request->order['dir']);
+            $query = View::orderBy($request->order['column'], 
+            $request->order['dir']);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
@@ -107,6 +112,9 @@ class ViewController extends Controller
 
                 if ($column == 'view' || $column == '*') {
                     $q->where('view', $type, $value);
+                }
+                if ($column == 'correlative' || $column == '*') {
+                    $q->where('correlative', $type, $value);
                 }
                 if ($column == 'path' || $column == '*') {
                     $q->orWhere('path', $type, $value);
@@ -152,10 +160,11 @@ class ViewController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $viewValidation = View::select(['view', 'path'])
+            $viewValidation = View::select(['view', 'correlative', 'path'])
                 ->where('id', '!=', $request->id)
                 ->where(function ($q) use ($request) {
                     $q->where('view', $request->view);
+                    $q->orWhere('correlative', $request->correlative);
                     $q->orWhere('path', $request->path);
                 })
                 ->first();
@@ -163,6 +172,9 @@ class ViewController extends Controller
             if ($viewValidation) {
                 if ($viewValidation->view == $request->view) {
                     throw new Exception("Escoja otro nombre para la vista");
+                }
+                if ($viewValidation->correlative == $request->correlative) {
+                    throw new Exception("Escoja correlativo para esta vista");
                 }
                 if ($viewValidation->path == $request->path) {
                     throw new Exception("Escoja otra ruta para esta vista");
@@ -175,6 +187,9 @@ class ViewController extends Controller
             }
             if(isset($request->view)){
                 $viewJpa->view = $request->view;
+            }
+            if(isset($request->correlative)){
+                $viewJpa->correlative = $request->correlative;
             }
             if(isset($request->path)){
                 $viewJpa->path = $request->path;
