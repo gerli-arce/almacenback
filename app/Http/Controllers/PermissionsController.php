@@ -26,6 +26,7 @@ class PermissionsController extends Controller
                 'status',
                 'view__id',
                 'view__view',
+                'view__correlative',
                 'view__path',
                 'view__description',
                 'view__status'
