@@ -31,11 +31,6 @@ Route::post('/session/login', [SessionController::class, 'login']);
 Route::post('/session/logout', [SessionController::class, 'logout']);
 Route::post('/session/verify', [SessionController::class, 'verify']);
 
-// PERSON
-
-Route::post('/person', [PeopleController::class, 'store']);
-
-
 // BRANCH
 
 Route::get('/branches', [BranchController::class, 'index']);
@@ -84,3 +79,11 @@ Route::post('/users/restore', [UserController::class, 'restore']);
 Route::get('/users/get/{username}', [UserController::class, 'getUser']);
 Route::post('/users/paginate', [UserController::class, 'paginate']);
 Route::post('/users/media', [UserController::class, 'searchByMedia']);
+
+// PEOPLE
+Route::get('/people', [PeopleController::class, 'index']);
+Route::post('/people', [PeopleController::class, 'store']);
+Route::put('/people', [PeopleController::class, 'update']);
+Route::delete('/people', [PeopleController::class, 'destroy']);
+Route::post('/people/restore', [PeopleController::class, 'restore']);
+Route::post('/people/paginate', [PeopleController::class, 'paginate']);

@@ -212,17 +212,20 @@ class RoleController extends Controller
                 }
             }
 
-            if ($roleJpa->priority < $role->priority) {
-                throw new Exception('No puedes actualizar roles superiores');
-            }
-
             if ($request->priority < $role->priority) {
                 throw new Exception('Los roles que actualices no pueden tener mayor prioridad al tuyo, intenta poner un número mayor a ' . $role->priority);
             }
 
-            $roleJpa->description = $request->description;
+            if($request->description){
+                $roleJpa->description = $request->description;
+            }
 
-            if (gValidate::check($role->permissions, 'views', 'change_status')) {
+            if($request->permissions){
+                $roleJpa->permissions = $request->permissions;
+            }
+
+
+            if (gValidate::check($role->permissions, $branch, 'views', 'change_status')) {
                 if (isset($request->status)) {
                     $roleJpa->status = $request->status;
                 }
