@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
+use App\gLibraries\gValidate;
 use App\Models\People;
 use App\Models\Response;
 use App\Models\ViewPeople;
@@ -16,6 +17,15 @@ class PeopleController extends Controller
     {
         $response = new Response();
         try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'create')) {
+                throw new Exception('No tienes permisos para agregar personas');
+            }
+            
             if (
                 !isset($request->doc_type) ||
                 !isset($request->doc_number) ||
@@ -45,7 +55,7 @@ class PeopleController extends Controller
                 ->first();
 
             if ($userValidation) {
-                throw new Exception("Este usuario ya existe");
+                throw new Exception("Esta persona ya existe");
             }
 
             $peopleJpa = new People();
@@ -70,22 +80,17 @@ class PeopleController extends Controller
                 $peopleJpa->phone = $request->phone;
             }
 
-            if ($request->department) {
-                $peopleJpa->department = $request->department;
-            }
-
-            if ($request->province) {
-                $peopleJpa->province = $request->province;
-            }
-
-            if ($request->distric) {
-                $peopleJpa->distric = $request->distric;
+            if ($request->ubigeo) {
+                $peopleJpa->ubigeo = $request->ubigeo;
             }
 
             if ($request->address) {
                 $peopleJpa->address = $request->address;
             }
-
+            $peopleJpa->_creation_user = $userid;
+            $peopleJpa->creation_date = gTrace::getDate('mysql');
+            $peopleJpa->_update_user = $userid;
+            $peopleJpa->update_date = gTrace::getDate('mysql');
             $peopleJpa->type = $request->type;
             $peopleJpa->_branch = $request->_branch;
 
@@ -111,6 +116,14 @@ class PeopleController extends Controller
         $response = new Response();
         try {
 
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
+                throw new Exception('No tienes permisos para listar personas');
+            }
+
             $query = ViewPeople::select([
                 'id',
                 'doc_type',
@@ -121,14 +134,23 @@ class PeopleController extends Controller
                 'gender',
                 'email',
                 'phone',
-                'department',
-                'province',
-                'distric',
+                'ubigeo',
                 'address',
                 'type',
                 'branch__id',
-                'branch__correlative',
                 'branch__name',
+                'branch__correlative',
+                'branch__ubigeo',
+                'branch__address',
+                'branch__description',
+                'branch__status',
+                'user_creation__name',
+                'user_creation__relative_id',
+                'creation_date',
+                'user_update__id',
+                'user_update__username',
+                'user_update__relative_id',
+                'update_date',
                 'status',
             ])
                 ->orderBy($request->order['column'], $request->order['dir']);
@@ -170,14 +192,8 @@ class PeopleController extends Controller
                 if ($column == 'phone' || $column == '*') {
                     $q->orWhere('phone', $type, $value);
                 }
-                if ($column == 'department' || $column == '*') {
-                    $q->orWhere('department', $type, $value);
-                }
-                if ($column == 'province' || $column == '*') {
-                    $q->orWhere('province', $type, $value);
-                }
-                if ($column == 'distric' || $column == '*') {
-                    $q->orWhere('distric', $type, $value);
+                if ($column == 'ubigeo' || $column == '*') {
+                    $q->orWhere('ubigeo', $type, $value);
                 }
                 if ($column == 'address' || $column == '*') {
                     $q->orWhere('address', $type, $value);
@@ -227,47 +243,107 @@ class PeopleController extends Controller
         $response = new Response();
         try {
 
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'update')) {
+                throw new Exception('No tienes permisos para actualizar personas');
+            }
+
             if (
                 !isset($request->id)
-
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $PermissionValidation = Permission::select(['permissions.id', 'permissions.permission'])
-                ->where('permission', $request->permission)
-                ->where('id', '!=', $request->id)
+            $personJpa = Person::find($request->id);
+
+            if(!$personJpa){
+                throw new Exception("Esta persona no existe");
+            }
+
+            if(isset($request->doc_type) && isset($request->doc_number)){
+                if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
+                    if (strlen($request->doc_number) != 11) {
+                        throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
+                    }
+                }
+                if ($request->doc_type == "DNI") {
+                    if (strlen($request->doc_number) != 8) {
+                        throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
+                    }
+                }
+            }
+
+            $userValidation = People::select(['id','doc_type', 'doc_number'])
+                ->where('doc_type', $request->doc_type)
+                ->where('doc_number', $request->doc_number)
+                ->where('id','!=',$request->id)
                 ->first();
 
-            if ($PermissionValidation) {
-                throw new Exception("Este permiso ya existe");
+            if ($userValidation) {
+                throw new Exception("Esta persona ya existe");
             }
 
-            $permissionJpa = Permission::find($request->id);
-            if (!$permissionJpa) {
-                throw new Exception("El permiso que solicitada no existe");
-            }
-            if (isset($request->permission)) {
-                $permissionJpa->permission = $request->permission;
-            }
-            if (isset($request->correlative)) {
-                $permissionJpa->correlative = $request->correlative;
-            }
-            if (isset($request->_view)) {
-                $permissionJpa->_view = $request->_view;
-            }
-            if (isset($request->description)) {
-                $permissionJpa->description = $request->description;
+            $personJpa->doc_type = $request->doc_type;
+            $personJpa->doc_number = $request->doc_number;
+
+            if(isset($request->name)){
+                $personJpa->name = $request->name;
             }
 
-            if (isset($request->status)) {
-                $permissionJpa->status = $request->status;
+            if(isset($request->lastname)){
+                $personJpa->lastname = $request->lastname;
             }
 
-            $permissionJpa->save();
+            if(isset($request->birthdate)){
+                $personJpa->birthdate = $request->birthdate;
+            }
+
+            if(isset($request->gender)){
+                $personJpa->gender = $request->gender;
+            }
+
+            if(isset($request->email)){
+                $personJpa->email = $request->email;
+            }
+
+            if(isset($request->phone)){
+                $personJpa->phone = $request->phone;
+            }
+
+            if(isset($request->ubigeo)){
+                $personJpa->ubigeo = $request->ubigeo;
+            }
+
+            if(isset($request->address)){
+                $personJpa->address = $request->address;
+            }
+
+            if(isset($request->type)){
+                $personJpa->type = $request->type;
+            }
+
+            if(isset($request->_branch)){
+                $personJpa->_branch = $request->_branch;
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'people', 'change_status')) {
+                throw new Exception('No tienes permisos para cambiar estado de personas');
+            }else{
+                if (isset($request->status)) {
+                    $personJpa->status = $request->status;
+                }
+            }
+
+            $personJpa->_update_user = $userid;
+            $personJpa->update_date = gTrace::getDate('mysql');
+
+            $personJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El permiso se a actualizado correctamente');
+            $response->setMessage('La persona se a actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

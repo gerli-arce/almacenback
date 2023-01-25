@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Response;
@@ -12,12 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 class BranchController extends Controller
 {
-
-    public function index(Request $request){
+    public function index(Request $request)
+    {
         $response = new Response();
         try {
 
-            [$branch ,$status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -27,7 +26,6 @@ class BranchController extends Controller
 
             $branchesJpa = Branch::select(['*'])->whereNotNull('status')->get();
 
-        
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($branchesJpa->toArray());
@@ -46,12 +44,19 @@ class BranchController extends Controller
     {
         $response = new Response();
         try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'branches', 'create')) {
+                throw new Exception('No tienes permisos para listar las sucursales');
+            }
+            
             if (
                 !isset($request->name) ||
                 !isset($request->correlative) ||
-                !isset($request->department) ||
-                !isset($request->province) ||
-                !isset($request->distric) ||
+                !isset($request->ubigeo) ||
                 !isset($request->address)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
@@ -74,9 +79,7 @@ class BranchController extends Controller
             $branchJpa = new Branch();
             $branchJpa->name = $request->name;
             $branchJpa->correlative = $request->correlative;
-            $branchJpa->department = $request->department;
-            $branchJpa->province = $request->province;
-            $branchJpa->distric = $request->distric;
+            $branchJpa->ubigeo = $request->ubigeo;
             $branchJpa->address = $request->address;
 
             if ($request->description) {
@@ -108,9 +111,7 @@ class BranchController extends Controller
                 'id',
                 'name',
                 'correlative',
-                'department',
-                'province',
-                'distric',
+                'ubigeo',
                 'address',
                 'description',
                 'status',
@@ -139,14 +140,8 @@ class BranchController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-                if ($column == 'department' || $column == '*') {
-                    $q->orWhere('department', $type, $value);
-                }
-                if ($column == 'province' || $column == '*') {
-                    $q->orWhere('province', $type, $value);
-                }
-                if ($column == 'distric' || $column == '*') {
-                    $q->orWhere('distric', $type, $value);
+                if ($column == 'ubigeo' || $column == '*') {
+                    $q->orWhere('ubigeo', $type, $value);
                 }
                 if ($column == 'address' || $column == '*') {
                     $q->orWhere('address', $type, $value);
@@ -188,8 +183,8 @@ class BranchController extends Controller
 
             $branchJpa = Branch::find($request->id);
 
-            if(!$branchJpa){
-              throw new Exception("El registro que trata de actualizar no existe");
+            if (!$branchJpa) {
+                throw new Exception("El registro que trata de actualizar no existe");
             }
 
             if (isset($request->name) && isset($request->correlative)) {
@@ -238,20 +233,14 @@ class BranchController extends Controller
             if ($request->description) {
                 $branchJpa->description = $request->description;
             }
-            if($request->department){
-              $branchJpa->department = $request->department;
+            if ($request->ubigeo) {
+                $branchJpa->ubigeo = $request->ubigeo;
             }
-            if($request->province){
-              $branchJpa->province = $request->province;
+            if ($request->address) {
+                $branchJpa->address = $request->address;
             }
-            if($request->distric){
-              $branchJpa->distric = $request->distric;
-            }
-            if($request->address){
-              $branchJpa->address = $request->address;
-            }
-            if($request->status){
-              $branchJpa->status = "1";
+            if ($request->status) {
+                $branchJpa->status = "1";
             }
 
             $branchJpa->save();
@@ -269,66 +258,68 @@ class BranchController extends Controller
         }
     }
 
-    public function delete(Request $request){
-      $response = new Response();
-      try {
-          if (
-              !isset($request->id)
-          ) {
-              throw new Exception("Error: No deje campos vacíos");
-          }
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
 
-          $branchJpa = Branch::find($request->id);
+            $branchJpa = Branch::find($request->id);
 
-          if(!$branchJpa){
-            throw new Exception("El registro que intenta eliminar no existe");
-          }
+            if (!$branchJpa) {
+                throw new Exception("El registro que intenta eliminar no existe");
+            }
 
-          $branchJpa->status = null;
-          
-          $branchJpa->save();
+            $branchJpa->status = null;
 
-          $response->setStatus(200);
-          $response->setMessage('Sucursal eliminada correctamente');
-      } catch (\Throwable$th) {
-          $response->setStatus(400);
-          $response->setMessage($th->getMessage());
-      } finally {
-          return response(
-              $response->toArray(),
-              $response->getStatus()
-          );
-      }
+            $branchJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Sucursal eliminada correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
-    public function restore(Request $request){
-      $response = new Response();
-      try {
-          if (
-              !isset($request->id)
-          ) {
-              throw new Exception("Error: No deje campos vacíos");
-          }
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
 
-          $branchJpa = Branch::find($request->id);
+            $branchJpa = Branch::find($request->id);
 
-          if(!$branchJpa){
-            throw new Exception("El registro que intenta restaurar no existe");
-          }
+            if (!$branchJpa) {
+                throw new Exception("El registro que intenta restaurar no existe");
+            }
 
-          $branchJpa->status = "1";
-          
-          $branchJpa->save();
+            $branchJpa->status = "1";
 
-          $response->setStatus(200);
-          $response->setMessage('Sucursal restaurada correctamente');
-      } catch (\Throwable$th) {
-          $response->setStatus(400);
-          $response->setMessage($th->getMessage());
-      } finally {
-          return response(
-              $response->toArray(),
-              $response->getStatus()
-          );
-      }
+            $branchJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Sucursal restaurada correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
 }
