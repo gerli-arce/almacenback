@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
-use App\gLibraries\gValidate;
 use App\gLibraries\gTrace;
+use App\gLibraries\gValidate;
 use App\Models\People;
 use App\Models\Response;
 use App\Models\ViewPeople;
@@ -14,6 +14,107 @@ use Illuminate\Support\Facades\DB;
 
 class PeopleController extends Controller
 {
+    public function index(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
+                throw new Exception('No tienes permisos para listar personas');
+            }
+
+            $peopleJpa = ViewPeople::select([
+                'id',
+                'doc_type',
+                'doc_number',
+                'name',
+                'lastname',
+                'birthdate',
+                'gender',
+                'email',
+                'phone',
+                'ubigeo',
+                'address',
+                'type',
+                'branch__id',
+                'branch__name',
+                'branch__correlative',
+                'branch__ubigeo',
+                'branch__address',
+                'branch__description',
+                'branch__status',
+                'user_creation__username',
+                'user_creation__relative_id',
+                'creation_date',
+                'user_update__id',
+                'user_update__username',
+                'user_update__relative_id',
+                'update_date',
+                'status',
+            ])->whereNotNull('status')->get();
+               
+            $people = array();
+            foreach ($peopleJpa as $personJpa) {
+                $person = gJSON::restore($personJpa->toArray(), '__');
+                $people[] = $person;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($people);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
+                throw new Exception('No tienes permisos para listar personas');
+            }
+
+            $peopleJpa = ViewPeople::select([
+                'id',
+                'doc_number',
+                'name',
+                'lastname',
+            ])->whereNotNull('status')
+                ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('doc_number', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -26,7 +127,7 @@ class PeopleController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'people', 'create')) {
                 throw new Exception('No tienes permisos para agregar personas');
             }
-            
+
             if (
                 !isset($request->doc_type) ||
                 !isset($request->doc_number) ||
@@ -145,7 +246,7 @@ class PeopleController extends Controller
                 'branch__address',
                 'branch__description',
                 'branch__status',
-                'user_creation__name',
+                'user_creation__username',
                 'user_creation__relative_id',
                 'creation_date',
                 'user_update__id',
@@ -230,7 +331,7 @@ class PeopleController extends Controller
             $response->setData($people);
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'ln ' . $th->getLine());
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
@@ -260,11 +361,11 @@ class PeopleController extends Controller
 
             $personJpa = People::find($request->id);
 
-            if(!$personJpa){
+            if (!$personJpa) {
                 throw new Exception("Esta persona no existe");
             }
 
-            if(isset($request->doc_type) && isset($request->doc_number)){
+            if (isset($request->doc_type) && isset($request->doc_number)) {
                 if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
                     if (strlen($request->doc_number) != 11) {
                         throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
@@ -275,64 +376,63 @@ class PeopleController extends Controller
                         throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
                     }
                 }
+                $personJpa->doc_type = $request->doc_type;
+                $personJpa->doc_number = $request->doc_number;
             }
 
-            $userValidation = People::select(['id','doc_type', 'doc_number'])
+            $userValidation = People::select(['id', 'doc_type', 'doc_number'])
                 ->where('doc_type', $request->doc_type)
                 ->where('doc_number', $request->doc_number)
-                ->where('id','!=',$request->id)
+                ->where('id', '!=', $request->id)
                 ->first();
 
             if ($userValidation) {
                 throw new Exception("Esta persona ya existe");
             }
 
-            $personJpa->doc_type = $request->doc_type;
-            $personJpa->doc_number = $request->doc_number;
-
-            if(isset($request->name)){
+            if (isset($request->name)) {
                 $personJpa->name = $request->name;
             }
 
-            if(isset($request->lastname)){
+            if (isset($request->lastname)) {
                 $personJpa->lastname = $request->lastname;
             }
 
-            if(isset($request->birthdate)){
+            if (isset($request->birthdate)) {
                 $personJpa->birthdate = $request->birthdate;
             }
 
-            if(isset($request->gender)){
+            if (isset($request->gender)) {
                 $personJpa->gender = $request->gender;
             }
 
-            if(isset($request->email)){
+            if (isset($request->email)) {
                 $personJpa->email = $request->email;
             }
 
-            if(isset($request->phone)){
+            if (isset($request->phone)) {
                 $personJpa->phone = $request->phone;
             }
 
-            if(isset($request->ubigeo)){
+            if (isset($request->ubigeo)) {
                 $personJpa->ubigeo = $request->ubigeo;
             }
 
-            if(isset($request->address)){
+            if (isset($request->address)) {
                 $personJpa->address = $request->address;
             }
 
-            if(isset($request->type)){
+            if (isset($request->type)) {
                 $personJpa->type = $request->type;
             }
 
-            if(isset($request->_branch)){
+            if (isset($request->_branch)) {
                 $personJpa->_branch = $request->_branch;
             }
 
             if (!gValidate::check($role->permissions, $branch, 'people', 'change_status')) {
                 throw new Exception('No tienes permisos para cambiar estado de personas');
-            }else{
+            } else {
                 if (isset($request->status)) {
                     $personJpa->status = $request->status;
                 }
@@ -367,7 +467,7 @@ class PeopleController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $permissionJpa = Permission::find($request->id);
+            $permissionJpa = People::find($request->id);
 
             if (!$permissionJpa) {
                 throw new Exception("Este reguistro no existe");
@@ -400,7 +500,7 @@ class PeopleController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $viewJpa = Permission::find($request->id);
+            $viewJpa = People::find($request->id);
             if (!$viewJpa) {
                 throw new Exception("Este reguistro no existe");
             }

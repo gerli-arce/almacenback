@@ -69,6 +69,14 @@ Route::post('/roles/restore', [RoleController::class, 'restore']);
 Route::post('/roles/paginate', [RoleController::class, 'paginate']);
 Route::put('/roles/permissions', [RoleController::class, 'permissions']);
 
+// PEOPLE
+Route::get('/people', [PeopleController::class, 'index']);
+Route::post('/people', [PeopleController::class, 'store']);
+Route::patch('/people', [PeopleController::class, 'update']);
+Route::delete('/people', [PeopleController::class, 'delete']);
+Route::post('/people/search', [PeopleController::class, 'search']);
+Route::post('/people/restore', [PeopleController::class, 'restore']);
+Route::post('/people/paginate', [PeopleController::class, 'paginate']);
 
 // USERS
 Route::get('/users', [UserController::class, 'index']);
@@ -79,11 +87,3 @@ Route::post('/users/restore', [UserController::class, 'restore']);
 Route::get('/users/get/{username}', [UserController::class, 'getUser']);
 Route::post('/users/paginate', [UserController::class, 'paginate']);
 Route::post('/users/media', [UserController::class, 'searchByMedia']);
-
-// PEOPLE
-Route::get('/people', [PeopleController::class, 'index']);
-Route::post('/people', [PeopleController::class, 'store']);
-Route::patch('/people', [PeopleController::class, 'update']);
-Route::delete('/people', [PeopleController::class, 'destroy']);
-Route::post('/people/restore', [PeopleController::class, 'restore']);
-Route::post('/people/paginate', [PeopleController::class, 'paginate']);
