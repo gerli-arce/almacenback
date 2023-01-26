@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
+use App\gLibraries\gTrace;
 use App\Models\People;
 use App\Models\Response;
 use App\Models\ViewPeople;
@@ -257,7 +258,7 @@ class PeopleController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $personJpa = Person::find($request->id);
+            $personJpa = People::find($request->id);
 
             if(!$personJpa){
                 throw new Exception("Esta persona no existe");

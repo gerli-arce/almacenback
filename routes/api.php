@@ -83,7 +83,7 @@ Route::post('/users/media', [UserController::class, 'searchByMedia']);
 // PEOPLE
 Route::get('/people', [PeopleController::class, 'index']);
 Route::post('/people', [PeopleController::class, 'store']);
-Route::put('/people', [PeopleController::class, 'update']);
+Route::patch('/people', [PeopleController::class, 'update']);
 Route::delete('/people', [PeopleController::class, 'destroy']);
 Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
