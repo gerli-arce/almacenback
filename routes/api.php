@@ -8,6 +8,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ViewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 
 /*
@@ -81,9 +82,18 @@ Route::post('/people/paginate', [PeopleController::class, 'paginate']);
 // USERS
 Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
-Route::put('/users', [UserController::class, 'update']);
+Route::patch('/users', [UserController::class, 'update']);
 Route::delete('/users', [UserController::class, 'destroy']);
 Route::post('/users/restore', [UserController::class, 'restore']);
 Route::get('/users/get/{username}', [UserController::class, 'getUser']);
 Route::post('/users/paginate', [UserController::class, 'paginate']);
 Route::post('/users/media', [UserController::class, 'searchByMedia']);
+
+// PROFILE
+Route::get('/profile/{relative_id}/{zize}', [ProfileController::class, 'profile']);
+Route::put('/profile/account', [ProfileController::class, 'account']);
+Route::patch('/profile/account', [ProfileController::class, 'account']);
+Route::put('/profile/password', [ProfileController::class, 'password']);
+Route::patch('/profile/password', [ProfileController::class, 'password']);
+Route::put('/profile/personal', [ProfileController::class, 'personal']);
+Route::patch('/profile/personal', [ProfileController::class, 'personal']);

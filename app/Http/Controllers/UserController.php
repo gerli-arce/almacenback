@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\gLibraries\gTrace;
+use App\gLibraries\gUid;
 use App\Models\User;
 use App\Models\Response;
 use App\Models\ViewUsers;
@@ -19,7 +20,7 @@ class UserController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -72,8 +73,11 @@ class UserController extends Controller
             $userJpa->_role = $request->_role;
             $userJpa->_person = $request->_person;
             $userJpa->_branch = $request->_branch;
-            $userJpa->origin = $request->origin;
+            $userJpa->origin = $branch;
             $userJpa->creation_date = gTrace::getDate('mysql');
+            $userJpa->_creation_user = $userid;
+            $userJpa->update_date = gTrace::getDate('mysql');
+            $userJpa->_update_user = $userid;
             $userJpa->status = "1";
 
             $userJpa->save();
@@ -104,6 +108,8 @@ class UserController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'users', 'read')) {
                 throw new Exception('No tienes permisos para listar usuarios');
             }
+
+            $dat = gValidate::check($role->permissions, $branch, 'users', 'read');
 
             $query = ViewUsers::select([
                 'id',
@@ -202,7 +208,7 @@ class UserController extends Controller
             $response->setData($users);
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -216,11 +222,11 @@ class UserController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role] = gValidate::get($request);
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'users', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'users', 'update')) {
                 throw new Exception('No tienes permisos para actualizar usuarios');
             }
 
@@ -243,6 +249,7 @@ class UserController extends Controller
                 if ($userValidation) {
                     throw new Exception("Este usuario ya existe");
                 }
+                $userJpa->username = $request->username;
             }
 
             if (isset($request->password)) {
@@ -253,53 +260,48 @@ class UserController extends Controller
                 $userJpa->_branch = $request->_branch;
             }
 
-            // if(isset($request->_person)){
-            //   $personValidation = User::select(['id','username','_person'])
-            //   ->where('_person','=',$request->_person)
-            //   ->where('id','!=',$request->id)->first();
-            //   if($personValidation){
-            //     throw new Exception("Error: Esta persona ya tiene un usuario");
-            //   }
-            // }
+            if(isset($request->_person)){
+              $personValidation = User::select(['id','username','_person'])
+              ->where('_person','=',$request->_person)
+              ->where('id','!=',$request->id)->first();
+              if($personValidation){
+                throw new Exception("Error: Esta persona ya tiene un usuario");
+              }
+              $userJpa->_person = $request->_person;
+            }
 
-            // if($request->_role){
+            if($request->_role){
+                $userJpa->_role = $request->_role;
+            }
 
-            // }
+            if (
+              isset($request->image_type) &&
+              isset($request->image_mini) &&
+              isset($request->image_full)
+            ) {
+              if (
+                $request->image_type &&
+                $request->image_mini &&
+                $request->image_full
+              ) {
+                $userJpa->image_type = $request->image_type;
+                $userJpa->image_mini = base64_decode($request->image_mini);
+                $userJpa->image_full = base64_decode($request->image_full);
+              } else {
+                $userJpa->image_type = null;
+                $userJpa->image_mini = null;
+                $userJpa->image_full = null;
+              }
+            }
 
-            // if (
-            //   isset($request->image_type) &&
-            //   isset($request->image_mini) &&
-            //   isset($request->image_full)
-            // ) {
-            //   if (
-            //     $request->image_type &&
-            //     $request->image_mini &&
-            //     $request->image_full
-            //   ) {
-            //     $userJpa->image_type = $request->image_type;
-            //     $userJpa->image_mini = base64_decode($request->image_mini);
-            //     $userJpa->image_full = base64_decode($request->image_full);
-            //   } else {
-            //     $userJpa->image_type = null;
-            //     $userJpa->image_mini = null;
-            //     $userJpa->image_full = null;
-            //   }
-            // }
-
-            // $userJpa->relative_id = guid::short();
-            // $userJpa->username = $request->username;
-            // $userJpa->password = password_hash($request->password, PASSWORD_DEFAULT);
-            // $userJpa->_role = $request->_role;
-            // $userJpa->_person = $request->_person;
-            // $userJpa->_branch = $request->_branch;
-            // $userJpa->origin = $request->origin;
-            // $userJpa->creation_date = gTrace::getDate('mysql');
-            // $userJpa->status = "1";
+            $userJpa->update_date = gTrace::getDate('mysql');
+            $userJpa->_update_user = $userid;
+            $userJpa->status = "1";
 
             $userJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Usuario agregado correctamente');
+            $response->setMessage('Usuario actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

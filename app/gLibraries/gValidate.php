@@ -2,11 +2,11 @@
 
 namespace App\gLibraries;
 
-use App\Models\User;
 use App\gLibraries\gjson;
-use Illuminate\Http\Request;
 use App\Models\Role;
+use App\Models\User;
 use Exception;
+use Illuminate\Http\Request;
 
 class gValidate
 {
@@ -28,7 +28,7 @@ class gValidate
                 'roles.id AS role.id',
                 'roles.priority AS role.priority',
                 'roles.permissions AS role.permissions',
-                'roles.status AS role.status'
+                'roles.status AS role.status',
             ])
                 ->where('auth_token', $request->header('Auth-Token'))
                 ->where('username', $request->header('Auth-User'))
@@ -53,7 +53,7 @@ class gValidate
                 $status = 400;
                 throw new Exception('Tu rol se encuentra deshabilitado');
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $status = 400;
             $message = $th->getMessage();
             $role = null;
@@ -63,19 +63,37 @@ class gValidate
         return [$branch, $status, $message, $role, $userid];
     }
 
-    public static function check(array $permissions, string $branch, String $view, String $permission): bool
+    public static function check(array $permissions, string $branch, String $view, String $permission)
     {
-        $permissions = gJSON::flatten($permissions);
-        if (
-            isset($permissions["root"]) ||
-            isset($permissions["admin"]) ||
-            isset($permissions["$branch.all"]) ||
-            isset($permissions["$branch.$view.all"]) ||
-            isset($permissions["$branch.$view.$permission"])
-        ) {
-            return true;
+        $status = false;
+        $root = false;
+        try {
+            if (isset($permissions['root'])) {
+                $root = true;
+            }
+
+            foreach ($permissions as $branch_) {
+                if (array_key_exists($branch, $branch_)) {
+                    foreach ($branch_[$branch] as $views_) {
+                        if (array_key_exists($view, $views_)) {
+                            $canReadUsers = $views_[$view][$permission];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($canReadUsers) {
+                $status = true;
+            } else {
+                $status = false;
+            }
+        } catch (\Throwable$th) {
+            $status = false;
+        } finally {
+            return $status || $root;
         }
-        return false;
+
     }
 
     public static function cleanPermissions(array $permissions, array $before, array $toset): array
@@ -94,7 +112,7 @@ class gValidate
                     $after[$key] = true;
                 }
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $ok = false;
             $message = $th->getMessage();
         }
