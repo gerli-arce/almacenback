@@ -86,7 +86,6 @@ class SessionController extends Controller
                 throw new Exception("Error: Usuario inactivo");
             }
 
-            $userJpa->relative_id = '12';
             $userJpa->auth_token = guid::long();
 
             $userJpa->save();
@@ -120,15 +119,16 @@ class SessionController extends Controller
             ) {
                 throw new Exception("Error: no deje campos vaciós");
             }
-            if ($request->header('SoDe-Auth-Token') == null || $request->header('SoDe-Auth-User') == null) {
+            if ($request->header('Auth-Token') == null || $request->header('Auth-User') == null || $request->header('Auth-Branch') == null) {
                 throw new Exception('Error: Datos de cabesera deben ser enviados');
             }
+
             $userJpaValidation = User::select([
                 'users.username',
                 'users.auth_token'
             ])
-            ->where('auth_token', $request->header('SoDe-Auth-Token'))
-            ->where('username', $request->header('SoDe-Auth-User'))
+            ->where('auth_token', $request->header('Auth-Token'))
+            ->where('username', $request->header('Auth-User'))
             ->first();
 
             if (!$userJpaValidation) {
@@ -147,7 +147,6 @@ class SessionController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData([]);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

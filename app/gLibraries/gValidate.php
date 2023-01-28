@@ -67,9 +67,17 @@ class gValidate
     {
         $status = false;
         $root = false;
+        $admin = false;
         try {
             if (isset($permissions['root'])) {
                 $root = true;
+            }
+
+            if(isset($permission['admin'])){
+                $admin = true;
+                if($view == 'system'){
+                    $admin = false;
+                }
             }
 
             foreach ($permissions as $branch_) {
@@ -91,7 +99,7 @@ class gValidate
         } catch (\Throwable$th) {
             $status = false;
         } finally {
-            return $status || $root;
+            return $status || $root || $admin;
         }
 
     }
