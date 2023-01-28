@@ -11,6 +11,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\UnityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 
@@ -117,3 +118,11 @@ Route::patch('/brands', [BrandController::class, 'update']);
 Route::delete('/brands', [BrandController::class, 'destroy']);
 Route::post('/brands/restore', [BrandController::class, 'restore']);
 Route::post('/brands/paginate', [BrandController::class, 'paginate']);
+
+// CBRANDS
+Route::get('/unities', [UnityController::class, 'index']);
+Route::post('/unities', [UnityController::class, 'store']);
+Route::patch('/unities', [UnityController::class, 'update']);
+Route::delete('/unities', [UnityController::class, 'destroy']);
+Route::post('/unities/restore', [UnityController::class, 'restore']);
+Route::post('/unities/paginate', [UnityController::class, 'paginate']);
