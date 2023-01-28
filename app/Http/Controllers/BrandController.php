@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Category;
+use App\Models\Brand;
 use App\Models\Response;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class CategoriesController extends Controller
+class BrandController extends Controller
 {
     public function store(Request $request)
     {
@@ -22,38 +22,48 @@ class CategoriesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'create')) {
-                throw new Exception('No tienes permisos para agregar categorias en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'create')) {
+                throw new Exception('No tienes permisos para agregar marcas en ' . $branch);
             }
 
             if (
-                !isset($request->category)
+                !isset($request->correlative) ||
+                !isset($request->brand)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $roleValidation = Category::select(['category'])->where('category', $request->category)->first();
+            $brandValidation = Brand::select(['brand','correlative'])
+            ->where('brand', $request->brand)
+            ->orWhere('correlative', $request->correlative)
+            ->first();
 
-            if ($roleValidation) {
-                throw new Exception("Escoja otro nombre para esta categoria");
+            if ($brandValidation) {
+                if($brandValidation->brand == $request->brand){
+                    throw new Exception("Escoja otro nombre para la marca");
+                }
+                if($brandValidation->correlative == $request->correlative){
+                    throw new Exception("Escoja otro correlativo para la marca");
+                }
             }
 
-            $categoriesJpa = new Category();
-            $categoriesJpa->category = $request->category;
+            $brandJpa = new Brand();
+            $brandJpa->brand = $request->brand;
+            $brandJpa->correlative = $request->correlative;
 
             if (isset($request->description)) {
-                $categoriesJpa->description = $request->description;
+                $brandJpa->description = $request->description;
             }
 
-            $categoriesJpa->creation_date = gTrace::getDate('mysql');
-            $categoriesJpa->_creation_user = $userid;
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = "1";
-            $categoriesJpa->save();
+            $brandJpa->creation_date = gTrace::getDate('mysql');
+            $brandJpa->_creation_user = $userid;
+            $brandJpa->update_date = gTrace::getDate('mysql');
+            $brandJpa->_update_user = $userid;
+            $brandJpa->status = "1";
+            $brandJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria se a agregado correctamente');
+            $response->setMessage('La marca se a agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -75,15 +85,15 @@ class CategoriesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'read')) {
-                throw new Exception('No tienes permisos para listar las categorias de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+                throw new Exception('No tienes permisos para listar las marcas de ' . $branch);
             }
 
-            $categoriesJpa = Category::whereNotNull('status')->get();
+            $brandsJpa = Role::whereNotNull('status')->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($categoriesJpa->toArray());
+            $response->setData($brandsJpa->toArray());
         } catch (\Throwable$th) {
             $response->setMessage($th->getMessage());
             $response->setStatus(400);
@@ -105,24 +115,27 @@ class CategoriesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'read')) {
-                throw new Exception('No tienes permisos para listar las categorias  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 
-            $query = Category::select(['*'])
+            $query = Brand::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
-                if(!$request->all){
-                    $query->whereNotNull('status');
-                }
-    
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'category' || $column == '*') {
-                    $q->where('category', $type, $value);
+                if ($column == 'correlative' || $column == '*') {
+                    $q->where('correlative', $type, $value);
+                }
+                if ($column == 'brand' || $column == '*') {
+                    $q->where('brand', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -130,7 +143,7 @@ class CategoriesController extends Controller
             });
 
             $iTotalDisplayRecords = $query->count();
-            $categoriesJpa = $query->select('*')
+            $brandsJpa = $query->select('*')
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -139,8 +152,8 @@ class CategoriesController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Category::count());
-            $response->setData($categoriesJpa->toArray());
+            $response->setITotalRecords(Brand::count());
+            $response->setData($brandsJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -167,40 +180,51 @@ class CategoriesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'update')) {
-                throw new Exception('No tienes permisos para actualizar categorias');
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'update')) {
+                throw new Exception('No tienes permisos para actualizar marcas');
             }
 
-            $categoriesJpa = Category::find($request->id);
-            if (!$categoriesJpa) {
+            $brandJpa = Brand::find($request->id);
+            if (!$brandJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
-            if (isset($request->category)) {
-                $verifyCatJpa = Category::select(['id', 'category'])
-                    ->where('category', $request->category)
+            if (isset($request->brand)) {
+                $verifyCatJpa = Brand::select(['id', 'brand'])
+                    ->where('brand', $request->brand)
                     ->where('id', '!=', $request->id)
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta categoria");
+                    throw new Exception("Elija otro nombre para esta marca");
                 }
-                $categoriesJpa->category = $request->category;
+                $brandJpa->brand = $request->brand;
+            }
+
+            if (isset($request->correlative)) {
+                $verifyCatJpa = Brand::select(['id', 'correlative'])
+                    ->where('correlative', $request->correlative)
+                    ->where('id', '!=', $request->id)
+                    ->first();
+                if ($verifyCatJpa) {
+                    throw new Exception("Elija otro correlativo para esta marca");
+                }
+                $brandJpa->correlative = $request->correlative;
             }
 
             if (isset($request->description)) {
-                $categoriesJpa->description = $request->description;
+                $brandJpa->description = $request->description;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'categories', 'change_status')) {
+            if (gValidate::check($role->permissions, $branch, 'brands', 'change_status')) {
                 if (isset($request->status)) {
-                    $categoriesJpa->status = $request->status;
+                    $brandJpa->status = $request->status;
                 }
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
+            $brandJpa->update_date = gTrace::getDate('mysql');
+            $brandJpa->_update_user = $userid;
 
-            $categoriesJpa->save();
+            $brandJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La categoria ha sido actualizado correctamente');
@@ -224,8 +248,8 @@ class CategoriesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar categorias en '.$branch);
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar marcas en ' . $branch);
             }
 
             if (
@@ -234,18 +258,18 @@ class CategoriesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Category::find($request->id);
-            if (!$categoriesJpa) {
+            $brandJpa = Brand::find($request->id);
+            if (!$brandJpa) {
                 throw new Exception('La categoria que deseas eliminar no existe');
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = null;
-            $categoriesJpa->save();
+            $brandJpa->update_date = gTrace::getDate('mysql');
+            $brandJpa->_update_user = $userid;
+            $brandJpa->status = null;
+            $brandJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria a sido eliminada correctamente');
+            $response->setMessage('La marca a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -266,8 +290,8 @@ class CategoriesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar categorias en '.$branch);
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar marcas en ' . $branch);
             }
 
             if (
@@ -276,9 +300,9 @@ class CategoriesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Category::find($request->id);
+            $categoriesJpa = Brand::find($request->id);
             if (!$categoriesJpa) {
-                throw new Exception('La categoria que deseas restaurar no existe');
+                throw new Exception('La marca que deseas restaurar no existe');
             }
 
             $categoriesJpa->update_date = gTrace::getDate('mysql');
@@ -287,7 +311,7 @@ class CategoriesController extends Controller
             $categoriesJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria a sido restaurada correctamente');
+            $response->setMessage('La marca a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -299,5 +323,4 @@ class CategoriesController extends Controller
             );
         }
     }
-
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\ViewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 
@@ -108,3 +109,11 @@ Route::patch('/categories', [CategoriesController::class, 'update']);
 Route::delete('/categories', [CategoriesController::class, 'destroy']);
 Route::post('/categories/restore', [CategoriesController::class, 'restore']);
 Route::post('/categories/paginate', [CategoriesController::class, 'paginate']);
+
+// CBRANDS
+Route::get('/brands', [BrandController::class, 'index']);
+Route::post('/brands', [BrandController::class, 'store']);
+Route::patch('/brands', [BrandController::class, 'update']);
+Route::delete('/brands', [BrandController::class, 'destroy']);
+Route::post('/brands/restore', [BrandController::class, 'restore']);
+Route::post('/brands/paginate', [BrandController::class, 'paginate']);

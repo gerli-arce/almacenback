@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
+use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Response;
 use App\Models\Role;
