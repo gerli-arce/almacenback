@@ -4,10 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PeoplesController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ViewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 
@@ -73,6 +75,7 @@ Route::put('/roles/permissions', [RoleController::class, 'permissions']);
 // PEOPLE
 Route::get('/people', [PeopleController::class, 'index']);
 Route::post('/people', [PeopleController::class, 'store']);
+Route::post('/peoples', [PeoplesController::class, 'store']);
 Route::patch('/people', [PeopleController::class, 'update']);
 Route::delete('/people', [PeopleController::class, 'delete']);
 Route::post('/people/search', [PeopleController::class, 'search']);
@@ -97,3 +100,11 @@ Route::put('/profile/password', [ProfileController::class, 'password']);
 Route::patch('/profile/password', [ProfileController::class, 'password']);
 Route::put('/profile/personal', [ProfileController::class, 'personal']);
 Route::patch('/profile/personal', [ProfileController::class, 'personal']);
+
+// CATEGORIES
+Route::get('/categories', [CategoriesController::class, 'index']);
+Route::post('/categories', [CategoriesController::class, 'store']);
+Route::patch('/categories', [CategoriesController::class, 'update']);
+Route::delete('/categories', [CategoriesController::class, 'destroy']);
+Route::post('/categories/restore', [CategoriesController::class, 'restore']);
+Route::post('/categories/paginate', [CategoriesController::class, 'paginate']);
