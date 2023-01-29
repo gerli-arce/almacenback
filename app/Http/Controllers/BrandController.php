@@ -51,6 +51,26 @@ class BrandController extends Controller
             $brandJpa->brand = $request->brand;
             $brandJpa->correlative = $request->correlative;
 
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type &&
+                    $request->image_mini &&
+                    $request->image_full
+                ) {
+                    $brandJpa->image_type = $request->image_type;
+                    $brandJpa->image_mini = base64_decode($request->image_mini);
+                    $brandJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $brandJpa->image_type = null;
+                    $brandJpa->image_mini = null;
+                    $brandJpa->image_full = null;
+                }
+            }
+
             if (isset($request->description)) {
                 $brandJpa->description = $request->description;
             }
@@ -75,36 +95,6 @@ class BrandController extends Controller
         }
     }
 
-    public function index(Request $request)
-    {
-        $response = new Response();
-        try {
-
-            [$branch, $status, $message, $role] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas de ' . $branch);
-            }
-
-            $brandsJpa = Role::whereNotNull('status')->get();
-
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-            $response->setData($brandsJpa->toArray());
-        } catch (\Throwable$th) {
-            $response->setMessage($th->getMessage());
-            $response->setStatus(400);
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -119,7 +109,18 @@ class BrandController extends Controller
                 throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 
-            $query = Brand::select(['*'])
+            $query = Brand::select([
+                'id',
+                'correlative',
+                'brand',
+                'description',
+                'relative_id',
+                'creation_date',
+                '_creation_user',
+                'update_date',
+                '_update_user',
+                'status'
+            ])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -162,6 +163,54 @@ class BrandController extends Controller
                 $response->toArray(),
                 $response->getStatus()
             );
+        }
+    }
+
+    public function image($relative_id, $size){
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($relative_id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $userJpa = Brand::select([
+                "brands.image_$size as image_content",
+                'brands.image_type'
+
+            ])
+                ->where('relative_id', $relative_id)
+                ->first();
+
+            if (!$userJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+            if (!$userJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+            $content = $userJpa->image_content;
+            $type = $userJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/user_not_found.svg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/svg+xml';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
         }
     }
 
