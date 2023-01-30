@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
+use App\gLibraries\gUid;
 use App\Models\Brand;
 use App\Models\Response;
 use Exception;
@@ -23,26 +23,26 @@ class BrandController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'brands', 'create')) {
-                throw new Exception('No tienes permisos para agregar marcas en ' . $branch);
+                throw new Exception("No tienes permisos para agregar marcas en ");
             }
 
             if (
-                !isset($request->correlative) ||
-                !isset($request->brand)
+                !isset($request->brand) ||
+                !isset($request->correlative)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $brandValidation = Brand::select(['brand','correlative'])
-            ->where('brand', $request->brand)
-            ->orWhere('correlative', $request->correlative)
-            ->first();
+            $brandValidation = Brand::select(['brand', 'correlative'])
+                ->where('brand', $request->brand)
+                ->orWhere('correlative', $request->correlative)
+                ->first();
 
             if ($brandValidation) {
-                if($brandValidation->brand == $request->brand){
+                if ($brandValidation->brand == $request->brand) {
                     throw new Exception("Escoja otro nombre para la marca");
                 }
-                if($brandValidation->correlative == $request->correlative){
+                if ($brandValidation->correlative == $request->correlative) {
                     throw new Exception("Escoja otro correlativo para la marca");
                 }
             }
@@ -50,6 +50,7 @@ class BrandController extends Controller
             $brandJpa = new Brand();
             $brandJpa->brand = $request->brand;
             $brandJpa->correlative = $request->correlative;
+            $brandJpa->relative_id = guid::short();
 
             if (
                 isset($request->image_type) &&
@@ -84,7 +85,7 @@ class BrandController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La marca se a agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -119,7 +120,7 @@ class BrandController extends Controller
                 '_creation_user',
                 'update_date',
                 '_update_user',
-                'status'
+                'status',
             ])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
@@ -144,7 +145,16 @@ class BrandController extends Controller
             });
 
             $iTotalDisplayRecords = $query->count();
-            $brandsJpa = $query->select('*')
+            $brandsJpa = $query->select('id',
+                'correlative',
+                'brand',
+                'description',
+                'relative_id',
+                'creation_date',
+                '_creation_user',
+                'update_date',
+                '_update_user',
+                'status')
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -166,7 +176,8 @@ class BrandController extends Controller
         }
     }
 
-    public function image($relative_id, $size){
+    public function image($relative_id, $size)
+    {
         $response = new Response();
         $content = null;
         $type = null;
@@ -182,7 +193,7 @@ class BrandController extends Controller
 
             $userJpa = Brand::select([
                 "brands.image_$size as image_content",
-                'brands.image_type'
+                'brands.image_type',
 
             ])
                 ->where('relative_id', $relative_id)
@@ -197,14 +208,14 @@ class BrandController extends Controller
             $content = $userJpa->image_content;
             $type = $userJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable $th) {
-            $ruta = '../storage/images/user_not_found.svg';
+        } catch (\Throwable$th) {
+            $ruta = '../storage/images/brands-default.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
-            $type = 'image/svg+xml';
+            $type = 'image/jpeg';
             $response->setStatus(400);
         } finally {
             return response(
@@ -233,7 +244,7 @@ class BrandController extends Controller
                 throw new Exception('No tienes permisos para actualizar marcas');
             }
 
-            $brandJpa = Brand::find($request->id);
+            $brandJpa = Brand::select(['id'])-> find($request->id);
             if (!$brandJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
@@ -258,6 +269,26 @@ class BrandController extends Controller
                     throw new Exception("Elija otro correlativo para esta marca");
                 }
                 $brandJpa->correlative = $request->correlative;
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type &&
+                    $request->image_mini &&
+                    $request->image_full
+                ) {
+                    $brandJpa->image_type = $request->image_type;
+                    $brandJpa->image_mini = base64_decode($request->image_mini);
+                    $brandJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $brandJpa->image_type = null;
+                    $brandJpa->image_mini = null;
+                    $brandJpa->image_full = null;
+                }
             }
 
             if (isset($request->description)) {

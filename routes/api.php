@@ -118,6 +118,7 @@ Route::patch('/brands', [BrandController::class, 'update']);
 Route::delete('/brands', [BrandController::class, 'destroy']);
 Route::post('/brands/restore', [BrandController::class, 'restore']);
 Route::post('/brands/paginate', [BrandController::class, 'paginate']);
+Route::get('/brandsimg/{relative_id}/{zize}', [BrandController::class, 'image']);
 
 // CBRANDS
 Route::get('/unities', [UnityController::class, 'index']);

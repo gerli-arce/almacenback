@@ -23,7 +23,7 @@ class UnityController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'unities', 'create')) {
-                throw new Exception('No tienes permisos para agregar unidades en ' . $branch);
+                throw new Exception('No tienes permisos para agregar unidades');
             }
 
             if (
@@ -34,16 +34,16 @@ class UnityController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $brandValidation = Unity::select(['acronym','name'])
+            $unityValidation = Unity::select(['acronym','name'])
             ->where('acronym', $request->acronym)
             ->orWhere('name', $request->name)
             ->first();
 
-            if ($brandValidation) {
-                if($brandValidation->acronym == $request->acronym){
+            if ($unityValidation) {
+                if($unityValidation->acronym == $request->acronym){
                     throw new Exception("Escoja otro acronimo para la unidad");
                 }
-                if($brandValidation->name == $request->name){
+                if($unityValidation->name == $request->name){
                     throw new Exception("Escoja otro nombre para la marca");
                 }
             }
@@ -192,7 +192,7 @@ class UnityController extends Controller
             }
 
             if (isset($request->name)) {
-                $verifyCatJpa = name::select(['id', 'name'])
+                $verifyCatJpa = Unity::select(['id', 'name'])
                     ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->first();
@@ -203,7 +203,7 @@ class UnityController extends Controller
             }
 
             if (isset($request->acronym)) {
-                $verifyCatJpa = Brand::select(['id', 'acronym'])
+                $verifyCatJpa = Unity::select(['id', 'acronym'])
                     ->where('acronym', $request->acronym)
                     ->where('id', '!=', $request->id)
                     ->first();
