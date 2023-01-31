@@ -13,58 +13,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class PeopleController extends Controller
+class TechnicalsController extends Controller
 {
-
-    public function image($relative_id, $size)
-    {
-        $response = new Response();
-        $content = null;
-        $type = null;
-        try {
-            if ($size != 'full') {
-                $size = 'mini';
-            }
-            if (
-                !isset($relative_id)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
-
-            $userJpa = People::select([
-                "people.image_$size as image_content",
-                'people.image_type',
-
-            ])
-                ->where('relative_id', $relative_id)
-                ->first();
-
-            if (!$userJpa) {
-                throw new Exception('No se encontraron datos');
-            }
-            if (!$userJpa->image_content) {
-                throw new Exception('No existe imagen');
-            }
-            $content = $userJpa->image_content;
-            $type = $userJpa->image_type;
-            $response->setStatus(200);
-        } catch (\Throwable$th) {
-            $ruta = '../storage/images/user_not_found.svg';
-            $fp = fopen($ruta, 'r');
-            $datos_image = fread($fp, filesize($ruta));
-            $datos_image = addslashes($datos_image);
-            fclose($fp);
-            $content = stripslashes($datos_image);
-            $type = 'image/svg+xml';
-            $response->setStatus(400);
-        } finally {
-            return response(
-                $content,
-                $response->getStatus()
-            )->header('Content-Type', $type);
-        }
-    }
-
     public function search(Request $request)
     {
         $response = new Response();
@@ -74,8 +24,8 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
-                throw new Exception('No tienes permisos para listar personas');
+            if (!gValidate::check($role->permissions, $branch, 'technicalls', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
             }
 
             $peopleJpa = ViewPeople::select([
@@ -111,8 +61,8 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'create')) {
-                throw new Exception('No tienes permisos para agregar personas');
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'create')) {
+                throw new Exception('No tienes permisos para agregar técnicos');
             }
 
             if (
@@ -120,22 +70,13 @@ class PeopleController extends Controller
                 !isset($request->doc_number) ||
                 !isset($request->name) ||
                 !isset($request->lastname) ||
-                !isset($request->type) ||
                 !isset($request->_branch)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
-                if (strlen($request->doc_number) != 11) {
-                    throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
-                }
-            }
-
-            if ($request->doc_type == "DNI") {
-                if (strlen($request->doc_number) != 8) {
-                    throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
-                }
+            if (strlen($request->doc_number) != 8) {
+                throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
             }
 
             $userValidation = People::select(['doc_type', 'doc_number'])
@@ -144,7 +85,7 @@ class PeopleController extends Controller
                 ->first();
 
             if ($userValidation) {
-                throw new Exception("Esta persona ya existe");
+                throw new Exception("Esta registro ya existe");
             }
 
             $peopleJpa = new People();
@@ -201,7 +142,7 @@ class PeopleController extends Controller
             $peopleJpa->creation_date = gTrace::getDate('mysql');
             $peopleJpa->_update_user = $userid;
             $peopleJpa->update_date = gTrace::getDate('mysql');
-            $peopleJpa->type = $request->type;
+            $peopleJpa->type = "TECHNICAL";
             $peopleJpa->_branch = $request->_branch;
 
             $peopleJpa->status = "1";
@@ -209,7 +150,7 @@ class PeopleController extends Controller
             $peopleJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Usuario agregado correctamente');
+            $response->setMessage('Tecnico agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -230,8 +171,8 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
-                throw new Exception('No tienes permisos para listar personas');
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
             }
 
             $query = ViewPeople::select([
@@ -264,7 +205,9 @@ class PeopleController extends Controller
                 'update_date',
                 'status',
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->where('type', 'TECHNICAL')
+                ->where('branch__correlative',$branch);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
@@ -309,9 +252,6 @@ class PeopleController extends Controller
                 if ($column == 'address' || $column == '*') {
                     $q->orWhere('address', $type, $value);
                 }
-                if ($column == 'type' || $column == '*') {
-                    $q->orWhere('type', $type, $value);
-                }
                 if ($column == 'branch__name' || $column == '*') {
                     $q->orWhere('branch__name', $type, $value);
                 }
@@ -336,7 +276,7 @@ class PeopleController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPeople::count());
+            $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->count());
             $response->setData($people);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -349,7 +289,6 @@ class PeopleController extends Controller
         }
     }
 
-
     public function update(Request $request)
     {
         $response = new Response();
@@ -359,7 +298,7 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception('No tienes permisos para actualizar personas');
             }
 
@@ -452,15 +391,12 @@ class PeopleController extends Controller
                 $personJpa->address = $request->address;
             }
 
-            if (isset($request->type)) {
-                $personJpa->type = $request->type;
-            }
 
             if (isset($request->_branch)) {
                 $personJpa->_branch = $request->_branch;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'people', 'change_status')) {
+            if (gValidate::check($role->permissions, $branch, 'technicals', 'change_status')) {
                 if (isset($request->status)) {
                     $personJpa->status = $request->status;
                 }
@@ -492,8 +428,8 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar personas');
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar técnicos');
             }
 
             if (
@@ -514,7 +450,7 @@ class PeopleController extends Controller
             $personJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La persona se a eliminado correctamente');
+            $response->setMessage('Técnico se a eliminado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -535,7 +471,7 @@ class PeopleController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'people', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
                 throw new Exception('No tienes permisos para eliminar personas');
             }
 
@@ -547,12 +483,12 @@ class PeopleController extends Controller
 
             $personJpa->_update_user = $userid;
             $personJpa->update_date = gTrace::getDate('mysql');
-            $viewJpa = People::find($request->id);
-            if (!$viewJpa) {
+            $technicalJpa = People::find($request->id);
+            if (!$technicalJpa) {
                 throw new Exception("Este reguistro no existe");
             }
-            $viewJpa->status = "1";
-            $viewJpa->save();
+            $technicalJpa->status = "1";
+            $technicalJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La persona a sido restaurado correctamente');

@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PeoplesController;
+use App\Http\Controllers\ProvidersController;
+use App\Http\Controllers\TechnicalsController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ViewController;
 use App\Http\Controllers\RoleController;
@@ -85,6 +87,26 @@ Route::post('/people/search', [PeopleController::class, 'search']);
 Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
 Route::get('/image_person/{relative_id}/{zize}', [PeopleController::class, 'image']);
+
+// PROVIDERS
+Route::get('/providers', [ProvidersController::class, 'index']);
+Route::post('/providers', [ProvidersController::class, 'store']);
+Route::post('/providerss', [ProvidersController::class, 'store']);
+Route::patch('/providers', [ProvidersController::class, 'update']);
+Route::delete('/providers', [ProvidersController::class, 'delete']);
+Route::post('/providers/search', [ProvidersController::class, 'search']);
+Route::post('/providers/restore', [ProvidersController::class, 'restore']);
+Route::post('/providers/paginate', [ProvidersController::class, 'paginate']);
+
+// TECHNICALLS
+Route::get('/technicals', [TechnicalsController::class, 'index']);
+Route::post('/technicals', [TechnicalsController::class, 'store']);
+Route::post('/technicalss', [TechnicalsController::class, 'store']);
+Route::patch('/technicals', [TechnicalsController::class, 'update']);
+Route::delete('/technicals', [TechnicalsController::class, 'delete']);
+Route::post('/technicals/search', [TechnicalsController::class, 'search']);
+Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
+Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 
 // USERS
 Route::get('/users', [UserController::class, 'index']);

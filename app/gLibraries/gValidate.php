@@ -73,7 +73,7 @@ class gValidate
                 $root = true;
             }
 
-            if(isset($permission['admin'])){
+            if(isset($permissions['admin'])){
                 $admin = true;
                 if($view == 'system'){
                     $admin = false;
