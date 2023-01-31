@@ -14,6 +14,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\UnityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
+use App\Http\Controllers\OperationTypesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,6 +84,7 @@ Route::delete('/people', [PeopleController::class, 'delete']);
 Route::post('/people/search', [PeopleController::class, 'search']);
 Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
+Route::get('/image_person/{relative_id}/{zize}', [PeopleController::class, 'image']);
 
 // USERS
 Route::get('/users', [UserController::class, 'index']);
@@ -127,3 +129,11 @@ Route::patch('/unities', [UnityController::class, 'update']);
 Route::delete('/unities', [UnityController::class, 'destroy']);
 Route::post('/unities/restore', [UnityController::class, 'restore']);
 Route::post('/unities/paginate', [UnityController::class, 'paginate']);
+
+// OPERATION TYPES
+Route::get('/operations', [OperationTypesController::class, 'index']);
+Route::post('/operations', [OperationTypesController::class, 'store']);
+Route::patch('/operations', [OperationTypesController::class, 'update']);
+Route::delete('/operations', [OperationTypesController::class, 'destroy']);
+Route::post('/operations/restore', [OperationTypesController::class, 'restore']);
+Route::post('/operations/paginate', [OperationTypesController::class, 'paginate']);
