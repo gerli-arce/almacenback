@@ -16,13 +16,13 @@ class BranchController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'branches', 'read')) {
-                throw new Exception('No tienes permisos para listar las sucursales');
-            }
+            // [$branch, $status, $message, $role] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'branches', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las sucursales');
+            // }
 
             $branchesJpa = Branch::select(['*'])->whereNotNull('status')->get();
 
