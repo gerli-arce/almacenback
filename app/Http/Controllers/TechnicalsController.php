@@ -276,7 +276,7 @@ class TechnicalsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->count());
+            $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->where('branch__correlative',$branch)->count());
             $response->setData($people);
         } catch (\Throwable$th) {
             $response->setStatus(400);

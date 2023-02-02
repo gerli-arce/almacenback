@@ -171,6 +171,33 @@ class BranchController extends Controller
         }
     }
 
+    public function getBranch(Request $request){
+        $response = new Response();
+        try {
+
+            if(!isset($request->id)){
+                throw new Exception("Error: No deje campos vacios");
+            }
+
+            $branchJpa = Branch::find($request->id);
+            if(!$branchJpa){
+                throw new Exception("Error: El reguistro solicitado no existe");
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($branchJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setMessage($th->getMessage());
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function update(Request $request)
     {
         $response = new Response();

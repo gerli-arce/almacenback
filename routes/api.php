@@ -47,6 +47,7 @@ Route::post('/branches/paginate', [BranchController::class, 'paginate']);
 Route::patch('/branches', [BranchController::class, 'update']);
 Route::delete('/branches', [BranchController::class, 'delete']);
 Route::post('/branches/restore', [BranchController::class, 'restore']);
+Route::post('/branch/search', [BranchController::class, 'getBranch']);
 
 
 // VIEW
