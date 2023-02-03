@@ -96,6 +96,44 @@ class BrandController extends Controller
         }
     }
 
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+                throw new Exception('No tienes permisos para listar marcas');
+            }
+
+            $peopleJpa = Brand::select([
+                'id',
+                'correlative',
+                'brand',
+                'relative_id',
+            ])->whereNotNull('status')
+                ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('brand', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
     public function paginate(Request $request)
     {
         $response = new Response();

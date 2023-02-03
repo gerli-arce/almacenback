@@ -20,6 +20,7 @@ class BranchController extends Controller
             // if ($status != 200) {
             //     throw new Exception($message);
             // }
+            
             // if (!gValidate::check($role->permissions, $branch, 'branches', 'read')) {
             //     throw new Exception('No tienes permisos para listar las sucursales');
             // }

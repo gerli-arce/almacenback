@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
@@ -123,6 +122,48 @@ class ProvidersController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Proveedor agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'providers', 'read')) {
+                throw new Exception('No tienes permisos para listar marcas');
+            }
+
+            $peopleJpa = People::select([
+                'id',
+                'doc_number',
+                'relative_id',
+                'name',
+                'lastname',
+                'type',
+            ])
+                ->where('type', 'PROVIDER')
+                ->whereNotNull('status')
+                ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

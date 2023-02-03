@@ -98,6 +98,7 @@ Route::delete('/providers', [ProvidersController::class, 'delete']);
 Route::post('/providers/search', [ProvidersController::class, 'search']);
 Route::post('/providers/restore', [ProvidersController::class, 'restore']);
 Route::post('/providers/paginate', [ProvidersController::class, 'paginate']);
+Route::post('/providers/search', [ProvidersController::class, 'search']);
 
 // TECHNICALLS
 Route::get('/technicals', [TechnicalsController::class, 'index']);
@@ -135,6 +136,7 @@ Route::patch('/categories', [CategoriesController::class, 'update']);
 Route::delete('/categories', [CategoriesController::class, 'destroy']);
 Route::post('/categories/restore', [CategoriesController::class, 'restore']);
 Route::post('/categories/paginate', [CategoriesController::class, 'paginate']);
+Route::post('/categories/search', [CategoriesController::class, 'search']);
 
 // CBRANDS
 Route::get('/brands', [BrandController::class, 'index']);
@@ -144,8 +146,10 @@ Route::delete('/brands', [BrandController::class, 'destroy']);
 Route::post('/brands/restore', [BrandController::class, 'restore']);
 Route::post('/brands/paginate', [BrandController::class, 'paginate']);
 Route::get('/brandsimg/{relative_id}/{zize}', [BrandController::class, 'image']);
+Route::post('/brands/search', [BrandController::class, 'search']);
 
-// CBRANDS
+
+// UNITIES
 Route::get('/unities', [UnityController::class, 'index']);
 Route::post('/unities', [UnityController::class, 'store']);
 Route::patch('/unities', [UnityController::class, 'update']);
