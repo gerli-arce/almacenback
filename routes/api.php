@@ -13,6 +13,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ModelsController;
 use App\Http\Controllers\UnityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
@@ -164,3 +165,16 @@ Route::patch('/operations', [OperationTypesController::class, 'update']);
 Route::delete('/operations', [OperationTypesController::class, 'destroy']);
 Route::post('/operations/restore', [OperationTypesController::class, 'restore']);
 Route::post('/operations/paginate', [OperationTypesController::class, 'paginate']);
+
+// MODELS
+Route::get('/models', [ModelsController::class, 'index']);
+Route::post('/models', [ModelsController::class, 'store']);
+Route::patch('/models', [ModelsController::class, 'update']);
+Route::delete('/models', [ModelsController::class, 'destroy']);
+Route::post('/models/restore', [ModelsController::class, 'restore']);
+Route::post('/models/paginate', [ModelsController::class, 'paginate']);
+Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
+Route::post('/models/search', [ModelsController::class, 'search']);
+
+
+

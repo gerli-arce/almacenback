@@ -154,12 +154,12 @@ class ProvidersController extends Controller
                 'lastname',
                 'type',
             ])
-                ->where('type', 'PROVIDER')
-                ->whereNotNull('status')
-                ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orWhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('name', 'asc')
-                ->get();
+            ->whereNotNull('status')
+            ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+            ->orWhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+            ->orderBy('name', 'asc')
+            ->where('type', 'PROVIDER')
+            ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
