@@ -101,9 +101,9 @@ class TechnicalsController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $peopleJpa->image_type = $request->image_type;
                     $peopleJpa->image_mini = base64_decode($request->image_mini);
@@ -345,9 +345,9 @@ class TechnicalsController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $personJpa->image_type = $request->image_type;
                     $personJpa->image_mini = base64_decode($request->image_mini);

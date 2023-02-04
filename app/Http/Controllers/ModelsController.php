@@ -50,9 +50,9 @@ class ModelsController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $modelJpa->image_type = $request->image_type;
                     $modelJpa->image_mini = base64_decode($request->image_mini);
@@ -278,9 +278,9 @@ class ModelsController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $modelJpa->image_type = $request->image_type;
                     $modelJpa->image_mini = base64_decode($request->image_mini);

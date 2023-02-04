@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
-use App\gLibraries\gValidate;
 use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
-use App\Models\User;
+use App\gLibraries\gValidate;
 use App\Models\Response;
+use App\Models\User;
 use App\Models\ViewUsers;
 use Exception;
 use Illuminate\Http\Request;
@@ -53,9 +53,9 @@ class UserController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $userJpa->image_type = $request->image_type;
                     $userJpa->image_mini = base64_decode($request->image_mini);
@@ -95,7 +95,6 @@ class UserController extends Controller
         }
     }
 
-    
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -208,7 +207,7 @@ class UserController extends Controller
             $response->setData($users);
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().$th->getLine());
+            $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -260,38 +259,38 @@ class UserController extends Controller
                 $userJpa->_branch = $request->_branch;
             }
 
-            if(isset($request->_person)){
-              $personValidation = User::select(['id','username','_person'])
-              ->where('_person','=',$request->_person)
-              ->where('id','!=',$request->id)->first();
-              if($personValidation){
-                throw new Exception("Error: Esta persona ya tiene un usuario");
-              }
-              $userJpa->_person = $request->_person;
+            if (isset($request->_person)) {
+                $personValidation = User::select(['id', 'username', '_person'])
+                    ->where('_person', '=', $request->_person)
+                    ->where('id', '!=', $request->id)->first();
+                if ($personValidation) {
+                    throw new Exception("Error: Esta persona ya tiene un usuario");
+                }
+                $userJpa->_person = $request->_person;
             }
 
-            if($request->_role){
+            if ($request->_role) {
                 $userJpa->_role = $request->_role;
             }
 
             if (
-              isset($request->image_type) &&
-              isset($request->image_mini) &&
-              isset($request->image_full)
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
             ) {
-              if (
-                $request->image_type &&
-                $request->image_mini &&
-                $request->image_full
-              ) {
-                $userJpa->image_type = $request->image_type;
-                $userJpa->image_mini = base64_decode($request->image_mini);
-                $userJpa->image_full = base64_decode($request->image_full);
-              } else {
-                $userJpa->image_type = null;
-                $userJpa->image_mini = null;
-                $userJpa->image_full = null;
-              }
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $userJpa->image_type = $request->image_type;
+                    $userJpa->image_mini = base64_decode($request->image_mini);
+                    $userJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $userJpa->image_type = null;
+                    $userJpa->image_mini = null;
+                    $userJpa->image_full = null;
+                }
             }
 
             $userJpa->update_date = gTrace::getDate('mysql');

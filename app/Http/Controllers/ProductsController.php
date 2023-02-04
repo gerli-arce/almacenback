@@ -64,9 +64,9 @@ class ProductsController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $productJpa->image_type = $request->image_type;
                     $productJpa->image_mini = base64_decode($request->image_mini);
@@ -304,9 +304,9 @@ class ProductsController extends Controller
               isset($request->image_full)
             ) {
               if (
-                $request->image_type &&
-                $request->image_mini &&
-                $request->image_full
+                $request->image_type != "none" &&
+                $request->image_mini != "none" &&
+                $request->image_full != "none"
               ) {
                 $userJpa->image_type = $request->image_type;
                 $userJpa->image_mini = base64_decode($request->image_mini);

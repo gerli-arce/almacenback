@@ -160,9 +160,9 @@ class PeopleController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $peopleJpa->image_type = $request->image_type;
                     $peopleJpa->image_mini = base64_decode($request->image_mini);
@@ -406,9 +406,9 @@ class PeopleController extends Controller
                 isset($request->image_full)
             ) {
                 if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
                 ) {
                     $personJpa->image_type = $request->image_type;
                     $personJpa->image_mini = base64_decode($request->image_mini);
@@ -545,14 +545,14 @@ class PeopleController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $personJpa->_update_user = $userid;
-            $personJpa->update_date = gTrace::getDate('mysql');
-            $viewJpa = People::find($request->id);
-            if (!$viewJpa) {
+            $personJpa = People::find($request->id);
+            if (!$personJpa) {
                 throw new Exception("Este reguistro no existe");
             }
-            $viewJpa->status = "1";
-            $viewJpa->save();
+            $personJpa->_update_user = $userid;
+            $personJpa->update_date = gTrace::getDate('mysql');
+            $personJpa->status = "1";
+            $personJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La persona a sido restaurado correctamente');
