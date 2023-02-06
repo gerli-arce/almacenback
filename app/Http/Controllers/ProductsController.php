@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
-use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\EntryProducts;
+use App\Models\ViewProducts;
 use App\Models\Product;
 use App\Models\Response;
 use Exception;
@@ -49,7 +50,6 @@ class ProductsController extends Controller
             $entryProduct->status = "1";
             $entryProduct->save();
 
-
             foreach ($request->data as $product) {
 
                 $productValidation = Product::select(['mac', 'serie'])
@@ -58,7 +58,7 @@ class ProductsController extends Controller
                     ->first();
 
                 if ($productValidation) {
-                    if ($productValidation->mac ==  $product['mac']) {
+                    if ($productValidation->mac == $product['mac']) {
                         throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
                     }
                     if ($productValidation->serie == $product['serie']) {
@@ -106,7 +106,6 @@ class ProductsController extends Controller
     {
         $response = new Response();
         try {
-
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
@@ -117,46 +116,8 @@ class ProductsController extends Controller
 
             $dat = gValidate::check($role->permissions, $branch, 'users', 'read');
 
-            $query = ViewUsers::select([
-                'id',
-                'username',
-                'relative_id',
-                'person__id',
-                'person__doc_type',
-                'person__doc_number',
-                'person__name',
-                'person__lastname',
-                'person__birthdate',
-                'person__gender',
-                'person__ubigeo',
-                'person__address',
-                'person__type',
-                'person__status',
-                'branch__name',
-                'branch__correlative',
-                'branch__ubigeo',
-                'branch__address',
-                'branch__status',
-                'origin',
-                'role__id',
-                'role__role',
-                'role__priority',
-                'role__permissions',
-                'role__status',
-                'creation_date',
-                'user_creation__id',
-                'user_creation__username',
-                'user_creation__relative_id',
-                'update_date',
-                'user_update__id',
-                'user_update__username',
-                'user_update__relative_id',
-                'status',
-            ])
+            $query = ViewProducts::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
-
-            // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
-            // }
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -168,23 +129,20 @@ class ProductsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'username' || $column == '*') {
-                    $q->where('username', $type, $value);
+                if ($column == 'brand__brand' || $column == '*') {
+                    $q->where('brand__brand', $type, $value);
                 }
-                if ($column == 'person__name' || $column == '*') {
-                    $q->where('person__name', $type, $value);
+                if ($column == 'category__category' || $column == '*') {
+                    $q->where('category__category', $type, $value);
                 }
-                if ($column == 'person__lastname' || $column == '*') {
-                    $q->orWhere('person__lastname', $type, $value);
+                if ($column == 'model__model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
                 }
-                if ($column == 'person__doc_number' || $column == '*') {
-                    $q->orWhere('person__doc_number', $type, $value);
+                if ($column == 'mac' || $column == '*') {
+                    $q->orWhere('mac', $type, $value);
                 }
-                if ($column == 'branch__name' || $column == '*') {
-                    $q->orWhere('branch__name', $type, $value);
-                }
-                if ($column == 'role__role' || $column == '*') {
-                    $q->orWhere('role__role', $type, $value);
+                if ($column == 'serie' || $column == '*') {
+                    $q->orWhere('serie', $type, $value);
                 }
                 if ($column == 'status' || $column == '*') {
                     $q->orWhere('status', $type, $value);
@@ -192,26 +150,23 @@ class ProductsController extends Controller
             });
             $iTotalDisplayRecords = $query->count();
 
-            $usersJpa = $query->select('*')
+            $productsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $users = array();
-            foreach ($usersJpa as $userJpa) {
-                $person = gJSON::restore($userJpa->toArray(), '__');
-                $person['role']['permissions'] = gJSON::parse($person['role']['permissions']);
-                unset($person['password']);
-                unset($person['auth_token']);
-                $users[] = $person;
+            $products = array();
+            foreach ($productsJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
             }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewUsers::count());
-            $response->setData($users);
+            $response->setITotalRecords(ViewProducts::count());
+            $response->setData($products);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
@@ -222,7 +177,6 @@ class ProductsController extends Controller
             );
         }
     }
-
     public function update(Request $request)
     {
         $response = new Response();

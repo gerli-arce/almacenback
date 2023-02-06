@@ -181,5 +181,6 @@ Route::get('/products', [ProductsController::class, 'index']);
 Route::post('/products', [ProductsController::class, 'store']);
 Route::patch('/products', [ProductsController::class, 'update']);
 Route::delete('/products', [ProductsController::class, 'destroy']);
+Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 
 
