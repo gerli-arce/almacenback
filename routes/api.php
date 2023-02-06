@@ -17,6 +17,7 @@ use App\Http\Controllers\ModelsController;
 use App\Http\Controllers\UnityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
+use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\OperationTypesController;
 
 /*
@@ -149,7 +150,6 @@ Route::post('/brands/paginate', [BrandController::class, 'paginate']);
 Route::get('/brandsimg/{relative_id}/{zize}', [BrandController::class, 'image']);
 Route::post('/brands/search', [BrandController::class, 'search']);
 
-
 // UNITIES
 Route::get('/unities', [UnityController::class, 'index']);
 Route::post('/unities', [UnityController::class, 'store']);
@@ -176,5 +176,10 @@ Route::post('/models/paginate', [ModelsController::class, 'paginate']);
 Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
 Route::post('/models/search', [ModelsController::class, 'search']);
 
+// PRODUCTS
+Route::get('/products', [ProductsController::class, 'index']);
+Route::post('/products', [ProductsController::class, 'store']);
+Route::patch('/products', [ProductsController::class, 'update']);
+Route::delete('/products', [ProductsController::class, 'destroy']);
 
 
