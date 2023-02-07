@@ -102,6 +102,7 @@ class ProductsController extends Controller
             );
         }
     }
+    
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -177,6 +178,7 @@ class ProductsController extends Controller
             );
         }
     }
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -272,4 +274,5 @@ class ProductsController extends Controller
             );
         }
     }
+
 }
