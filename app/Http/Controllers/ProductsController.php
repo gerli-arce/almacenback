@@ -38,6 +38,8 @@ class ProductsController extends Controller
                 !isset($request->price_buy) ||
                 !isset($request->price_sale) ||
                 !isset($request->data) ||
+                !isset($request->condition_product) ||
+                !isset($request->status_product) ||
                 !isset($request->date_entry)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
@@ -78,10 +80,16 @@ class ProductsController extends Controller
                 $productJpa->mac = $product['mac'];
                 $productJpa->serie = $product['serie'];
                 $productJpa->num_gia = $request->num_gia;
+                if(isset($request->warranty)){
+                    $productJpa->warranty = $request->warranty;
+                }
                 $productJpa->date_entry = $request->date_entry;
                 $productJpa->_entry_product = $entryProduct->id;
                 $productJpa->condition_product = $request->condition_product;
                 $productJpa->status_product = $request->status_product;
+                if(isset($request->description)){
+                    $productJpa->description = $request->description;
+                }
                 $productJpa->creation_date = gTrace::getDate('mysql');
                 $productJpa->_creation_user = $userid;
                 $productJpa->update_date = gTrace::getDate('mysql');
