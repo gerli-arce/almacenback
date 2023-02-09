@@ -17,7 +17,6 @@ class ViewController extends Controller
     public function index (Response $rsponse){
         $response = new Response();
         try {
-
             $viewsJpa = View::whereNotNull('status')->orderBy('view', 'ASC')->get();
             $response->setStatus(200);
             $response->setMessage('Operación correcta');

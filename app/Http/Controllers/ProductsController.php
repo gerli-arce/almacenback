@@ -7,9 +7,9 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
 use App\gLibraries\gValidate;
 use App\Models\EntryProducts;
-use App\Models\ViewProducts;
 use App\Models\Product;
 use App\Models\Response;
+use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,14 +80,14 @@ class ProductsController extends Controller
                 $productJpa->mac = $product['mac'];
                 $productJpa->serie = $product['serie'];
                 $productJpa->num_gia = $request->num_gia;
-                if(isset($request->warranty)){
+                if (isset($request->warranty)) {
                     $productJpa->warranty = $request->warranty;
                 }
                 $productJpa->date_entry = $request->date_entry;
                 $productJpa->_entry_product = $entryProduct->id;
                 $productJpa->condition_product = $request->condition_product;
                 $productJpa->status_product = $request->status_product;
-                if(isset($request->description)){
+                if (isset($request->description)) {
                     $productJpa->description = $request->description;
                 }
                 $productJpa->creation_date = gTrace::getDate('mysql');
@@ -110,7 +110,7 @@ class ProductsController extends Controller
             );
         }
     }
-    
+
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -196,8 +196,8 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'users', 'update')) {
-                throw new Exception('No tienes permisos para actualizar usuarios');
+            if (!gValidate::check($role->permissions, $branch, 'products', 'update')) {
+                throw new Exception('No tienes permisos para actualizar productos');
             }
 
             if (
@@ -206,72 +206,102 @@ class ProductsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $userJpa = User::find($request->id);
+            $productJpa = Product::find($request->id);
 
-            if (!$userJpa) {
+            if (!$productJpa) {
                 throw new Exception("Error: El registro que intenta modificar no existe");
             }
+            if (!isset($request->mac) && !isset($request->serie)) {
+                if (isset($request->mac)) {
+                    $productValidation = Product::select(['id', 'mac'])
+                        ->where('mac', $request->mac)
+                        ->where('id', '!=', $request->id)
+                        ->first();
 
-            if (isset($request->username)) {
-                $userValidation = User::select(['id', 'username'])
-                    ->where('username', $request->username)
-                    ->where('id', '!=', $request->id)->first();
-                if ($userValidation) {
-                    throw new Exception("Este usuario ya existe");
+                    if ($productValidation->mac == $request->mac) {
+                        throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
+                    }
+                    $productJpa->mac = $request->mac;
                 }
-                $userJpa->username = $request->username;
-            }
-
-            if (isset($request->password)) {
-                $userJpa->password = password_hash($request->password, PASSWORD_DEFAULT);
-            }
-
-            if (isset($request->_branch)) {
-                $userJpa->_branch = $request->_branch;
-            }
-
-            if (isset($request->_person)) {
-                $personValidation = User::select(['id', 'username', '_person'])
-                    ->where('_person', '=', $request->_person)
-                    ->where('id', '!=', $request->id)->first();
-                if ($personValidation) {
-                    throw new Exception("Error: Esta persona ya tiene un usuario");
+                if(isset($request->serie)){
+                    $productValidation = Product::select(['id', 'serie'])
+                    ->orWhere('serie', $request->serie)
+                    ->where('id', '!=', $request->id)
+                    ->first();
+            
+                    if ($productValidation->serie == $request->serie) {
+                        throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
+                    }
+                    $productJpa->serie = $request->serie;
                 }
-                $userJpa->_person = $request->_person;
-            }
+            } else {
+                $productValidation = Product::select(['id', 'mac', 'serie'])
+                    ->where('mac', $request->mac)
+                    ->where('id', '!=', $request->id)
+                    ->orWhere('serie', $request->serie)
+                    ->where('id', '!=', $request->id)
+                    ->first();
 
-            if ($request->_role) {
-                $userJpa->_role = $request->_role;
-            }
-
-            if (
-                isset($request->image_type) &&
-                isset($request->image_mini) &&
-                isset($request->image_full)
-            ) {
-                if (
-                    $request->image_type != "none" &&
-                    $request->image_mini != "none" &&
-                    $request->image_full != "none"
-                ) {
-                    $userJpa->image_type = $request->image_type;
-                    $userJpa->image_mini = base64_decode($request->image_mini);
-                    $userJpa->image_full = base64_decode($request->image_full);
-                } else {
-                    $userJpa->image_type = null;
-                    $userJpa->image_mini = null;
-                    $userJpa->image_full = null;
+                if ($productValidation) {
+                    if ($productValidation->mac == $request->mac) {
+                        throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
+                    }
+                    if ($productValidation->serie == $request->serie) {
+                        throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
+                    }
                 }
+                $productJpa->mac = $request->mac;
+                $productJpa->serie = $request->serie;
             }
 
-            $userJpa->update_date = gTrace::getDate('mysql');
-            $userJpa->_update_user = $userid;
-            $userJpa->status = "1";
+            if(isset($request->num_gia)){
+                $productJpa->num_gia = $request->num_gia;
+            }
 
-            $userJpa->save();
+            if(isset($request->status_product)){
+                $productJpa->status_product = $request->status_product;
+            }
+
+            if(isset($request->condition_product)){
+                $productJpa->condition_product = $request->condition_product;
+            }
+
+            if(isset($request->description)){
+                $productJpa->description = $request->description;
+            }
+
+            if(isset($request->currency)){
+                $productJpa->currency = $request->currency;
+            }
+
+            if(isset($request->_model)){
+                $productJpa->_model = $request->_model;
+            }
+
+            if(isset($request->_brand)){
+                $productJpa->_brand = $request->_brand;
+            }
+
+            if(isset($request->_category)){
+                $productJpa->_category = $request->_category;
+            }
+
+            if(isset($request->_provider)){
+                $productJpa->_provider = $request->_provider;
+            }
+
+            if(isset($request->warranty)){
+                $productJpa->warranty = $request->warranty;
+            }
+
+            $productJpa->update_date = gTrace::getDate('mysql');
+            $productJpa->_update_user = $userid;
+            $productJpa->status = "1";
+
+            $productJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Usuario actualizado correctamente');
+            $response->setMessage('Producto actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
