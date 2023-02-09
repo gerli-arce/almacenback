@@ -536,7 +536,7 @@ class PeopleController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'people', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar personas');
+                throw new Exception('No tienes permisos para restaurar personas');
             }
 
             if (

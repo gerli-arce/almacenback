@@ -286,8 +286,8 @@ class ProductsController extends Controller
                 $productJpa->_category = $request->_category;
             }
 
-            if(isset($request->_provider)){
-                $productJpa->_provider = $request->_provider;
+            if(isset($request->_supplier)){
+                $productJpa->_supplier = $request->_supplier;
             }
 
             if(isset($request->warranty)){
@@ -296,12 +296,100 @@ class ProductsController extends Controller
 
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->_update_user = $userid;
-            $productJpa->status = "1";
+
+            if (gValidate::check($role->permissions, $branch, 'products', 'change_status')) {
+                if (isset($request->status)) {
+                    $productJpa->status = $request->status;
+                }
+            }
+
 
             $productJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function destroy(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $productJpa = Product::find($request->id);
+
+            if (!$productJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $productJpa->_update_user = $userid;
+            $productJpa->update_date = gTrace::getDate('mysql');
+            $productJpa->status = null;
+            $productJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El producto se a eliminado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $productJpa = Product::find($request->id);
+            if (!$productJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+            $productJpa->_update_user = $userid;
+            $productJpa->update_date = gTrace::getDate('mysql');
+            $productJpa->status = "1";
+            $productJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El producto a sido restaurado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
