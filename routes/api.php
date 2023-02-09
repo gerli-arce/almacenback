@@ -18,6 +18,7 @@ use App\Http\Controllers\UnityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ProductsController;
+use App\Http\Controllers\StockController;
 use App\Http\Controllers\OperationTypesController;
 
 /*
@@ -184,4 +185,6 @@ Route::delete('/products', [ProductsController::class, 'destroy']);
 Route::post('/products/restore', [ProductsController::class, 'restore']);
 Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 
+// STOCK
+Route::post('/stock/paginate', [StockController::class, 'paginate']);
 

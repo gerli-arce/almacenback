@@ -119,17 +119,26 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'users', 'read')) {
-                throw new Exception('No tienes permisos para listar usuarios');
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
             }
-
-            $dat = gValidate::check($role->permissions, $branch, 'users', 'read');
 
             $query = ViewProducts::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
+               
 
             if (!$request->all) {
                 $query->whereNotNull('status');
+            }
+        
+            if(isset($request->search['brand'])){
+                $query->where('brand__id',$request->search['brand'] );
+            }
+            if(isset($request->search['category'])){
+                $query->where('category__id',$request->search['category'] );
+            }
+            if(isset($request->search['model'])){
+                $query->where('model__id',$request->search['model']);
             }
 
             $query->where(function ($q) use ($request) {
@@ -153,13 +162,20 @@ class ProductsController extends Controller
                 if ($column == 'serie' || $column == '*') {
                     $q->orWhere('serie', $type, $value);
                 }
+                if ($column == 'price_buy' || $column == '*') {
+                    $q->orWhere('price_buy', $type, $value);
+                }
+                if ($column == 'status_product' || $column == '*') {
+                    $q->orWhere('status_product', $type, $value);
+                }
                 if ($column == 'status' || $column == '*') {
                     $q->orWhere('status', $type, $value);
                 }
-            });
+            })->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
+                
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -174,7 +190,7 @@ class ProductsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewProducts::count());
+            $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
             $response->setData($products);
         } catch (\Throwable$th) {
             $response->setStatus(400);

@@ -83,6 +83,7 @@ class CategoriesController extends Controller
                 'category',
             ])->whereNotNull('status')
                 ->WhereRaw("category LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orderBy('category', 'asc')
                 ->get();
 

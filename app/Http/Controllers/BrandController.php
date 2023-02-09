@@ -116,6 +116,7 @@ class BrandController extends Controller
                 'relative_id',
             ])->whereNotNull('status')
                 ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orderBy('brand', 'asc')
                 ->get();
 
