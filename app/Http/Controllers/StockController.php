@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\Response;
+use App\Models\ViewModels;
 use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
@@ -17,9 +18,11 @@ class StockController extends Controller
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
             if ($status != 200) {
                 throw new Exception($message);
             }
+
             if (!gValidate::check($role->permissions, $branch, 'stock', 'read')) {
                 throw new Exception('No tienes permisos para listar el stock');
             }
@@ -41,9 +44,14 @@ class StockController extends Controller
                     count(*) as total
                 '
             )->groupBy('brand__brand', 'model__model', 'category__category')
-            ->where('branch__correlative', $branch);
-            
-            
+                ->where('branch__correlative', $branch);
+
+            $modelsJpa = ViewModels::select(['*'])->get();
+            $models = array();
+            foreach ($modelsJpa as $modelJpa) {
+                $model = gJSON::restore($modelJpa->toArray(), '__');
+                $models[] = $model;
+            }
 
             $query = ViewProducts::fromSub($subquery, 'aggregate')
                 ->select(
@@ -92,12 +100,44 @@ class StockController extends Controller
                 $products[] = $product;
             }
 
+            // $result = [];
+            // foreach ($products as $item) {
+            //     $found = false;
+            //     foreach ($models as $stock) {
+            //         if (
+            //             $item['brand']['id'] === $stock['brand']['id'] && 
+            //             $item['model']['id'] === $stock['model']['id']) {
+
+            //             $found = true;
+            //             $result[] = [
+            //                 'brand' => $item['brand'],
+            //                 'category' => $item['category'],
+            //                 'model' => $item['model'],
+            //                 'total' => $stock['total'],
+            //             ];
+            //             break;
+            //         }
+            //     }
+            //     if (!$found) {
+            //         $result[] = [
+            //             'brand' => $item['brand'],
+            //             'category' => $item['category'],
+            //             'model' => $item['model'],
+            //             'total' => 0,
+            //         ];
+            //     }
+            // }
+
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewProducts::groupBy('brand__brand', 'model__model', 'category__category')->where('branch__correlative', $branch)->count());
+            $response->setITotalRecords(ViewProducts::groupBy('brand__brand', 'model__model', 'category__category')
+                    ->where('branch__correlative', $branch)
+                    ->count());
             $response->setData($products);
+            // $response->setData($models);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());

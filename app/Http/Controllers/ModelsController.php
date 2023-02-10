@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
 use App\gLibraries\gValidate;
 use App\Models\Models;
 use App\Models\Response;
+use App\Models\ViewModels;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +29,9 @@ class ModelsController extends Controller
             }
 
             if (
-                !isset($request->model)
+                !isset($request->model) ||
+                !isset($request->_brand) ||
+                !isset($request->_category)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -42,6 +46,8 @@ class ModelsController extends Controller
 
             $modelJpa = new Models();
             $modelJpa->model = $request->model;
+            $modelJpa->_brand = $request->_brand;
+            $modelJpa->_category = $request->_category;
             $modelJpa->relative_id = guid::short();
 
             if (
@@ -134,13 +140,7 @@ class ModelsController extends Controller
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
-            $query = Models::select([
-                'id',
-                'model',
-                'relative_id',
-                'description',
-                'status',
-            ])
+            $query = ViewModels::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -155,28 +155,35 @@ class ModelsController extends Controller
                 if ($column == 'model' || $column == '*') {
                     $q->where('model', $type, $value);
                 }
+                if ($column == 'brand__brand' || $column == '*') {
+                    $q->where('brand__brand', $type, $value);
+                }
+                if ($column == 'category__category' || $column == '*') {
+                    $q->where('category__category', $type, $value);
+                }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
             });
 
             $iTotalDisplayRecords = $query->count();
-            $brandsJpa = $query->select(['id',
-                            'id',
-                            'model',
-                            'relative_id',
-                            'description',
-                            'status' ])
+            $modelsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
+
+            $models = array();
+            foreach ($modelsJpa as $modelJpa) {
+                $model = gJSON::restore($modelJpa->toArray(), '__');
+                $models[] = $model;
+            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Models::count());
-            $response->setData($brandsJpa->toArray());
+            $response->setITotalRecords(ViewModels::count());
+            $response->setData($models);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -270,6 +277,14 @@ class ModelsController extends Controller
                     throw new Exception("Elija otro nombre para este modelo");
                 }
                 $modelJpa->model = $request->model;
+            }
+
+            if (isset($request->_brand)) {
+                $modelJpa->_brand = $request->_brand;
+            }
+
+            if (isset($request->_category)) {
+                $modelJpa->_category = $request->_category;
             }
 
             if (

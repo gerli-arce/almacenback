@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
 use App\gLibraries\gValidate;
 use App\Models\EntryProducts;
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\ViewProducts;
@@ -52,6 +53,8 @@ class ProductsController extends Controller
             $entryProduct->status = "1";
             $entryProduct->save();
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             foreach ($request->data as $product) {
 
                 $productValidation = Product::select(['mac', 'serie'])
@@ -69,6 +72,7 @@ class ProductsController extends Controller
                 }
 
                 $productJpa = new Product();
+                $productJpa->_branch = $branch_->id;
                 $productJpa->relative_id = guid::short();
                 $productJpa->_brand = $request->_brand;
                 $productJpa->_category = $request->_category;
