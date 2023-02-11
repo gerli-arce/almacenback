@@ -43,7 +43,6 @@ Route::post('/session/logout', [SessionController::class, 'logout']);
 Route::post('/session/verify', [SessionController::class, 'verify']);
 
 // BRANCH
-
 Route::get('/branches', [BranchController::class, 'index']);
 Route::post('/branches', [BranchController::class, 'store']);
 Route::post('/branches/paginate', [BranchController::class, 'paginate']);
@@ -54,7 +53,6 @@ Route::post('/branch/search', [BranchController::class, 'getBranch']);
 
 
 // VIEW
-
 Route::get('/views', [ViewController::class, 'index']);
 Route::post('/views', [ViewController::class, 'store']);
 Route::post('/views/paginate', [ViewController::class, 'paginate']);
@@ -63,7 +61,6 @@ Route::delete('/views', [ViewController::class, 'delete']);
 Route::post('/views/restore', [ViewController::class, 'restore']);
 
 // PERMISSION
-
 Route::get('/permissions', [PermissionsController::class, 'index']);
 Route::post('/permissions', [PermissionsController::class, 'store']);
 Route::post('/permissions/paginate', [PermissionsController::class, 'paginate']);

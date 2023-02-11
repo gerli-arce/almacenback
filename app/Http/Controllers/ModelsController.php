@@ -103,18 +103,22 @@ class ModelsController extends Controller
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
-            $modelJpa = Models::select([
-                'id',
-                'model',
-                'relative_id',
+            $modelsJpa = ViewModels::select([
+                '*',
             ])->whereNotNull('status')
                 ->WhereRaw("model LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orderBy('model', 'asc')
                 ->get();
 
+            $models = array();
+            foreach ($modelsJpa as $modelJpa) {
+                $model = gJSON::restore($modelJpa->toArray(), '__');
+                $models[] = $model;
+            }
+            
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($modelJpa->toArray());
+            $response->setData($models);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

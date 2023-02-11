@@ -31,6 +31,7 @@ class ProductsController extends Controller
             }
 
             if (
+                !isset($request->type) ||
                 !isset($request->_brand) ||
                 !isset($request->_category) ||
                 !isset($request->_supplier) ||
@@ -38,7 +39,6 @@ class ProductsController extends Controller
                 !isset($request->currency) ||
                 !isset($request->price_buy) ||
                 !isset($request->price_sale) ||
-                !isset($request->data) ||
                 !isset($request->condition_product) ||
                 !isset($request->status_product) ||
                 !isset($request->date_entry)
@@ -52,37 +52,78 @@ class ProductsController extends Controller
             $entryProduct->_type_entry = $request->_type_entry;
             $entryProduct->status = "1";
             $entryProduct->save();
-
+            
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
-            foreach ($request->data as $product) {
-
-                $productValidation = Product::select(['mac', 'serie'])
-                    ->where('mac', $product['mac'])
-                    ->orWhere('serie', $product['serie'])
-                    ->first();
-
-                if ($productValidation) {
-                    if ($productValidation->mac == $product['mac']) {
-                        throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
-                    }
-                    if ($productValidation->serie == $product['serie']) {
-                        throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
-                    }
+            
+            if($request->type == "EQUIPO"){
+                if(!isset($request->data)){
+                    throw new Exception("Error: No deje campos vacíos");
                 }
-
+                foreach ($request->data as $product) {
+    
+                    $productValidation = Product::select(['mac', 'serie'])
+                        ->where('mac', $product['mac'])
+                        ->orWhere('serie', $product['serie'])
+                        ->first();
+    
+                    if ($productValidation) {
+                        if ($productValidation->mac == $product['mac']) {
+                            throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                        }
+                        if ($productValidation->serie == $product['serie']) {
+                            throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                        }
+                    }
+    
+                    $productJpa = new Product();
+                    $productJpa->type = $request->type;
+                    $productJpa->_branch = $branch_->id;
+                    $productJpa->relative_id = guid::short();
+                    $productJpa->_brand = $request->_brand;
+                    $productJpa->_category = $request->_category;
+                    $productJpa->_supplier = $request->_supplier;
+                    $productJpa->_model = $request->_model;
+                    $productJpa->currency = $request->currency;
+                    $productJpa->price_buy = $request->price_buy;
+                    $productJpa->price_sale = $request->price_sale;
+                    $productJpa->mac = $product['mac'];
+                    $productJpa->serie = $product['serie'];
+                    $productJpa->mount = "1";
+                    $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->warranty)) {
+                        $productJpa->warranty = $request->warranty;
+                    }
+                    $productJpa->date_entry = $request->date_entry;
+                    $productJpa->_entry_product = $entryProduct->id;
+                    $productJpa->condition_product = $request->condition_product;
+                    $productJpa->status_product = $request->status_product;
+                    if (isset($request->description)) {
+                        $productJpa->description = $request->description;
+                    }
+                    $productJpa->creation_date = gTrace::getDate('mysql');
+                    $productJpa->_creation_user = $userid;
+                    $productJpa->update_date = gTrace::getDate('mysql');
+                    $productJpa->_update_user = $userid;
+                    $productJpa->status = "1";
+                    $productJpa->save();
+                }
+            }
+            else if($request->type == "MATERIAL"){
+                if(!isset($request->mount)){
+                    throw new Exception("Error: No deje campos vacíos");
+                }
                 $productJpa = new Product();
+                $productJpa->type = $request->type;
                 $productJpa->_branch = $branch_->id;
                 $productJpa->relative_id = guid::short();
                 $productJpa->_brand = $request->_brand;
                 $productJpa->_category = $request->_category;
                 $productJpa->_supplier = $request->_supplier;
                 $productJpa->_model = $request->_model;
+                $productJpa->mount = $request->mount;
                 $productJpa->currency = $request->currency;
                 $productJpa->price_buy = $request->price_buy;
                 $productJpa->price_sale = $request->price_sale;
-                $productJpa->mac = $product['mac'];
-                $productJpa->serie = $product['serie'];
                 $productJpa->num_gia = $request->num_gia;
                 if (isset($request->warranty)) {
                     $productJpa->warranty = $request->warranty;
