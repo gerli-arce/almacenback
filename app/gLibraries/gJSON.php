@@ -1,5 +1,9 @@
-<?php namespace App\gLibraries;class gJSON
-{public static function parse(string $text): array
+<?php 
+namespace App\gLibraries;
+
+class gJSON
+{
+    public static function parse(string $text): array
     {
         $array = json_decode($text, true);
         return $array;}

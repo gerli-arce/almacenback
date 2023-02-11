@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gFetch;
-use App\gLibraries\gJson;
+use App\gLibraries\gJSON;
 use App\gLibraries\guid;
 use App\gLibraries\gStatus;
 use App\gLibraries\gValidate;
