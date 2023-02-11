@@ -107,6 +107,7 @@ class ModelsController extends Controller
                 '*',
             ])->whereNotNull('status')
                 ->WhereRaw("model LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orderBy('model', 'asc')
                 ->get();
 

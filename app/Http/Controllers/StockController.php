@@ -41,7 +41,7 @@ class StockController extends Controller
                     model__id,
                     model__model,
                     model__relative_id,
-                    count(*) as total
+                    sum(mount) as stock
                 '
             )->groupBy('brand__brand', 'model__model', 'category__category')
                 ->where('branch__correlative', $branch);
@@ -64,7 +64,7 @@ class StockController extends Controller
                     'model__id',
                     'model__model',
                     'model__relative_id',
-                    'total'
+                    'stock'
                 )
                 ->orderBy($request->order['column'], $request->order['dir'])
                 ->where(function ($q) use ($request) {
@@ -82,8 +82,8 @@ class StockController extends Controller
                     if ($column == 'model__model' || $column == '*') {
                         $q->orWhere('model__model', $type, $value);
                     }
-                    if ($column == 'total' || $column == '*') {
-                        $q->orWhere('total', $type, $value);
+                    if ($column == 'stock' || $column == '*') {
+                        $q->orWhere('stock', $type, $value);
                     }
                 });
 
@@ -99,35 +99,33 @@ class StockController extends Controller
                 $product = gJSON::restore($product_->toArray(), '__');
                 $products[] = $product;
             }
+            $resultados = [];
+            foreach ($models as $modelo) {
+                $encontrado = false;
+                foreach ($products as $producto) {
+                    if ($producto['model']['id'] == $modelo['id']) {
+                        $resultados[] = [
+                            'model' => $modelo['model'],
+                            'brand' => $modelo['brand'],
+                            'category' => $modelo['category'],
+                            'stock' => $producto['stock'],
+                            'id' => $modelo['id']
+                        ];
+                        $encontrado = true;
+                        break;
+                    }
+                }
 
-            // $result = [];
-            // foreach ($products as $item) {
-            //     $found = false;
-            //     foreach ($models as $stock) {
-            //         if (
-            //             $item['brand']['id'] === $stock['brand']['id'] && 
-            //             $item['model']['id'] === $stock['model']['id']) {
-
-            //             $found = true;
-            //             $result[] = [
-            //                 'brand' => $item['brand'],
-            //                 'category' => $item['category'],
-            //                 'model' => $item['model'],
-            //                 'total' => $stock['total'],
-            //             ];
-            //             break;
-            //         }
-            //     }
-            //     if (!$found) {
-            //         $result[] = [
-            //             'brand' => $item['brand'],
-            //             'category' => $item['category'],
-            //             'model' => $item['model'],
-            //             'total' => 0,
-            //         ];
-            //     }
-            // }
-
+                if (!$encontrado) {
+                    $resultados[] = [
+                        'model' => $modelo['model'],
+                        'brand' => $modelo['brand'],
+                        'category' => $modelo['category'],
+                        'stock' => 0,
+                        'id' => $modelo['id']
+                    ];
+                }
+            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -136,8 +134,8 @@ class StockController extends Controller
             $response->setITotalRecords(ViewProducts::groupBy('brand__brand', 'model__model', 'category__category')
                     ->where('branch__correlative', $branch)
                     ->count());
-            $response->setData($products);
-            // $response->setData($models);
+            // $response->setData($result);
+            $response->setData($resultados);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
