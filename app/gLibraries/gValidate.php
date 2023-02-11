@@ -2,7 +2,7 @@
 
 namespace App\gLibraries;
 
-use App\gLibraries\gjson;
+use App\gLibraries\gJSON;
 use App\Models\Role;
 use App\Models\User;
 use Exception;
