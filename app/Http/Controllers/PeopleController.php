@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
-use App\gLibraries\gUid;
+use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\People;
 use App\Models\Response;

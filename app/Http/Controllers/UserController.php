@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
-use App\gLibraries\gUid;
+use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Response;
 use App\Models\User;
@@ -295,7 +295,12 @@ class UserController extends Controller
 
             $userJpa->update_date = gTrace::getDate('mysql');
             $userJpa->_update_user = $userid;
-            $userJpa->status = "1";
+
+            if (gValidate::check($role->permissions, $branch, 'users', 'change_status')) {
+                if (isset($request->status)) {
+                    $userJpa->status = $request->status;
+                }
+            }
 
             $userJpa->save();
 
@@ -312,4 +317,89 @@ class UserController extends Controller
         }
     }
 
+    public function destroy(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'users', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar usuarios');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $userJpa = User::find($request->id);
+
+            if (!$userJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $userJpa->_update_user = $userid;
+            $userJpa->update_date = gTrace::getDate('mysql');
+            $userJpa->status = null;
+            $userJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El usuario se a eliminado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'users', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar usuarios');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $userJpa = User::find($request->id);
+            if (!$userJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+            $userJpa->_update_user = $userid;
+            $userJpa->update_date = gTrace::getDate('mysql');
+            $userJpa->status = "1";
+            $userJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El usuario a sido restaurado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+    
 }

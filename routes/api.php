@@ -185,3 +185,7 @@ Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
+
+
+
+
