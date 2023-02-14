@@ -6,8 +6,8 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gUid;
 use App\gLibraries\gValidate;
-use App\Models\EntryProducts;
 use App\Models\Branch;
+use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\ViewProducts;
@@ -52,20 +52,20 @@ class ProductsController extends Controller
             $entryProduct->_type_entry = $request->_type_entry;
             $entryProduct->status = "1";
             $entryProduct->save();
-            
+
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-            
-            if($request->type == "EQUIPO"){
-                if(!isset($request->data)){
+
+            if ($request->type == "EQUIPO") {
+                if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
                 foreach ($request->data as $product) {
-    
+
                     $productValidation = Product::select(['mac', 'serie'])
                         ->where('mac', $product['mac'])
                         ->orWhere('serie', $product['serie'])
                         ->first();
-    
+
                     if ($productValidation) {
                         if ($productValidation->mac == $product['mac']) {
                             throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
@@ -74,7 +74,7 @@ class ProductsController extends Controller
                             throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
                         }
                     }
-    
+
                     $productJpa = new Product();
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
@@ -107,40 +107,85 @@ class ProductsController extends Controller
                     $productJpa->status = "1";
                     $productJpa->save();
                 }
-            }
-            else if($request->type == "MATERIAL"){
-                if(!isset($request->mount)){
+            } else if ($request->type == "MATERIAL") {
+                if (!isset($request->mount)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
-                $productJpa = new Product();
-                $productJpa->type = $request->type;
-                $productJpa->_branch = $branch_->id;
-                $productJpa->relative_id = guid::short();
-                $productJpa->_brand = $request->_brand;
-                $productJpa->_category = $request->_category;
-                $productJpa->_supplier = $request->_supplier;
-                $productJpa->_model = $request->_model;
-                $productJpa->mount = $request->mount;
-                $productJpa->currency = $request->currency;
-                $productJpa->price_buy = $request->price_buy;
-                $productJpa->price_sale = $request->price_sale;
-                $productJpa->num_gia = $request->num_gia;
-                if (isset($request->warranty)) {
-                    $productJpa->warranty = $request->warranty;
+
+                $material = Product::select([
+                    'id',
+                    'mount',
+                    '_model',
+                    '_category',
+                    '_brand',
+                ])
+                    ->where('_model', $request->_model)
+                    ->where('_category', $request->_category)
+                    ->where('_brand', $request->_brand)
+                    ->first();
+                if($material){
+                    $mount_old = $material->mount;
+                    $mount_new = $mount_old + $request->mount;
+
+                    $material->type = $request->type;
+                    $material->_branch = $branch_->id;
+                    $material->relative_id = guid::short();
+                    $material->_brand = $request->_brand;
+                    $material->_category = $request->_category;
+                    $material->_supplier = $request->_supplier;
+                    $material->_model = $request->_model;
+                    $material->mount = $mount_new;
+                    $material->currency = $request->currency;
+                    $material->price_buy = $request->price_buy;
+                    $material->price_sale = $request->price_sale;
+                    $material->num_gia = $request->num_gia;
+                    if (isset($request->warranty)) {
+                        $material->warranty = $request->warranty;
+                    }
+                    $material->date_entry = $request->date_entry;
+                    $material->_entry_product = $entryProduct->id;
+                    $material->condition_product = $request->condition_product;
+                    $material->status_product = $request->status_product;
+                    if (isset($request->description)) {
+                        $material->description = $request->description;
+                    }
+                    $material->creation_date = gTrace::getDate('mysql');
+                    $material->_creation_user = $userid;
+                    $material->update_date = gTrace::getDate('mysql');
+                    $material->_update_user = $userid;
+                    $material->status = "1";
+                    $material->save();
+                }else{
+                    $productJpa = new Product();
+                    $productJpa->type = $request->type;
+                    $productJpa->_branch = $branch_->id;
+                    $productJpa->relative_id = guid::short();
+                    $productJpa->_brand = $request->_brand;
+                    $productJpa->_category = $request->_category;
+                    $productJpa->_supplier = $request->_supplier;
+                    $productJpa->_model = $request->_model;
+                    $productJpa->mount = $request->mount;
+                    $productJpa->currency = $request->currency;
+                    $productJpa->price_buy = $request->price_buy;
+                    $productJpa->price_sale = $request->price_sale;
+                    $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->warranty)) {
+                        $productJpa->warranty = $request->warranty;
+                    }
+                    $productJpa->date_entry = $request->date_entry;
+                    $productJpa->_entry_product = $entryProduct->id;
+                    $productJpa->condition_product = $request->condition_product;
+                    $productJpa->status_product = $request->status_product;
+                    if (isset($request->description)) {
+                        $productJpa->description = $request->description;
+                    }
+                    $productJpa->creation_date = gTrace::getDate('mysql');
+                    $productJpa->_creation_user = $userid;
+                    $productJpa->update_date = gTrace::getDate('mysql');
+                    $productJpa->_update_user = $userid;
+                    $productJpa->status = "1";
+                    $productJpa->save();
                 }
-                $productJpa->date_entry = $request->date_entry;
-                $productJpa->_entry_product = $entryProduct->id;
-                $productJpa->condition_product = $request->condition_product;
-                $productJpa->status_product = $request->status_product;
-                if (isset($request->description)) {
-                    $productJpa->description = $request->description;
-                }
-                $productJpa->creation_date = gTrace::getDate('mysql');
-                $productJpa->_creation_user = $userid;
-                $productJpa->update_date = gTrace::getDate('mysql');
-                $productJpa->_update_user = $userid;
-                $productJpa->status = "1";
-                $productJpa->save();
             }
 
             $response->setStatus(200);
@@ -170,20 +215,19 @@ class ProductsController extends Controller
 
             $query = ViewProducts::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
-               
 
             if (!$request->all) {
                 $query->whereNotNull('status');
             }
-        
-            if(isset($request->search['brand'])){
-                $query->where('brand__id',$request->search['brand'] );
+
+            if (isset($request->search['brand'])) {
+                $query->where('brand__id', $request->search['brand']);
             }
-            if(isset($request->search['category'])){
-                $query->where('category__id',$request->search['category'] );
+            if (isset($request->search['category'])) {
+                $query->where('category__id', $request->search['category']);
             }
-            if(isset($request->search['model'])){
-                $query->where('model__id',$request->search['model']);
+            if (isset($request->search['model'])) {
+                $query->where('model__id', $request->search['model']);
             }
 
             $query->where(function ($q) use ($request) {
@@ -220,7 +264,7 @@ class ProductsController extends Controller
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
-                
+
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -284,12 +328,12 @@ class ProductsController extends Controller
                     }
                     $productJpa->mac = $request->mac;
                 }
-                if(isset($request->serie)){
+                if (isset($request->serie)) {
                     $productValidation = Product::select(['id', 'serie'])
-                    ->orWhere('serie', $request->serie)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-            
+                        ->orWhere('serie', $request->serie)
+                        ->where('id', '!=', $request->id)
+                        ->first();
+
                     if ($productValidation->serie == $request->serie) {
                         throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
                     }
@@ -315,43 +359,43 @@ class ProductsController extends Controller
                 $productJpa->serie = $request->serie;
             }
 
-            if(isset($request->num_gia)){
+            if (isset($request->num_gia)) {
                 $productJpa->num_gia = $request->num_gia;
             }
 
-            if(isset($request->status_product)){
+            if (isset($request->status_product)) {
                 $productJpa->status_product = $request->status_product;
             }
 
-            if(isset($request->condition_product)){
+            if (isset($request->condition_product)) {
                 $productJpa->condition_product = $request->condition_product;
             }
 
-            if(isset($request->description)){
+            if (isset($request->description)) {
                 $productJpa->description = $request->description;
             }
 
-            if(isset($request->currency)){
+            if (isset($request->currency)) {
                 $productJpa->currency = $request->currency;
             }
 
-            if(isset($request->_model)){
+            if (isset($request->_model)) {
                 $productJpa->_model = $request->_model;
             }
 
-            if(isset($request->_brand)){
+            if (isset($request->_brand)) {
                 $productJpa->_brand = $request->_brand;
             }
 
-            if(isset($request->_category)){
+            if (isset($request->_category)) {
                 $productJpa->_category = $request->_category;
             }
 
-            if(isset($request->_supplier)){
+            if (isset($request->_supplier)) {
                 $productJpa->_supplier = $request->_supplier;
             }
 
-            if(isset($request->warranty)){
+            if (isset($request->warranty)) {
                 $productJpa->warranty = $request->warranty;
             }
 
@@ -363,7 +407,6 @@ class ProductsController extends Controller
                     $productJpa->status = $request->status;
                 }
             }
-
 
             $productJpa->save();
 
@@ -380,7 +423,8 @@ class ProductsController extends Controller
         }
     }
 
-    public function destroy(Request $request){
+    public function destroy(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
