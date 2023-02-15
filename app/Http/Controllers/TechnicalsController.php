@@ -30,12 +30,16 @@ class TechnicalsController extends Controller
 
             $peopleJpa = ViewPeople::select([
                 'id',
+                'type',
                 'doc_number',
                 'name',
                 'lastname',
             ])->whereNotNull('status')
                 ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("lastname LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orderBy('doc_number', 'asc')
+                ->where('type', 'TECHNICAL')
                 ->get();
 
             $response->setStatus(200);

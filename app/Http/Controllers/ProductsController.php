@@ -21,7 +21,6 @@ class ProductsController extends Controller
     {
         $response = new Response();
         try {
-
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
@@ -60,12 +59,10 @@ class ProductsController extends Controller
                     throw new Exception("Error: No deje campos vacíos");
                 }
                 foreach ($request->data as $product) {
-
                     $productValidation = Product::select(['mac', 'serie'])
                         ->where('mac', $product['mac'])
                         ->orWhere('serie', $product['serie'])
                         ->first();
-
                     if ($productValidation) {
                         if ($productValidation->mac == $product['mac']) {
                             throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);

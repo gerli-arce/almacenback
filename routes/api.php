@@ -51,7 +51,6 @@ Route::delete('/branches', [BranchController::class, 'delete']);
 Route::post('/branches/restore', [BranchController::class, 'restore']);
 Route::post('/branch/search', [BranchController::class, 'getBranch']);
 
-
 // VIEW
 Route::get('/views', [ViewController::class, 'index']);
 Route::post('/views', [ViewController::class, 'store']);
