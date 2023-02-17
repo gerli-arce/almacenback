@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\OperationTypesController;
 
 /*
@@ -184,6 +185,9 @@ Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
+// INTALLATIONS
+Route::post('/install', [SalesProductsController::class, 'registerInstallation']);
+Route::post('/install/paginate/pending', [SalesProductsController::class, 'paginateInstallationsPending']);
 
 
 
