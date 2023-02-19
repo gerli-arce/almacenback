@@ -187,10 +187,7 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
 // INTALLATIONS
 Route::post('/install', [SalesProductsController::class, 'registerInstallation']);
-Route::post('/install/paginate/pending', [SalesProductsController::class, 'paginateInstallationsPending']);
+Route::post('/install/pending/paginate', [SalesProductsController::class, 'paginateInstallationsPending']);
 Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
 Route::patch('/install', [SalesProductsController::class, 'update']);
-
-
-
-
+Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
