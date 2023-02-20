@@ -257,7 +257,8 @@ class ProductsController extends Controller
                 if ($column == 'status' || $column == '*') {
                     $q->orWhere('status', $type, $value);
                 }
-            })->where('branch__correlative', $branch);
+            })->where('branch__correlative', $branch)
+            ->where('status_product','!=','VENDIDO');
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
