@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informe.pdf</title>
+  <style>
+    * {
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+      line-height: 1.5;
+      font-size: 10pt;
+      color: #343a40;
+    }
+
+    @page {
+      margin: 3cm 2.5cm;
+    }
+
+    header {
+      position: fixed;
+      top: -2.25cm;
+      width: 100%;
+      padding: 10px 0;
+      border-bottom: 1px solid #6c757d;
+    }
+
+    footer {
+      position: fixed;
+      bottom: -2.25cm;
+      width: 100%;
+      padding: 10px 0;
+      border-top: 1px solid #6c757d;
+    }
+
+    footer .issue-detail {
+      position: absolute;
+      float: right;
+      top: 10px;
+    }
+
+    a {
+      text-decoration: none;
+      color: unset;
+    }
+
+    #softwareintegration {
+      height: 1.38cm;
+    }
+
+    #sodeworld {
+      height: 2cm;
+      position: absolute;
+      right: 0;
+      top: -10px;
+    }
+
+    #date {
+      font-weight: bolder;
+      text-align: right;
+    }
+
+    #recipient {
+      font-weight: bolder;
+    }
+
+    #description {
+      text-indent: 1.25cm;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+
+    #signature {
+      text-align: center;
+    }
+
+    #signature img {
+      height: 2.41cm;
+    }
+
+    table {
+      width: 100%;
+      border-spacing: 0;
+    }
+
+    table td {
+      vertical-align: middle;
+    }
+
+    table tbody td {
+      border-bottom: 1px solid #222222;
+    }
+
+    table thead td {
+      text-align: center;
+      font-weight: bold;
+      background-color: #323a46;
+      color: #ffffff !important;
+    }
+
+    table td {
+      vertical-align: middle;
+      padding: 5px 10px;
+    }
+
+    #total_hours {
+      position: relative;
+      background-color: #323a46;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    #total_hours::before {
+      content: 'Total: ';
+      font-weight: bolder;
+      background-color: #ffffff;
+      position: absolute;
+      left: -100%;
+    }
+
+    .text-bold {
+      font-weight: bold;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-start {
+      text-align: left;
+    }
+
+    .text-end {
+      text-align: right;
+    }
+
+    .text-red {
+      color: rgba(253, 64, 81, 255);
+    }
+
+    .text-grey {
+      color: #6c757d;
+    }
+
+    .fs-small {
+      font-size: 8pt;
+    }
+
+    .evidence {
+      max-width: 100%;
+    }
+
+    @media all {
+      div.page-break {
+        display: block;
+        page-break-before: always;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <img id="softwareintegration" src="../storage/images/softwareintegration.png" alt="Logo de Software Integration">
+    <img id="sodeworld" src="../storage/images/sodeworld.png" alt="Logo de Software Developers World">
+  </header>
+  <footer>
+    <div>
+      SOFWTARE INTEGRATION CONSULTING E.I.R.L<br>
+      D: Av. Paseo de la República 1810 Lince<br>
+      T: <a href="tel:51959689277">51 959689277</a>
+    </div>
+    <div class="issue-detail">
+      FACTURA <span class="text-red">{issue_date}</span> - Nro. <span class="text-red">{issue_id}</span>
+    </div>
+  </footer>
+  <main>
+    <p id="date">Lima, {issue_long_date}</p>
+    <br>
+    <p id="recipient">
+      Señores GERENCIA DE RIESGOS ASESORES Y CORREDORES DE SEGUROS S.R.L.<br>
+      Carlos Kuang - Gerente General
+    </p>
+    <br><br>
+    <p>Presente.-</p>
+    <br><br>
+    <p id="description">
+      El presente informe permite conocer las actividades realizadas por Software Integration
+      Consulting durante {from_to_format} como parte del "Servicio de mejoras al Software Cotizador de Seguros Vehiculares
+      con Microservicios en Kubernetes y Google Cloud Platform".<br><br>
+      Este informe sustenta en detalle la liquidación de la factura emitida el <b>{issue_date}</b>.
+    </p>
+    <br><br><br>
+    <p>Atentamente,</p>
+    <br><br><br>
+    <p id="signature">
+      <img src="../storage/images/signature.png" alt="Firma de Freddy Bendezu"><br>
+      Freddy Bendezu<br>
+      Gerente General
+    </p>
+    <div class="page-break"></div>
+
+    <p class="text-bold text-center">ÍNDICE</p>
+
+    <nav>
+      <ol>
+        <li>
+          <a href="#section-1" data-page="1">Resumen y horas de actividades</a>
+        </li>
+        <li>
+          <a href="#section-2" data-page="3">Implementación</a>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="page-break"></div>
+
+    <p class="text-bold text-center">
+      Actividades realizadas para la implementación de un software de cotizador de seguros vehiculares con
+      microservicios en Kubernetes y Google Cloud Platform
+    </p>
+    <ol>
+      <li class="text-bold">
+        <span class="text-bold" id="section-1">Resumen y horas de actividades</span>
+      </li>
+      <br>
+      <table>
+        <thead>
+          <tr>
+            <td>#</td>
+            <td>FORMULARIO</td>
+            <td>ACTIVIDAD</td>
+            <td>HORAS</td>
+          </tr>
+        </thead>
+        <tbody>
+          {summary}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td id="total_hours">{total_hours}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="page-break"></div>
+      <li class="text-bold" id="section-2">Implementación</li>
+      <br>
+      {implementation}
+    </ol>
+  </main>
+
+</body>
+</html>
