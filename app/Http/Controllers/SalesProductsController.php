@@ -32,6 +32,8 @@ class SalesProductsController extends Controller
             }
 
             if (!isset($request->_client) ||
+                !isset($request->type_intallation) ||
+                !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
                 !isset($request->date_sale)) {
@@ -41,14 +43,16 @@ class SalesProductsController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = new SalesProducts();
-            $salesProduct->_user = $userid;
             $salesProduct->_client = $request->_client;
             $salesProduct->_technical = $request->_technical;
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = $request->type_intallation;
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
             $salesProduct->price_all = $request->price_all;
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->price_installation = $request->price_installation;
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
             $salesProduct->_update_user = $userid;
@@ -124,8 +128,8 @@ class SalesProductsController extends Controller
                 if ($column == 'client__name' || $column == '*') {
                     $q->where('client__name', $type, $value);
                 }
-                if ($column == 'user__username' || $column == '*') {
-                    $q->orWhere('user__username', $type, $value);
+                if ($column == 'user_creation__username' || $column == '*') {
+                    $q->orWhere('user_creation__username', $type, $value);
                 }
                 if ($column == 'date_sale' || $column == '*') {
                     $q->orWhere('date_sale', $type, $value);
@@ -167,14 +171,14 @@ class SalesProductsController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
 
-            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
-            }
+            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            // }
 
             $detailSaleJpa = DetailSale::select([
                 'detail_sales.id as id',
@@ -242,6 +246,7 @@ class SalesProductsController extends Controller
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -275,7 +280,6 @@ class SalesProductsController extends Controller
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
-            $salesProduct->save();
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
@@ -301,6 +305,7 @@ class SalesProductsController extends Controller
                                 if ($product['product']['type'] == "EQUIPO") {
                                     $productJpa->status_product = 'VENDIDO';
                                 }
+                                $salesProduct->data_issue = gTrace::getDate('mysql');
                             }
                         }
                         $productJpa->save();
@@ -324,6 +329,7 @@ class SalesProductsController extends Controller
                     }
                 }
             }
+            $salesProduct->save();
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
         } catch (\Throwable$th) {
@@ -371,8 +377,8 @@ class SalesProductsController extends Controller
                 if ($column == 'client__name' || $column == '*') {
                     $q->where('client__name', $type, $value);
                 }
-                if ($column == 'user__username' || $column == '*') {
-                    $q->orWhere('user__username', $type, $value);
+                if ($column == 'user_creation__username' || $column == '*') {
+                    $q->orWhere('user_creation__username', $type, $value);
                 }
                 if ($column == 'date_sale' || $column == '*') {
                     $q->orWhere('date_sale', $type, $value);
