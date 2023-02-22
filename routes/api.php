@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PDFController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PeoplesController;
@@ -36,6 +37,9 @@ use App\Http\Controllers\OperationTypesController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// QR
+Route::post('/qr/installation', [PDFController::class, 'QRinstallation']);
 
 
 // SESSION
