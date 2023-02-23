@@ -17,6 +17,52 @@ use Illuminate\Support\Facades\DB;
 
 class SalesProductsController extends Controller
 {
+
+    public function imageQR($id)
+    {
+        $response = new Response();
+        $content = null;
+        $type = 'image/png';
+        try {
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $saleProductQR = SalesProducts::select([
+                "sales_products.image_qr as image_content",
+                'sales_products.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$saleProductQR) {
+                throw new Exception('No se encontraron datos');
+            }
+            if (!$saleProductQR->image_content) {
+                throw new Exception('No existe imagen');
+            }
+            $content = $saleProductQR->image_content;
+            // $type = $saleProductQR->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable$th) {
+            $ruta = '../storage/images/QR-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/png';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
     public function registerInstallation(Request $request)
     {
         $response = new Response();
@@ -246,7 +292,7 @@ class SalesProductsController extends Controller
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            
+
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -273,13 +319,18 @@ class SalesProductsController extends Controller
             if (isset($request->price_all)) {
                 $salesProduct->price_all = $request->price_all;
             }
+            if (isset($request->price_installation)) {
+                $salesProduct->price_installation = $request->price_installation;
+            }
+            if (isset($request->type_intallation)) {
+                $salesProduct->type_intallation = $request->type_intallation;
+            }
 
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
-
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
@@ -305,7 +356,16 @@ class SalesProductsController extends Controller
                                 if ($product['product']['type'] == "EQUIPO") {
                                     $productJpa->status_product = 'VENDIDO';
                                 }
-                                $salesProduct->data_issue = gTrace::getDate('mysql');
+
+                                if (
+                                    isset($request->image_qr) 
+                                ) {
+                                    $salesProduct->image_type = $request->image_type;
+                                    $salesProduct->image_qr = base64_decode($request->image_qr);
+                                }
+
+                                $salesProduct->issue_date = gTrace::getDate('mysql');
+                                $salesProduct->_issue_user = $userid;
                             }
                         }
                         $productJpa->save();
@@ -318,6 +378,7 @@ class SalesProductsController extends Controller
                         } else {
                             $productJpa->status_product = "VENDIENDO";
                         }
+
                         $productJpa->save();
 
                         $detailSale = new DetailSale();

@@ -196,3 +196,4 @@ Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
 Route::patch('/install', [SalesProductsController::class, 'update']);
 Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
 Route::post('/canseluse', [SalesProductsController::class, 'cancelUseProduct']);
+Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
