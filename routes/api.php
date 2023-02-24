@@ -22,6 +22,7 @@ use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\OperationTypesController;
+use App\Http\Controllers\UserLoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +37,12 @@ use App\Http\Controllers\OperationTypesController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () {
+    
+    Route::get('home',[UserLoginController::class,'home'])->name('home');
+    Route::get('logout',[UserLoginController::class,'logout'])->name('logout');
 });
 
 // QR
@@ -191,9 +198,10 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
 // INTALLATIONS
 Route::post('/install', [SalesProductsController::class, 'registerInstallation']);
+Route::patch('/install', [SalesProductsController::class, 'update']);
+Route::delete('/install', [SalesProductsController::class, 'delete']);
 Route::post('/install/pending/paginate', [SalesProductsController::class, 'paginateInstallationsPending']);
 Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
-Route::patch('/install', [SalesProductsController::class, 'update']);
 Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
 Route::post('/canseluse', [SalesProductsController::class, 'cancelUseProduct']);
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);

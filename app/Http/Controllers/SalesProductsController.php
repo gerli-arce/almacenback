@@ -525,4 +525,54 @@ class SalesProductsController extends Controller
             );
         }
     }
+
+    public function delete(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $detailsSalesJpa = DetailSale::where('_sales_product',$saleProductJpa->id)
+            ->get();
+            foreach($detailsSalesJpa as $detail){
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $productJpa = Product::select('id', 'status','status_product','mount', 'type')->find($detail['_product']);
+                $productJpa->status_product = "DISPONIBLE";
+                if($productJpa->type == "MATERIAL"){
+                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']); 
+                }
+                $productJpa->save();
+                $detailSale->save();
+            }
+
+            $saleProductJpa->update_date = gTrace::getDate('mysql');
+            $saleProductJpa->status = null;
+            $saleProductJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('La instalación se elimino correctamente.');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }

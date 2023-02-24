@@ -349,7 +349,6 @@ class PeopleController extends Controller
         }
     }
 
-
     public function update(Request $request)
     {
         $response = new Response();
