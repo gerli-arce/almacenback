@@ -23,6 +23,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\OperationTypesController;
 use App\Http\Controllers\UserLoginController;
+use App\Http\Controllers\connect;
 
 /*
 |--------------------------------------------------------------------------
@@ -205,3 +206,6 @@ Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
 Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
 Route::post('/canseluse', [SalesProductsController::class, 'cancelUseProduct']);
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
+
+
+Route::get('/traslat', [connect::class, 'dats']);
