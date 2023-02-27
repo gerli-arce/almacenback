@@ -89,13 +89,13 @@ class StockController extends Controller
                     }
                 });
 
-            $iTotalDisplayRecords = $query->count();
-
-            $productsJpa = $query
+                
+                $productsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
-
+                
+                $iTotalDisplayRecords = $query->count();
             $products = array();
             foreach ($productsJpa as $product_) {
                 $product = gJSON::restore($product_->toArray(), '__');

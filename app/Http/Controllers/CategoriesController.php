@@ -214,9 +214,10 @@ class CategoriesController extends Controller
             }
 
             if (isset($request->category)) {
-                $verifyCatJpa = Category::select(['id', 'category'])
+                $verifyCatJpa = Category::select(['id', 'category','status'])
                     ->where('category', $request->category)
                     ->where('id', '!=', $request->id)
+                    ->whereNotNull('status')
                     ->first();
                 if ($verifyCatJpa) {
                     throw new Exception("Elija otro nombre para esta categoria");
