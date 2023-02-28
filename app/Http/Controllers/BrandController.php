@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\gLibraries\gUid;
+use App\gLibraries\guid;
 use App\Models\Brand;
 use App\Models\Response;
 use Exception;

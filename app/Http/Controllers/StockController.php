@@ -29,6 +29,7 @@ class StockController extends Controller
 
             $subquery = ViewProducts::selectRaw(
                 '
+                    status_product,
                     branch__id,
                     branch__name,
                     branch__correlative,
@@ -44,7 +45,8 @@ class StockController extends Controller
                     sum(mount) as stock
                 '
             )->groupBy('brand__brand', 'model__model', 'category__category')
-                ->where('branch__correlative', $branch);
+                ->where('branch__correlative', $branch)
+                ->where('status_product','!=','VENDIDO');
 
             $modelsJpa = ViewModels::select(['*'])->get();
             $models = array();
@@ -87,13 +89,13 @@ class StockController extends Controller
                     }
                 });
 
-            $iTotalDisplayRecords = $query->count();
-
-            $productsJpa = $query
+                
+                $productsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
-
+                
+                $iTotalDisplayRecords = $query->count();
             $products = array();
             foreach ($productsJpa as $product_) {
                 $product = gJSON::restore($product_->toArray(), '__');

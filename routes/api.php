@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PDFController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PeoplesController;
@@ -21,6 +22,8 @@ use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\OperationTypesController;
+use App\Http\Controllers\UserLoginController;
+use App\Http\Controllers\connect;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +39,15 @@ use App\Http\Controllers\OperationTypesController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () {
+    
+    Route::get('home',[UserLoginController::class,'home'])->name('home');
+    Route::get('logout',[UserLoginController::class,'logout'])->name('logout');
+});
+
+// QR
+Route::post('/qr/installation', [PDFController::class, 'QRinstallation']);
 
 
 // SESSION
@@ -187,10 +199,13 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
 // INTALLATIONS
 Route::post('/install', [SalesProductsController::class, 'registerInstallation']);
-Route::post('/install/paginate/pending', [SalesProductsController::class, 'paginateInstallationsPending']);
-Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
 Route::patch('/install', [SalesProductsController::class, 'update']);
+Route::delete('/install', [SalesProductsController::class, 'delete']);
+Route::post('/install/pending/paginate', [SalesProductsController::class, 'paginateInstallationsPending']);
+Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
+Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
+Route::post('/canseluse', [SalesProductsController::class, 'cancelUseProduct']);
+Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
 
-
-
+Route::get('/traslat', [connect::class, 'dats']);

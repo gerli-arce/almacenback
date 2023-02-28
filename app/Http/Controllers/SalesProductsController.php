@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJSON;
+use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
@@ -16,6 +17,52 @@ use Illuminate\Support\Facades\DB;
 
 class SalesProductsController extends Controller
 {
+
+    public function imageQR($id)
+    {
+        $response = new Response();
+        $content = null;
+        $type = 'image/png';
+        try {
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $saleProductQR = SalesProducts::select([
+                "sales_products.image_qr as image_content",
+                'sales_products.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$saleProductQR) {
+                throw new Exception('No se encontraron datos');
+            }
+            if (!$saleProductQR->image_content) {
+                throw new Exception('No existe imagen');
+            }
+            $content = $saleProductQR->image_content;
+            // $type = $saleProductQR->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable$th) {
+            $ruta = '../storage/images/QR-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/png';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
     public function registerInstallation(Request $request)
     {
         $response = new Response();
@@ -31,6 +78,8 @@ class SalesProductsController extends Controller
             }
 
             if (!isset($request->_client) ||
+                !isset($request->type_intallation) ||
+                !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
                 !isset($request->date_sale)) {
@@ -40,25 +89,32 @@ class SalesProductsController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = new SalesProducts();
-            $salesProduct->_user = $userid;
             $salesProduct->_client = $request->_client;
             $salesProduct->_technical = $request->_technical;
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = $request->type_intallation;
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
             $salesProduct->price_all = $request->price_all;
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->price_installation = $request->price_installation;
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
             $salesProduct->status = "1";
             $salesProduct->save();
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['id']);
-                    $productJpa->status_product = "VENDIENDO";
 
                     if ($product['type'] == "MATERIAL") {
                         $mount = $productJpa->mount - $product['mount'];
                         $productJpa->mount = $mount;
+                    } else {
+                        $productJpa->status_product = "VENDIENDO";
                     }
                     $productJpa->save();
 
@@ -92,6 +148,7 @@ class SalesProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
+
             if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             }
@@ -117,13 +174,14 @@ class SalesProductsController extends Controller
                 if ($column == 'client__name' || $column == '*') {
                     $q->where('client__name', $type, $value);
                 }
-                if ($column == 'user__username' || $column == '*') {
-                    $q->orWhere('user__username', $type, $value);
+                if ($column == 'user_creation__username' || $column == '*') {
+                    $q->orWhere('user_creation__username', $type, $value);
                 }
                 if ($column == 'date_sale' || $column == '*') {
                     $q->orWhere('date_sale', $type, $value);
                 }
-            })->where('status_sale', 'PENDIENTE');
+            })
+                ->where('status_sale', 'PENDIENTE');
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -141,7 +199,7 @@ class SalesProductsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::count());
+            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->count());
             $response->setData($installations);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -159,13 +217,14 @@ class SalesProductsController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+
+            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            // }
 
             $detailSaleJpa = DetailSale::select([
                 'detail_sales.id as id',
@@ -192,13 +251,16 @@ class SalesProductsController extends Controller
                 'products.status_product AS product__status_product',
                 'detail_sales.mount as mount',
                 'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
             ])
                 ->join('products', 'detail_sales._product', 'products.id')
                 ->join('branches', 'products._branch', 'branches.id')
                 ->join('brands', 'products._brand', 'brands.id')
                 ->join('categories', 'products._category', 'categories.id')
                 ->join('models', 'products._model', 'models.id')
-                ->where('_sales_product', $id)->get();
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $id)
+                ->get();
 
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
@@ -230,6 +292,7 @@ class SalesProductsController extends Controller
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -256,50 +319,255 @@ class SalesProductsController extends Controller
             if (isset($request->price_all)) {
                 $salesProduct->price_all = $request->price_all;
             }
+            if (isset($request->price_installation)) {
+                $salesProduct->price_installation = $request->price_installation;
+            }
+            if (isset($request->type_intallation)) {
+                $salesProduct->type_intallation = $request->type_intallation;
+            }
 
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
-
-            $salesProduct->save();
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
-                    $productJpa = Product::find($product['id']);
+                    if (isset($product['id'])) {
+                        $productJpa = Product::find($product['product']['id']);
+                        $detailSale = DetailSale::find($product['id']);
+                        if ($product['product']['type'] == "MATERIAL") {
+                            if (intval($detailSale->mount) != intval($product['mount'])) {
+                                if (intval($detailSale->mount) > intval($product['mount'])) {
+                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
+                                    $productJpa->mount = intval($productJpa->mount) + $mount_dif;
+                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
+                                    $productJpa->mount = intval($productJpa->mount) - $mount_dif;
+                                }
+                            }
+                            $detailSale->mount = $product['mount'];
+                            $detailSale->save();
+                        }
 
-                    if ($product['type'] == "MATERIAL") {
-                        $detailSale = DetailSale::where('_product', $product['id'])->first();
-                        $detailSale->mount = $product['mount'];
-                        if ($detailSale->mount != $product['mount']) {
-                            if ($detailSale->mount > $product['mount']) {
-                                $mount_dif = $detailSale->mount - $product['mount'];
-                                $productJpa->mount = $productJpa->mount + $mount_dif;
-                            } else if ($detailSale->mount < $product['mount']) {
-                                $mount_dif = $product['mount'] - $detailSale->mount;
-                                $productJpa->mount = $productJpa->mount - $mount_dif;
+                        if (isset($request->status_sale)) {
+                            if ($request->status_sale == 'CULMINADA') {
+                                if ($product['product']['type'] == "EQUIPO") {
+                                    $productJpa->status_product = 'VENDIDO';
+                                }
+
+                                if (
+                                    isset($request->image_qr) 
+                                ) {
+                                    $salesProduct->image_type = $request->image_type;
+                                    $salesProduct->image_qr = base64_decode($request->image_qr);
+                                }
+
+                                $salesProduct->issue_date = gTrace::getDate('mysql');
+                                $salesProduct->_issue_user = $userid;
                             }
                         }
+                        $productJpa->save();
+                    } else {
+                        $productJpa = Product::find($product['product']['id']);
+
+                        if ($product['product']['type'] == "MATERIAL") {
+                            $mount = $productJpa->mount - $product['mount'];
+                            $productJpa->mount = $mount;
+                        } else {
+                            $productJpa->status_product = "VENDIENDO";
+                        }
+
+                        $productJpa->save();
+
+                        $detailSale = new DetailSale();
+                        $detailSale->_product = $productJpa->id;
+                        $detailSale->mount = $product['mount'];
+                        $detailSale->_sales_product = $salesProduct->id;
+                        $detailSale->status = '1';
                         $detailSale->save();
                     }
-
-                    if (isset($request->status_sale)) {
-                        if ($request->status_sale == 'CULMINADA') {
-                            if ($product['type'] == "EQUIPO") {
-                                $productJpa->status_product = 'VENDIDO';
-                            }
-                        }
-                    }
-
-                    $productJpa->save();
-
-                    
                 }
             }
+            $salesProduct->save();
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().' ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateInstallationsCompleted(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installations_completed', 'read')) {
+                throw new Exception('No tienes permisos para listar las instataciónes completadas');
+            }
+
+            $query = viewInstallations::select([
+                '*',
+            ])
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'technical__name' || $column == '*') {
+                    $q->where('technical__name', $type, $value);
+                }
+                if ($column == 'client__name' || $column == '*') {
+                    $q->where('client__name', $type, $value);
+                }
+                if ($column == 'user_creation__username' || $column == '*') {
+                    $q->orWhere('user_creation__username', $type, $value);
+                }
+                if ($column == 'date_sale' || $column == '*') {
+                    $q->orWhere('date_sale', $type, $value);
+                }
+            })
+                ->where('status_sale', 'CULMINADA');
+            $iTotalDisplayRecords = $query->count();
+
+            $installationsPendingJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $installations = array();
+            foreach ($installationsPendingJpa as $pending) {
+                $install = gJSON::restore($pending->toArray(), '__');
+                $installations[] = $install;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(Viewinstallations::where('status_sale', 'CULMINADA')->count());
+            $response->setData($installations);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function cancelUseProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (!isset($request->id)) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $salesProduct = SalesProducts::find($request->_sales_product);
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+
+            $detailSale = DetailSale::find($request->id);
+            $detailSale->status = null;
+
+            $productJpa = Product::find($request->product['id']);
+            if ($productJpa->type == "MATERIAL") {
+                $mount = intval($request->mount);
+                $productJpa->mount = intval($productJpa->mount) + $mount;
+            } else if ($productJpa->type == "EQUIPO") {
+                $productJpa->status_product = "NUEVO";
+            }
+
+            $detailSale->save();
+            $salesProduct->save();
+            $productJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Instalación atualizada correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $detailsSalesJpa = DetailSale::where('_sales_product',$saleProductJpa->id)
+            ->get();
+            foreach($detailsSalesJpa as $detail){
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $productJpa = Product::select('id', 'status','status_product','mount', 'type')->find($detail['_product']);
+                $productJpa->status_product = "DISPONIBLE";
+                if($productJpa->type == "MATERIAL"){
+                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']); 
+                }
+                $productJpa->save();
+                $detailSale->save();
+            }
+
+            $saleProductJpa->update_date = gTrace::getDate('mysql');
+            $saleProductJpa->status = null;
+            $saleProductJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('La instalación se elimino correctamente.');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
