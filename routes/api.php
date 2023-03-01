@@ -20,9 +20,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StockController;
-use App\Http\Controllers\SalesProductsController;
+use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\OperationTypesController;
 use App\Http\Controllers\UserLoginController;
+use App\Http\Controllers\FauldController;
 use App\Http\Controllers\connect;
 
 /*
@@ -198,14 +199,24 @@ Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 
 // INTALLATIONS
-Route::post('/install', [SalesProductsController::class, 'registerInstallation']);
-Route::patch('/install', [SalesProductsController::class, 'update']);
-Route::delete('/install', [SalesProductsController::class, 'delete']);
-Route::post('/install/pending/paginate', [SalesProductsController::class, 'paginateInstallationsPending']);
-Route::get('/install/{id}', [SalesProductsController::class, 'getSale']);
-Route::post('/install/completed/paginate', [SalesProductsController::class, 'paginateInstallationsCompleted']);
-Route::post('/canseluse', [SalesProductsController::class, 'cancelUseProduct']);
-Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
+Route::post('/install', [InstallationController::class, 'registerInstallation']);
+Route::patch('/install', [InstallationController::class, 'update']);
+Route::delete('/install', [InstallationController::class, 'delete']);
+Route::post('/install/pending/paginate', [InstallationController::class, 'paginateInstallationsPending']);
+Route::get('/install/{id}', [InstallationController::class, 'getSale']);
+Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
+Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
+
+
+// 
+
+// FAULDS
+
+Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
+Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
+Route::patch('/fauld', [FauldController::class, 'update']);
+
+
 
 
 Route::get('/traslat', [connect::class, 'dats']);
