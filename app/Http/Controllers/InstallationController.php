@@ -140,7 +140,7 @@ class InstallationController extends Controller
                 }
             })
                 ->where('status_sale', 'PENDIENTE')
-                ->where('type_operation__operation', 'INSTALACIÓN');
+                ->where('type_operation__operation', 'INSTALACION');
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -404,6 +404,7 @@ class InstallationController extends Controller
                     $q->orWhere('date_sale', $type, $value);
                 }
             })
+            ->where('type_operation__operation', 'INSTALACION')
                 ->where('status_sale', 'CULMINADA');
             $iTotalDisplayRecords = $query->count();
 

@@ -216,6 +216,7 @@ Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 
 Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
+Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 
 
