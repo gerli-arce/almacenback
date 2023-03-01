@@ -23,6 +23,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\OperationTypesController;
 use App\Http\Controllers\UserLoginController;
+use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\FauldController;
 use App\Http\Controllers\connect;
 
@@ -48,7 +49,7 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 });
 
 // QR
-Route::post('/qr/installation', [PDFController::class, 'QRinstallation']);
+Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
 
 // SESSION
