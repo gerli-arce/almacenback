@@ -204,6 +204,7 @@ Route::patch('/install', [InstallationController::class, 'update']);
 Route::delete('/install', [InstallationController::class, 'delete']);
 Route::post('/install/pending/paginate', [InstallationController::class, 'paginateInstallationsPending']);
 Route::get('/install/{id}', [InstallationController::class, 'getSale']);
+Route::get('/installation/{id}', [InstallationController::class, 'getSaleInstallation']);
 Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
 Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 

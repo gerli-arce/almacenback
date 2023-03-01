@@ -303,14 +303,16 @@ class FauldController extends Controller
                 ->get();
 
             $details = array();
-           
-
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
                 $details[] = $detail;
             }
 
-            $InstallationJpa = viewInstallations::find($saleProductJpa->id);
+            $InstallationJpa = viewInstallations::where('type_operation__operation','INSTALACIÓN')->find($saleProductJpa->id);
+
+            if(!$InstallationJpa){
+                throw new Exception("Error: La instalacion solicitada relaciona al cliente no existe");
+            }
 
             $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
             $installJpa['products'] = $details;
@@ -320,7 +322,7 @@ class FauldController extends Controller
             $response->setData($installJpa);
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().' ln: '.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
