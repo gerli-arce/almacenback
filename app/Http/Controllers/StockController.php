@@ -95,7 +95,7 @@ class StockController extends Controller
                 ->take($request->length)
                 ->get();
                 
-                $iTotalDisplayRecords = $query->count();
+                $iTotalDisplayRecords = $modelsJpa->count();
             $products = array();
             foreach ($productsJpa as $product_) {
                 $product = gJSON::restore($product_->toArray(), '__');
@@ -133,9 +133,7 @@ class StockController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewProducts::groupBy('brand__brand', 'model__model', 'category__category')
-                    ->where('branch__correlative', $branch)
-                    ->count());
+            $response->setITotalRecords(ViewModels::count());
             // $response->setData($result);
             $response->setData($resultados);
         } catch (\Throwable$th) {

@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
+class ComposerStaticInitaa7311a41f01ea622f580763314a08dd
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -357,8 +357,8 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -556,17 +556,6 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
     public static $classMap = array (
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
-<<<<<<< HEAD
-        'App\\Http\\Controllers\\BranchController' => __DIR__ . '/../..' . '/app/Http/Controllers/BranchController.php',
-        'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
-        'App\\Http\\Controllers\\PeopleController' => __DIR__ . '/../..' . '/app/Http/Controllers/PeopleController.php',
-        'App\\Http\\Controllers\\PermissionsController' => __DIR__ . '/../..' . '/app/Http/Controllers/PermissionsController.php',
-        'App\\Http\\Controllers\\RoleController' => __DIR__ . '/../..' . '/app/Http/Controllers/RoleController.php',
-        'App\\Http\\Controllers\\SessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/SessionController.php',
-=======
-        'App\\Factories\\ConfigurationFactory' => __DIR__ . '/..' . '/laravel/pint/app/Factories/ConfigurationFactory.php',
-        'App\\Factories\\ConfigurationResolverFactory' => __DIR__ . '/..' . '/laravel/pint/app/Factories/ConfigurationResolverFactory.php',
-        'App\\Fixers\\LaravelPhpdocAlignmentFixer' => __DIR__ . '/..' . '/laravel/pint/app/Fixers/LaravelPhpdocAlignmentFixer.php',
         'App\\Http\\Controllers\\BranchController' => __DIR__ . '/../..' . '/app/Http/Controllers/BranchController.php',
         'App\\Http\\Controllers\\BrandController' => __DIR__ . '/../..' . '/app/Http/Controllers/BrandController.php',
         'App\\Http\\Controllers\\CategoriesController' => __DIR__ . '/../..' . '/app/Http/Controllers/CategoriesController.php',
@@ -587,12 +576,14 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         'App\\Http\\Controllers\\StockController' => __DIR__ . '/../..' . '/app/Http/Controllers/StockController.php',
         'App\\Http\\Controllers\\TechnicalsController' => __DIR__ . '/../..' . '/app/Http/Controllers/TechnicalsController.php',
         'App\\Http\\Controllers\\UnityController' => __DIR__ . '/../..' . '/app/Http/Controllers/UnityController.php',
->>>>>>> 80134521396b0a6179d6464ce18f20dde39d9104
         'App\\Http\\Controllers\\UserController' => __DIR__ . '/../..' . '/app/Http/Controllers/UserController.php',
+        'App\\Http\\Controllers\\UserLoginController' => __DIR__ . '/../..' . '/app/Http/Controllers/UserLoginController.php',
         'App\\Http\\Controllers\\ViewController' => __DIR__ . '/../..' . '/app/Http/Controllers/ViewController.php',
+        'App\\Http\\Controllers\\connect' => __DIR__ . '/../..' . '/app/Http/Controllers/connect.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
+        'App\\Http\\Middleware\\LoginAuthMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/LoginAuthMiddleware.php',
         'App\\Http\\Middleware\\PreventRequestsDuringMaintenance' => __DIR__ . '/../..' . '/app/Http/Middleware/PreventRequestsDuringMaintenance.php',
         'App\\Http\\Middleware\\RedirectIfAuthenticated' => __DIR__ . '/../..' . '/app/Http/Middleware/RedirectIfAuthenticated.php',
         'App\\Http\\Middleware\\TrimStrings' => __DIR__ . '/../..' . '/app/Http/Middleware/TrimStrings.php',
@@ -600,19 +591,6 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         'App\\Http\\Middleware\\TrustProxies' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustProxies.php',
         'App\\Http\\Middleware\\ValidateSignature' => __DIR__ . '/../..' . '/app/Http/Middleware/ValidateSignature.php',
         'App\\Http\\Middleware\\VerifyCsrfToken' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyCsrfToken.php',
-<<<<<<< HEAD
-        'App\\Models\\Branch' => __DIR__ . '/../..' . '/app/Models/Branch.php',
-        'App\\Models\\People' => __DIR__ . '/../..' . '/app/Models/People.php',
-        'App\\Models\\Permission' => __DIR__ . '/../..' . '/app/Models/Permission.php',
-        'App\\Models\\Response' => __DIR__ . '/../..' . '/app/Models/Response.php',
-        'App\\Models\\Role' => __DIR__ . '/../..' . '/app/Models/Role.php',
-        'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
-        'App\\Models\\View' => __DIR__ . '/../..' . '/app/Models/View.php',
-        'App\\Models\\ViewPeople' => __DIR__ . '/../..' . '/app/Models/ViewPeople.php',
-        'App\\Models\\ViewPermissionsByView' => __DIR__ . '/../..' . '/app/Models/ViewPermissionsByView.php',
-        'App\\Models\\ViewUsers' => __DIR__ . '/../..' . '/app/Models/ViewUsers.php',
-=======
-        'App\\Kernel' => __DIR__ . '/..' . '/laravel/pint/app/Kernel.php',
         'App\\Models\\Branch' => __DIR__ . '/../..' . '/app/Models/Branch.php',
         'App\\Models\\Brand' => __DIR__ . '/../..' . '/app/Models/Brand.php',
         'App\\Models\\Category' => __DIR__ . '/../..' . '/app/Models/Category.php',
@@ -638,33 +616,16 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         'App\\Models\\ViewProducts' => __DIR__ . '/../..' . '/app/Models/ViewProducts.php',
         'App\\Models\\ViewUsers' => __DIR__ . '/../..' . '/app/Models/ViewUsers.php',
         'App\\Models\\viewInstallations' => __DIR__ . '/../..' . '/app/Models/viewInstallations.php',
-        'App\\Output\\Concerns\\InteractsWithSymbols' => __DIR__ . '/..' . '/laravel/pint/app/Output/Concerns/InteractsWithSymbols.php',
-        'App\\Output\\ProgressOutput' => __DIR__ . '/..' . '/laravel/pint/app/Output/ProgressOutput.php',
-        'App\\Output\\SummaryOutput' => __DIR__ . '/..' . '/laravel/pint/app/Output/SummaryOutput.php',
-        'App\\Project' => __DIR__ . '/..' . '/laravel/pint/app/Project.php',
-        'App\\Providers\\ActionsServiceProvider' => __DIR__ . '/..' . '/laravel/pint/app/Providers/ActionsServiceProvider.php',
->>>>>>> 80134521396b0a6179d6464ce18f20dde39d9104
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
         'App\\Providers\\BroadcastServiceProvider' => __DIR__ . '/../..' . '/app/Providers/BroadcastServiceProvider.php',
         'App\\Providers\\EventServiceProvider' => __DIR__ . '/../..' . '/app/Providers/EventServiceProvider.php',
         'App\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/app/Providers/RouteServiceProvider.php',
-<<<<<<< HEAD
-        'App\\gLibraries\\auth' => __DIR__ . '/../..' . '/app/gLibraries/auth.php',
-        'App\\gLibraries\\gFetch' => __DIR__ . '/../..' . '/app/gLibraries/gFetch.php',
-        'App\\gLibraries\\gJSON' => __DIR__ . '/../..' . '/app/gLibraries/gJSON.php',
-        'App\\gLibraries\\gStatus' => __DIR__ . '/../..' . '/app/gLibraries/gStatus.php',
-=======
-        'App\\Repositories\\ConfigurationJsonRepository' => __DIR__ . '/..' . '/laravel/pint/app/Repositories/ConfigurationJsonRepository.php',
-        'App\\Repositories\\GitPathsRepository' => __DIR__ . '/..' . '/laravel/pint/app/Repositories/GitPathsRepository.php',
-        'App\\ValueObjects\\Issue' => __DIR__ . '/..' . '/laravel/pint/app/ValueObjects/Issue.php',
         'App\\gLibraries\\auth' => __DIR__ . '/../..' . '/app/gLibraries/auth.php',
         'App\\gLibraries\\gFetch' => __DIR__ . '/../..' . '/app/gLibraries/gFetch.php',
         'App\\gLibraries\\gJSON' => __DIR__ . '/../..' . '/app/gLibraries/gJSON.php',
         'App\\gLibraries\\gQR' => __DIR__ . '/../..' . '/app/gLibraries/gQR.php',
         'App\\gLibraries\\gStatus' => __DIR__ . '/../..' . '/app/gLibraries/gStatus.php',
-        'App\\gLibraries\\gTrace' => __DIR__ . '/../..' . '/app/gLibraries/gTrace.php',
->>>>>>> 80134521396b0a6179d6464ce18f20dde39d9104
         'App\\gLibraries\\gUbigeo' => __DIR__ . '/../..' . '/app/gLibraries/gUbigeo.php',
         'App\\gLibraries\\gValidate' => __DIR__ . '/../..' . '/app/gLibraries/gValidate.php',
         'App\\gLibraries\\guid' => __DIR__ . '/../..' . '/app/gLibraries/guid.php',
@@ -3407,9 +3368,6 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         'League\\MimeTypeDetection\\GeneratedExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/GeneratedExtensionToMimeTypeMap.php',
         'League\\MimeTypeDetection\\MimeTypeDetector' => __DIR__ . '/..' . '/league/mime-type-detection/src/MimeTypeDetector.php',
         'League\\MimeTypeDetection\\OverridingExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/OverridingExtensionToMimeTypeMap.php',
-<<<<<<< HEAD
-=======
-        'League\\MimeTypeDetection\\OverridingExtensionToMimeTypeMapTest' => __DIR__ . '/..' . '/league/mime-type-detection/src/OverridingExtensionToMimeTypeMapTest.php',
         'League\\OAuth1\\Client\\Credentials\\ClientCredentials' => __DIR__ . '/..' . '/league/oauth1-client/src/Credentials/ClientCredentials.php',
         'League\\OAuth1\\Client\\Credentials\\ClientCredentialsInterface' => __DIR__ . '/..' . '/league/oauth1-client/src/Credentials/ClientCredentialsInterface.php',
         'League\\OAuth1\\Client\\Credentials\\Credentials' => __DIR__ . '/..' . '/league/oauth1-client/src/Credentials/Credentials.php',
@@ -3453,7 +3411,6 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
         'Masterminds\\HTML5\\Serializer\\OutputRules' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/OutputRules.php',
         'Masterminds\\HTML5\\Serializer\\RulesInterface' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/RulesInterface.php',
         'Masterminds\\HTML5\\Serializer\\Traverser' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/Traverser.php',
->>>>>>> 80134521396b0a6179d6464ce18f20dde39d9104
         'Mockery' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegration' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegration.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegrationAssertPostConditions' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegrationAssertPostConditions.php',
@@ -6206,10 +6163,10 @@ class ComposerStaticInit982bf4da67c0d25670139fe3fde58137
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit982bf4da67c0d25670139fe3fde58137::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit982bf4da67c0d25670139fe3fde58137::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit982bf4da67c0d25670139fe3fde58137::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit982bf4da67c0d25670139fe3fde58137::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitaa7311a41f01ea622f580763314a08dd::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitaa7311a41f01ea622f580763314a08dd::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitaa7311a41f01ea622f580763314a08dd::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitaa7311a41f01ea622f580763314a08dd::$classMap;
 
         }, null, ClassLoader::class);
     }

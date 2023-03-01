@@ -18,7 +18,10 @@ class connect extends Controller
         $response = new Response();
         try {
             
-            $data = DB::connection('mysql_sisgein')->table('herramientas')->get();
+            $data = DB::connection('mysql_sisgein')
+            ->table('kardex')
+            // ->where('descripcion','RX8102W')
+            ->get();
 
             // foreach($data as $dat){
 
