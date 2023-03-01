@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
@@ -14,10 +15,9 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-
-class InstallationController extends Controller
+class FauldController extends Controller
 {
-    public function registerInstallation(Request $request)
+    public function registerFauld(Request $request)
     {
         $response = new Response();
         try {
@@ -27,8 +27,8 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'create')) {
-                throw new Exception('No tienes permisos para listar instalaciones');
+            if (!gValidate::check($role->permissions, $branch, 'fauld_pending', 'create')) {
+                throw new Exception('No tienes permisos para listar averias');
             }
 
             if (!isset($request->_client) ||
@@ -53,10 +53,7 @@ class InstallationController extends Controller
             $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
-
-            if(isset($request->description)){
-                $salesProduct->description = $request->description;
-            }
+            $salesProduct->description = $request->description;
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
             $salesProduct->_update_user = $userid;
@@ -97,7 +94,7 @@ class InstallationController extends Controller
         }
     }
 
-    public function paginateInstallationsPending(Request $request)
+    public function paginateFauldPending(Request $request)
     {
         $response = new Response();
         try {
@@ -140,7 +137,8 @@ class InstallationController extends Controller
                 }
             })
                 ->where('status_sale', 'PENDIENTE')
-                ->where('type_operation__operation', 'INSTALACIÓN');
+                ->where('type_operation__operation', 'AVERIA');
+
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -184,6 +182,8 @@ class InstallationController extends Controller
             // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
             //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             // }
+
+            
 
             $detailSaleJpa = DetailSale::select([
                 'detail_sales.id as id',
@@ -246,6 +246,89 @@ class InstallationController extends Controller
         }
     }
 
+    public function getSateByClient(Request $request, $idclient)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar averias pedientes');
+            }
+
+            $saleProductJpa = SalesProducts::where('_client',$idclient)->first();
+            if (!$saleProductJpa) {
+                throw new Exception("Error: No se encontro instalacion relacionada con este cliente");
+            }
+
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__brand__id',
+                'brands.correlative AS product__brand__correlative',
+                'brands.brand AS product__brand__brand',
+                'brands.relative_id AS product__brand__relative_id',
+                'categories.id AS product__category__id',
+                'categories.category AS product__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_gia AS product__num_gia',
+                'products.status_product AS product__status_product',
+                'detail_sales.mount as mount',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('brands', 'products._brand', 'brands.id')
+                ->join('categories', 'products._category', 'categories.id')
+                ->join('models', 'products._model', 'models.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $saleProductJpa->id)
+                ->get();
+
+            $details = array();
+           
+
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $InstallationJpa = viewInstallations::find($saleProductJpa->id);
+
+            $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
+            $installJpa['products'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($installJpa);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -284,6 +367,10 @@ class InstallationController extends Controller
             if (isset($request->type_intallation)) {
                 $salesProduct->type_intallation = $request->type_intallation;
             }
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
 
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
@@ -317,7 +404,7 @@ class InstallationController extends Controller
                                 }
 
                                 if (
-                                    isset($request->image_qr) 
+                                    isset($request->image_qr)
                                 ) {
                                     $salesProduct->image_type = $request->image_type;
                                     $salesProduct->image_qr = base64_decode($request->image_qr);
@@ -485,7 +572,8 @@ class InstallationController extends Controller
         }
     }
 
-    public function delete(Request $request){
+    public function delete(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -505,15 +593,15 @@ class InstallationController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
-            $detailsSalesJpa = DetailSale::where('_sales_product',$saleProductJpa->id)
-            ->get();
-            foreach($detailsSalesJpa as $detail){
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status','status_product','mount', 'type')->find($detail['_product']);
+                $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
                 $productJpa->status_product = "DISPONIBLE";
-                if($productJpa->type == "MATERIAL"){
-                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']); 
+                if ($productJpa->type == "MATERIAL") {
+                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']);
                 }
                 $productJpa->save();
                 $detailSale->save();
