@@ -10,6 +10,7 @@ use App\Models\Branch;
 use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\Response;
+use App\Models\Stock;
 use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
@@ -103,6 +104,10 @@ class ProductsController extends Controller
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
                     $productJpa->save();
+
+                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock->mount = intval($stock->mount) + 1;
+                    $stock->save();
                 }
             } else if ($request->type == "MATERIAL") {
                 if (!isset($request->mount)) {
@@ -120,7 +125,7 @@ class ProductsController extends Controller
                     ->where('_category', $request->_category)
                     ->where('_brand', $request->_brand)
                     ->first();
-                if($material){
+                if ($material) {
                     $mount_old = $material->mount;
                     $mount_new = $mount_old + $request->mount;
 
@@ -152,7 +157,11 @@ class ProductsController extends Controller
                     $material->_update_user = $userid;
                     $material->status = "1";
                     $material->save();
-                }else{
+
+                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock->mount = intval($stock->mount) + intval($request->mount);
+                    $stock->save();
+                } else {
                     $productJpa = new Product();
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
@@ -182,6 +191,10 @@ class ProductsController extends Controller
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
                     $productJpa->save();
+
+                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock->mount = intval($stock->mount) + intval($request->mount);
+                    $stock->save();
                 }
             }
 
@@ -258,7 +271,7 @@ class ProductsController extends Controller
                     $q->orWhere('status', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-            ->where('status_product','!=','VENDIDO');
+                ->where('status_product', '!=', 'VENDIDO');
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query

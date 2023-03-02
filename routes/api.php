@@ -199,6 +199,7 @@ Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
+Route::patch('/stock', [StockController::class, 'update']);
 
 // INTALLATIONS
 Route::post('/install', [InstallationController::class, 'registerInstallation']);
@@ -214,14 +215,12 @@ Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 // 
 
 // FAULDS
-
 Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 
 // KEYS
-
 Route::post('/keys', [KeysesController::class, 'store']);
 Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
 

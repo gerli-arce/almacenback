@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
+use App\Models\Stock;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Product;
@@ -71,8 +72,15 @@ class InstallationController extends Controller
                     if ($product['type'] == "MATERIAL") {
                         $mount = $productJpa->mount - $product['mount'];
                         $productJpa->mount = $mount;
+
+                        $stock = Stock::where('_model',$productJpa->_model)->first();
+                        $stock->mount = $mount;
+                        $stock->save();
                     } else {
                         $productJpa->status_product = "VENDIENDO";
+                        $stock = Stock::where('_model',$productJpa->_model)->first();
+                        $stock->mount = intval($stock->mount) - 1;
+                        $stock->save();
                     }
                     $productJpa->save();
 
