@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
+use App\gLibraries\gJSON;
 use App\gLibraries\gValidate;
 use App\Models\Keyses;
+use App\Models\ViewKeys;
 use App\Models\Response;
 use Exception;
 use Illuminate\Http\Request;
@@ -29,7 +31,9 @@ class KeysesController extends Controller
             if (
                 !isset($request->name) ||
                 !isset($request->responsible) ||
-                !isset($request->entry_date)
+                !isset($request->date_entry) ||
+                !isset($request->price) ||
+                !isset($request->duplicate) 
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -41,8 +45,8 @@ class KeysesController extends Controller
                 throw new Exception("Error: para agregar una llave es nesesario una imagen de esta.");
             }
 
-            $keyValidateExistence = Keyses::select(['description'])
-                ->where('description', $request->description)
+            $keyValidateExistence = Keyses::select(['name'])
+                ->where('name', $request->name)
                 ->first();
 
             if ($keyValidateExistence) {
@@ -52,12 +56,13 @@ class KeysesController extends Controller
             $keysesJpa = new Keyses();
             $keysesJpa->name = $request->name;
             $keysesJpa->responsible = $request->responsible;
-            $keysesJpa->duplicate = $request->duplicate;
-            $keysesJpa->entry_date = $request->entry_date;
+            $keysesJpa->date_entry = $request->date_entry;
             $keysesJpa->price = $request->price;
+            $keysesJpa->duplicate = $request->duplicate;
             $keysesJpa->address = $request->address;
             $keysesJpa->relative_id = guid::short();
-
+            $keysesJpa->status_key = "DISPONIBLE";
+          
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -86,7 +91,7 @@ class KeysesController extends Controller
             $keysesJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La marca se a agregado correctamente');
+            $response->setMessage('La llave se a agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -146,22 +151,11 @@ class KeysesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
+                throw new Exception('No tienes permisos para listar llaves');
             }
 
-            $query = Brand::select([
-                'id',
-                'correlative',
-                'brand',
-                'description',
-                'relative_id',
-                'creation_date',
-                '_creation_user',
-                'update_date',
-                '_update_user',
-                'status',
-            ])
+            $query = ViewKeys::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -173,38 +167,42 @@ class KeysesController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'correlative' || $column == '*') {
-                    $q->where('correlative', $type, $value);
+                if ($column == 'name' || $column == '*') {
+                    $q->where('name', $type, $value);
                 }
-                if ($column == 'brand' || $column == '*') {
-                    $q->where('brand', $type, $value);
+                if ($column == 'responsible__name' || $column == '*') {
+                    $q->where('responsible__name', $type, $value);
+                }
+                if ($column == 'date_entry' || $column == '*') {
+                    $q->where('date_entry', $type, $value);
+                }
+                if ($column == 'duplicate' || $column == '*') {
+                    $q->where('duplicate', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
             });
 
+            
             $iTotalDisplayRecords = $query->count();
-            $brandsJpa = $query->select('id',
-                'correlative',
-                'brand',
-                'description',
-                'relative_id',
-                'creation_date',
-                '_creation_user',
-                'update_date',
-                '_update_user',
-                'status')
-                ->skip($request->start)
-                ->take($request->length)
-                ->get();
+            $keysJpa = $query
+            ->skip($request->start)
+            ->take($request->length)
+            ->get();
+            
+            $keys = [];
+            foreach($keysJpa as $keyJpa){
+                $key = gJSON::restore($keyJpa->toArray(),'__');
+                $keys[] =$key;
+            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Brand::count());
-            $response->setData($brandsJpa->toArray());
+            $response->setITotalRecords(ViewKeys::count());
+            $response->setData($keys);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

@@ -25,6 +25,7 @@ use App\Http\Controllers\OperationTypesController;
 use App\Http\Controllers\UserLoginController;
 use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\FauldController;
+use App\Http\Controllers\KeysesController;
 use App\Http\Controllers\connect;
 
 /*
@@ -219,7 +220,10 @@ Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPe
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 
+// KEYS
 
+Route::post('/keys', [KeysesController::class, 'store']);
+Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
 
 
 Route::get('/traslat', [connect::class, 'dats']);
