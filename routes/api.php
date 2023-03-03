@@ -222,7 +222,11 @@ Route::patch('/fauld', [FauldController::class, 'update']);
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
+Route::patch('/keys', [KeysesController::class, 'update']);
+Route::delete('/keys', [KeysesController::class, 'destroy']);
+Route::post('/keys/restore', [KeysesController::class, 'restore']);
 Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
+Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
 
 
 Route::get('/traslat', [connect::class, 'dats']);

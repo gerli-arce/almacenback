@@ -229,9 +229,9 @@ class KeysesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $userJpa = Brand::select([
-                "brands.image_$size as image_content",
-                'brands.image_type',
+            $userJpa = Keyses::select([
+                "keyses.image_$size as image_content",
+                'keyses.image_type',
 
             ])
                 ->where('relative_id', $relative_id)
@@ -247,7 +247,7 @@ class KeysesController extends Controller
             $type = $userJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable$th) {
-            $ruta = '../storage/images/brands-default.jpg';
+            $ruta = '../storage/images/llaves-default.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
@@ -268,45 +268,35 @@ class KeysesController extends Controller
         $response = new Response();
         try {
 
+            
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+                throw new Exception('No tienes permisos para actualizar las llaves');
+            }
+            
             if (
                 !isset($request->id)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'update')) {
-                throw new Exception('No tienes permisos para actualizar marcas');
-            }
-
-            $brandJpa = Brand::select(['id'])->find($request->id);
-            if (!$brandJpa) {
+            $keysJpa = Keyses::select(['id'])->find($request->id);
+            if (!$keysJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
-            if (isset($request->brand)) {
-                $verifyCatJpa = Brand::select(['id', 'brand'])
-                    ->where('brand', $request->brand)
+            if (isset($request->name)) {
+                $verifyCatJpa = Keyses::select(['id', 'name'])
+                    ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta marca");
+                    throw new Exception("Elija otro nombre para esta llave, el nombre ya existe.");
                 }
-                $brandJpa->brand = $request->brand;
-            }
-
-            if (isset($request->correlative)) {
-                $verifyCatJpa = Brand::select(['id', 'correlative'])
-                    ->where('correlative', $request->correlative)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro correlativo para esta marca");
-                }
-                $brandJpa->correlative = $request->correlative;
+                $keysJpa->name = $request->name;
             }
 
             if (
@@ -319,30 +309,49 @@ class KeysesController extends Controller
                     $request->image_mini &&
                     $request->image_full
                 ) {
-                    $brandJpa->image_type = $request->image_type;
-                    $brandJpa->image_mini = base64_decode($request->image_mini);
-                    $brandJpa->image_full = base64_decode($request->image_full);
+                    $keysJpa->image_type = $request->image_type;
+                    $keysJpa->image_mini = base64_decode($request->image_mini);
+                    $keysJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    $brandJpa->image_type = null;
-                    $brandJpa->image_mini = null;
-                    $brandJpa->image_full = null;
+                    $keysJpa->image_type = null;
+                    $keysJpa->image_mini = null;
+                    $keysJpa->image_full = null;
                 }
+            }
+            if(isset($request->price)){
+                $keysJpa->price = $request->price;
+            }
+
+            if(isset($request->address)){
+                $keysJpa->address = $request->address;
+            }
+
+            if(isset($request->responsible)){
+                $keysJpa->responsible = $request->responsible;
+            }
+
+            if(isset($request->duplicate)){
+                $keysJpa->duplicate = $request->duplicate;
+            }
+
+            if(isset($request->date_entry)){
+                $keysJpa->date_entry = $request->date_entry;
             }
 
             if (isset($request->description)) {
-                $brandJpa->description = $request->description;
+                $keysJpa->description = $request->description;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'brands', 'change_status')) {
+            if (gValidate::check($role->permissions, $branch, 'keyses', 'change_status')) {
                 if (isset($request->status)) {
-                    $brandJpa->status = $request->status;
+                    $keysJpa->status = $request->status;
                 }
             }
 
-            $brandJpa->update_date = gTrace::getDate('mysql');
-            $brandJpa->_update_user = $userid;
+            $keysJpa->update_date = gTrace::getDate('mysql');
+            $keysJpa->_update_user = $userid;
 
-            $brandJpa->save();
+            $keysJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La categoria ha sido actualizado correctamente');
@@ -366,8 +375,8 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar marcas en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar llaves');
             }
 
             if (
@@ -376,18 +385,18 @@ class KeysesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $brandJpa = Brand::find($request->id);
-            if (!$brandJpa) {
-                throw new Exception('La categoria que deseas eliminar no existe');
+            $keyJpa = Keyses::find($request->id);
+            if (!$keyJpa) {
+                throw new Exception('La llave que deseas eliminar no existe');
             }
 
-            $brandJpa->update_date = gTrace::getDate('mysql');
-            $brandJpa->_update_user = $userid;
-            $brandJpa->status = null;
-            $brandJpa->save();
+            $keyJpa->update_date = gTrace::getDate('mysql');
+            $keyJpa->_update_user = $userid;
+            $keyJpa->status = null;
+            $keyJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La marca a sido eliminada correctamente');
+            $response->setMessage('La llave a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -408,8 +417,8 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar marcas en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar llaves');
             }
 
             if (
@@ -418,18 +427,18 @@ class KeysesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Brand::find($request->id);
-            if (!$categoriesJpa) {
-                throw new Exception('La marca que deseas restaurar no existe');
+            $keyJpa = Keyses::find($request->id);
+            if (!$keyJpa) {
+                throw new Exception('La llave que deseas restaurar no existe');
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = "1";
-            $categoriesJpa->save();
+            $keyJpa->update_date = gTrace::getDate('mysql');
+            $keyJpa->_update_user = $userid;
+            $keyJpa->status = "1";
+            $keyJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La marca a sido restaurada correctamente');
+            $response->setMessage('La llave a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
