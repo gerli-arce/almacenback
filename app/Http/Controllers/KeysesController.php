@@ -364,7 +364,7 @@ class KeysesController extends Controller
                 $response->getStatus()
             );
         }
-    }
+     }
 
     public function destroy(Request $request)
     {

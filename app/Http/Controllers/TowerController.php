@@ -6,7 +6,7 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\Models;
+use App\Models\Tower;
 use App\Models\Branch;
 use App\Models\Stock;
 use App\Models\Response;
@@ -15,7 +15,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ModelsController extends Controller
+
+class TowerController extends Controller
 {
     public function store(Request $request)
     {
@@ -26,31 +27,30 @@ class ModelsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'create')) {
-                throw new Exception("No tienes permisos para agregar modelos");
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'create')) {
+                throw new Exception("No tienes permisos para agregar torres");
             }
 
             if (
-                !isset($request->model) ||
-                !isset($request->_brand) ||
-                !isset($request->_category)
+                !isset($request->name) 
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelValidation = Models::select(['model'])
-                ->where('model', $request->model)
+            $towerValidation = Tower::select(['name'])
+                ->where('name', $request->model)
                 ->first();
 
-            if ($modelValidation) {
+            if ($towerValidation) {
                 throw new Exception("Escoja otro nombre para el modelo ");
             }
 
-            $modelJpa = new Models();
-            $modelJpa->model = $request->model;
-            $modelJpa->_brand = $request->_brand;
-            $modelJpa->_category = $request->_category;
-            $modelJpa->relative_id = guid::short();
+            $towerJpa = new Tower();
+            $towerJpa->name = $request->name;
+            $towerJpa->description = $request->description;
+            $towerJpa->coordenates = $request->coordenates;
+            $towerJpa->address = $request->address;
+            $towerJpa->relative_id = guid::short();
 
             if (
                 isset($request->image_type) &&
@@ -62,36 +62,21 @@ class ModelsController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $modelJpa->image_type = $request->image_type;
-                    $modelJpa->image_mini = base64_decode($request->image_mini);
-                    $modelJpa->image_full = base64_decode($request->image_full);
+                    $towerJpa->image_type = $request->image_type;
+                    $towerJpa->image_mini = base64_decode($request->image_mini);
+                    $towerJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    $modelJpa->image_type = null;
-                    $modelJpa->image_mini = null;
-                    $modelJpa->image_full = null;
+                    $towerJpa->image_type = null;
+                    $towerJpa->image_mini = null;
+                    $towerJpa->image_full = null;
                 }
             }
 
-            if (isset($request->description)) {
-                $modelJpa->description = $request->description;
-            }
-
-            
-            $modelJpa->status = "1";
-            $modelJpa->save();
-
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-            
-            $stockJpa = new Stock();
-            $stockJpa->_model = $modelJpa->id;
-            $stockJpa->mount = '0';
-            $stockJpa->stock_min = '5';
-            $stockJpa->_branch = $branch_->id;
-            $stockJpa->status = '1';
-            $stockJpa->save();
+            $towerJpa->status = "1";
+            $towerJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El modelo se a agregado correctamente');
+            $response->setMessage('La torre se a agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -158,7 +143,15 @@ class ModelsController extends Controller
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
-            $query = ViewModels::select(['*'])
+            $query = Tower::select([
+                'id',
+                'name',
+                'description',
+                'coordenates',
+                'address',
+                'relative_id',
+                'status'
+            ])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -170,38 +163,32 @@ class ModelsController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'model' || $column == '*') {
-                    $q->where('model', $type, $value);
+                if ($column == 'name' || $column == '*') {
+                    $q->where('name', $type, $value);
                 }
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                if ($column == 'coordenates' || $column == '*') {
+                    $q->where('coordenates', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                if ($column == 'address' || $column == '*') {
+                    $q->orWhere('address', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
-                    $q->orWhere('description', $type, $value);
+                    $q->where('description', $type, $value);
                 }
             });
 
             $iTotalDisplayRecords = $query->count();
-            $modelsJpa = $query
+            $towerJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
-
-            $models = array();
-            foreach ($modelsJpa as $modelJpa) {
-                $model = gJSON::restore($modelJpa->toArray(), '__');
-                $models[] = $model;
-            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewModels::count());
-            $response->setData($models);
+            $response->setITotalRecords(Tower::count());
+            $response->setData($towerJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -228,9 +215,9 @@ class ModelsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelJpa = Models::select([
-                "models.image_$size as image_content",
-                'models.image_type',
+            $modelJpa = Tower::select([
+                "towers.image_$size as image_content",
+                'towers.image_type',
 
             ])
                 ->where('relative_id', $relative_id)
@@ -239,14 +226,16 @@ class ModelsController extends Controller
             if (!$modelJpa) {
                 throw new Exception('No se encontraron datos');
             }
+
             if (!$modelJpa->image_content) {
                 throw new Exception('No existe imagen');
             }
+
             $content = $modelJpa->image_content;
             $type = $modelJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable$th) {
-            $ruta = '../storage/images/brands-default.jpg';
+            $ruta = '../storage/images/antena-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
@@ -278,31 +267,31 @@ class ModelsController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'models', 'update')) {
-                throw new Exception('No tienes permisos para actualizar modelos');
+                throw new Exception('No tienes permisos para actualizar torres');
             }
 
-            $modelJpa = Models::select(['id'])->find($request->id);
-            if (!$modelJpa) {
+            $towerJpa = Tower::select(['id'])->find($request->id);
+            if (!$towerJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
-            if (isset($request->model)) {
-                $verifyCatJpa = Models::select(['id', 'model'])
-                    ->where('model', $request->model)
+            if (isset($request->name)) {
+                $verifyCatJpa = Tower::select(['id', 'name'])
+                    ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para este modelo");
+                    throw new Exception("Elija otro nombre para esta llave");
                 }
-                $modelJpa->model = $request->model;
+                $towerJpa->name = $request->name;
             }
 
-            if (isset($request->_brand)) {
-                $modelJpa->_brand = $request->_brand;
+            if (isset($request->coordenates)) {
+                $towerJpa->coordenates = $request->coordenates;
             }
 
-            if (isset($request->_category)) {
-                $modelJpa->_category = $request->_category;
+            if (isset($request->address)) {
+                $towerJpa->address = $request->address;
             }
 
             if (
@@ -315,28 +304,28 @@ class ModelsController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $modelJpa->image_type = $request->image_type;
-                    $modelJpa->image_mini = base64_decode($request->image_mini);
-                    $modelJpa->image_full = base64_decode($request->image_full);
+                    $towerJpa->image_type = $request->image_type;
+                    $towerJpa->image_mini = base64_decode($request->image_mini);
+                    $towerJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    $modelJpa->image_type = null;
-                    $modelJpa->image_mini = null;
-                    $modelJpa->image_full = null;
+                    $towerJpa->image_type = null;
+                    $towerJpa->image_mini = null;
+                    $towerJpa->image_full = null;
                 }
             }
 
-            $modelJpa->description = $request->description;
+            $towerJpa->description = $request->description;
 
-            if (gValidate::check($role->permissions, $branch, 'models', 'change_status')) {
+            if (gValidate::check($role->permissions, $branch, 'towers', 'change_status')) {
                 if (isset($request->status)) {
-                    $modelJpa->status = $request->status;
+                    $towerJpa->status = $request->status;
                 }
             }
 
-            $modelJpa->save();
+            $towerJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El modelo ha sido actualizado correctamente');
+            $response->setMessage('La torre ha sido actualizada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -357,8 +346,8 @@ class ModelsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar modelos');
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar torres');
             }
 
             if (
@@ -367,18 +356,18 @@ class ModelsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelsJpa = Models::find($request->id);
-            if (!$modelsJpa) {
-                throw new Exception('El modelo que deseas eliminar no existe');
+            $towerJpa = Tower::find($request->id);
+            if (!$towerJpa) {
+                throw new Exception('La torre que deseas eliminar no existe');
             }
 
-            $modelsJpa->update_date = gTrace::getDate('mysql');
-            $modelsJpa->_update_user = $userid;
-            $modelsJpa->status = null;
-            $modelsJpa->save();
+            $towerJpa->update_date = gTrace::getDate('mysql');
+            $towerJpa->_update_user = $userid;
+            $towerJpa->status = null;
+            $towerJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El modelo a sido eliminado correctamente');
+            $response->setMessage('La torre a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -399,8 +388,8 @@ class ModelsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar modelos.');
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar torres.');
             }
 
             if (
@@ -411,14 +400,14 @@ class ModelsController extends Controller
 
             $modelsJpa = Models::find($request->id);
             if (!$modelsJpa) {
-                throw new Exception('El modelo que deseas restaurar no existe');
+                throw new Exception('La torre que deseas restaurar no existe');
             }
 
             $modelsJpa->status = "1";
             $modelsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El modelo a sido restaurado correctamente');
+            $response->setMessage('La torre a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);

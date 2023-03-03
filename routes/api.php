@@ -25,6 +25,7 @@ use App\Http\Controllers\OperationTypesController;
 use App\Http\Controllers\UserLoginController;
 use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\FauldController;
+use App\Http\Controllers\TowerController;
 use App\Http\Controllers\KeysesController;
 use App\Http\Controllers\connect;
 
@@ -228,5 +229,15 @@ Route::post('/keys/restore', [KeysesController::class, 'restore']);
 Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
 
+// TOWER
+Route::post('/towers', [TowerController::class, 'store']);
+Route::patch('/towers', [TowerController::class, 'update']);
+Route::delete('/towers', [TowerController::class, 'destroy']);
+Route::post('/towers/restore', [TowerController::class, 'restore']);
+Route::post('/towers/paginate', [TowerController::class, 'paginate']);
+Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
-Route::get('/traslat', [connect::class, 'dats']);
+
+
+
+// Route::get('/traslat', [connect::class, 'dats']);
