@@ -7,6 +7,8 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Models;
+use App\Models\Branch;
+use App\Models\Stock;
 use App\Models\Response;
 use App\Models\ViewModels;
 use Exception;
@@ -74,8 +76,19 @@ class ModelsController extends Controller
                 $modelJpa->description = $request->description;
             }
 
+            
             $modelJpa->status = "1";
             $modelJpa->save();
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            
+            $stockJpa = new Stock();
+            $stockJpa->_model = $modelJpa->id;
+            $stockJpa->mount = '0';
+            $stockJpa->stock_min = '5';
+            $stockJpa->_branch = $branch_->id;
+            $stockJpa->status = '1';
+            $stockJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El modelo se a agregado correctamente');
@@ -312,9 +325,7 @@ class ModelsController extends Controller
                 }
             }
 
-            if (isset($request->description)) {
-                $modelJpa->description = $request->description;
-            }
+            $modelJpa->description = $request->description;
 
             if (gValidate::check($role->permissions, $branch, 'models', 'change_status')) {
                 if (isset($request->status)) {
