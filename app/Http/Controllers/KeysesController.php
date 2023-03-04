@@ -342,6 +342,10 @@ class KeysesController extends Controller
                 $keysJpa->description = $request->description;
             }
 
+            if (isset($request->status_key)) {
+                $keysJpa->status_key = $request->status_key;
+            }
+
             if (gValidate::check($role->permissions, $branch, 'keyses', 'change_status')) {
                 if (isset($request->status)) {
                     $keysJpa->status = $request->status;
