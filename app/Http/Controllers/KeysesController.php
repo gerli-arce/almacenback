@@ -6,7 +6,9 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gJSON;
 use App\gLibraries\gValidate;
+use App\Models\People;
 use App\Models\Keyses;
+use App\Models\OperationKeys;
 use App\Models\ViewKeys;
 use App\Models\Response;
 use Exception;
@@ -15,6 +17,61 @@ use Illuminate\Support\Facades\DB;
 
 class KeysesController extends Controller
 {
+
+    public function lendKey(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+                throw new Exception("No tienes permisos para actualizar llaves en el sistema");
+            }
+
+            if (
+                !isset($request->lend_person) ||
+                !isset($request->lend_date) ||
+                !isset($request->lend_hour) ||
+                !isset($request->lend_key) 
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $operationKey = new OperationKeys();
+            $operationKey->type_operation = "LEND";
+            $operationKey->date_operation = $request->lend_date.' '.$request->lend_hour;
+            $operationKey->date_execute_operation = gTrace::getDate('mysql');
+            $operationKey->_user_operation = $userid;
+            $operationKey->_key = $request->lend_key['id'];
+            $operationKey->_person_operation = $request->lend_person;
+            if(isset($request->lend_reazon)){
+                $operationKey->reazon = $request->lend_reazon;
+            }
+            $operationKey->save();
+
+            $personJpa = People::find($request->lend_person);
+            $name_person_lend = $personJpa->name.' '.$personJpa->lastname;
+
+            $keyJpa = Keyses::find($request->lend_key['id']);
+            $keyJpa->status_key = "EN USO";
+            $keyJpa->description = "Se presto a ".$name_person_lend." la fecha: ".$request->lend_date.' '.$request->lend_hour." por la razon de: ". $request->lend_reazon;
+            $keyJpa->save();
+            
+            $response->setStatus(200);
+            $response->setMessage("La llave se a agregado correctamente");
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -262,7 +319,6 @@ class KeysesController extends Controller
             )->header('Content-Type', $type);
         }
     }
-
     public function update(Request $request)
     {
         $response = new Response();
@@ -454,4 +510,6 @@ class KeysesController extends Controller
             );
         }
     }
+
+
 }
