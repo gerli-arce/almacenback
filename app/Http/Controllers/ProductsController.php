@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
-use App\gLibraries\gUid;
+use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\EntryProducts;
@@ -26,6 +26,7 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
+            
             if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
