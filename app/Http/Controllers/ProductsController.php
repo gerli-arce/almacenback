@@ -329,49 +329,50 @@ class ProductsController extends Controller
                 throw new Exception("Error: El registro que intenta modificar no existe");
             }
 
-            // if (!isset($request->mac) && !isset($request->serie)) {
-            //     if (isset($request->mac)) {
-            //         $productValidation = Product::select(['id', 'mac'])
-            //             ->where('mac', $request->mac)
-            //             ->where('id', '!=', $request->id)
-            //             ->first();
+            if (!isset($request->mac) && !isset($request->serie)) {
+                if (isset($request->mac)) {
+                    $productValidation = Product::select(['id', 'mac'])
+                        ->where('mac', $request->mac)
+                        ->where('id', '!=', $request->id)
+                        ->first();
 
-            //         if ($productValidation->mac == $request->mac) {
-            //             throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
-            //         }
-            //         $productJpa->mac = $request->mac;
-            //     }
-            //     if (isset($request->serie)) {
-            //         $productValidation = Product::select(['id', 'serie'])
-            //             ->orWhere('serie', $request->serie)
-            //             ->where('id', '!=', $request->id)
-            //             ->first();
+                    if ($productValidation->mac == $request->mac) {
+                        throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
+                    }
+                    $productJpa->mac = $request->mac;
+                }
+                if (isset($request->serie)) {
+                    $productValidation = Product::select(['id', 'serie'])
+                        ->orWhere('serie', $request->serie)
+                        ->where('id', '!=', $request->id)
+                        ->first();
 
-            //         if ($productValidation->serie == $request->serie) {
-            //             throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
-            //         }
-            //         $productJpa->serie = $request->serie;
-            //     }
-            // } else {
-            //     $productValidation = Product::select(['id', 'mac', 'serie'])
-            //         ->where('mac', $request->mac)
-            //         ->where('id', '!=', $request->id)
-            //         ->orWhere('serie', $request->serie)
-            //         ->where('id', '!=', $request->id)
-            //         ->first();
+                    if ($productValidation->serie == $request->serie) {
+                        throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
+                    }
+                    $productJpa->serie = $request->serie;
+                }
+            } else {
+                $productValidation = Product::select(['id', 'mac', 'serie'])
+                    ->where('mac', $request->mac)
+                    ->where('id', '!=', $request->id)
+                    ->orWhere('serie', $request->serie)
+                    ->where('id', '!=', $request->id)
+                    ->first();
 
-            //     if ($productValidation) {
-            //         if ($productValidation->mac == $request->mac) {
-            //             throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
-            //         }
-            //         if ($productValidation->serie == $request->serie) {
-            //             throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
-            //         }
-            //     }
-            // }
+                if ($productValidation) {
+                    if ($productValidation->mac == $request->mac) {
+                        throw new Exception("Ya existe otro un produto con el número MAC: " . $request->mac);
+                    }
+                    if ($productValidation->serie == $request->serie) {
+                        throw new Exception("Ya existe otro un produto con el número de serie: " . $request->serie);
+                    }
+                }
+
+                $productJpa->mac = $request->mac;
+                $productJpa->serie = $request->serie;
+            }
             
-            $productJpa->mac = $request->mac;
-            $productJpa->serie = $request->serie;
             if (isset($request->num_gia)) {
                 $productJpa->num_gia = $request->num_gia;
             }
