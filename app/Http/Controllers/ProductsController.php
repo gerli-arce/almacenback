@@ -413,6 +413,11 @@ class ProductsController extends Controller
                 $productJpa->warranty = $request->warranty;
             }
 
+            if (isset($request->mount)) {
+                $productJpa->mount = $request->mount;
+            }
+
+
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->_update_user = $userid;
 

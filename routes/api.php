@@ -27,6 +27,7 @@ use App\Http\Controllers\SalesProductsController;
 use App\Http\Controllers\FauldController;
 use App\Http\Controllers\TowerController;
 use App\Http\Controllers\KeysesController;
+use App\Http\Controllers\EjecutivesController;
 use App\Http\Controllers\connect;
 
 /*
@@ -125,6 +126,10 @@ Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
+
+// EJECUTIVE
+Route::post('/ejecutives/search', [EjecutivesController::class, 'search']);
+Route::post('/ejecutives/paginate', [EjecutivesController::class, 'paginate']);
 
 // USERS
 Route::get('/users', [UserController::class, 'index']);

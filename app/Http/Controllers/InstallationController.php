@@ -22,14 +22,13 @@ class InstallationController extends Controller
     {
         $response = new Response();
         try {
-
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
 
             if (!gValidate::check($role->permissions, $branch, 'install_pending', 'create')) {
-                throw new Exception('No tienes permisos para listar instalaciones');
+                throw new Exception('No tienes permisos para agregar instalaciones');
             }
 
             if (!isset($request->_client) ||
@@ -87,6 +86,7 @@ class InstallationController extends Controller
                     $detailSale = new DetailSale();
                     $detailSale->_product = $product['id'];
                     $detailSale->mount = $product['mount'];
+                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -217,6 +217,7 @@ class InstallationController extends Controller
                 'products.num_gia AS product__num_gia',
                 'products.status_product AS product__status_product',
                 'detail_sales.mount as mount',
+                'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
             ])
@@ -315,8 +316,9 @@ class InstallationController extends Controller
                                 }
                             }
                             $detailSale->mount = $product['mount'];
-                            $detailSale->save();
                         }
+                        $detailSale->description = $product['description'];
+                        $detailSale->save();
 
                         if (isset($request->status_sale)) {
                             if ($request->status_sale == 'CULMINADA') {
