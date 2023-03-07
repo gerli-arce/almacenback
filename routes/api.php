@@ -247,7 +247,7 @@ Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 // RECORDS
 
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
-Route::post('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
+Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
+use App\gLibraries\gJSON;
 use App\gLibraries\gValidate;
 use App\Models\Response;
+use App\Models\ViewDetailSale;
 use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
@@ -119,57 +120,12 @@ class RecordsController extends Controller
             //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             // }
 
-            $detailSaleJpa = DetailSale::select([
-                'detail_sales.id as id',
-                'products.id AS product__id',
-                'products.type AS product__type',
-                'branches.id AS product__branch__id',
-                'branches.name AS product__branch__name',
-                'branches.correlative AS product__branch__correlative',
-                'brands.id AS product__brand__id',
-                'brands.correlative AS product__brand__correlative',
-                'brands.brand AS product__brand__brand',
-                'brands.relative_id AS product__brand__relative_id',
-                'categories.id AS product__category__id',
-                'categories.category AS product__category__category',
-                'models.id AS product__model__id',
-                'models.model AS product__model__model',
-                'models.relative_id AS product__model__relative_id',
-                'products.relative_id AS product__relative_id',
-                'products.mac AS product__mac',
-                'products.serie AS product__serie',
-                'products.price_sale AS product__price_sale',
-                'products.currency AS product__currency',
-                'products.num_gia AS product__num_gia',
-                'products.status_product AS product__status_product',
-                'detail_sales.mount as mount',
-                'detail_sales.description as description',
-                'detail_sales._sales_product as _sales_product',
-                'detail_sales.status as status',
-            ])
-                ->join('products', 'detail_sales._product', 'products.id')
-                ->join('branches', 'products._branch', 'branches.id')
-                ->join('brands', 'products._brand', 'brands.id')
-                ->join('categories', 'products._category', 'categories.id')
-                ->join('models', 'products._model', 'models.id')
-                ->whereNotNull('detail_sales.status')
-                ->where('products.id', $idProduct)
-                ->get();
-
-            $details = array();
-            foreach ($detailSaleJpa as $detailJpa) {
-                $detail = gJSON::restore($detailJpa->toArray(), '__');
-                $details[] = $detail;
-            }
-
-            $InstallationJpa = viewInstallations::find($detailSaleJpa->_sales_product);
-
-            $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
-            $installJpa['products'] = $details;
+            $detailSaleJpa = ViewDetailSale::where('product__id', $idProduct)->first();
+            $detailtSale = gJSON::restore($detailSaleJpa->toArray(), '__');
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($installJpa);
+            $response->setData($detailtSale);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
