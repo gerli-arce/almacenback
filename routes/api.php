@@ -28,6 +28,7 @@ use App\Http\Controllers\FauldController;
 use App\Http\Controllers\TowerController;
 use App\Http\Controllers\KeysesController;
 use App\Http\Controllers\EjecutivesController;
+use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\connect;
 
 /*
@@ -166,8 +167,8 @@ Route::patch('/brands', [BrandController::class, 'update']);
 Route::delete('/brands', [BrandController::class, 'destroy']);
 Route::post('/brands/restore', [BrandController::class, 'restore']);
 Route::post('/brands/paginate', [BrandController::class, 'paginate']);
-Route::get('/brandsimg/{relative_id}/{zize}', [BrandController::class, 'image']);
 Route::post('/brands/search', [BrandController::class, 'search']);
+Route::get('/brandsimg/{relative_id}/{zize}', [BrandController::class, 'image']);
 
 // UNITIES
 Route::get('/unities', [UnityController::class, 'index']);
@@ -243,7 +244,10 @@ Route::post('/towers/restore', [TowerController::class, 'restore']);
 Route::post('/towers/paginate', [TowerController::class, 'paginate']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
+// RECORDS
 
+Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
+Route::post('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
