@@ -15,6 +15,118 @@ use Illuminate\Support\Facades\DB;
 
 class EjecutivesController extends Controller
 {
+
+    public function store(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'ejecutives', 'create')) {
+                throw new Exception('No tienes permisos para agregar ejecutivos');
+            }
+
+            if (
+                !isset($request->doc_type) ||
+                !isset($request->doc_number) ||
+                !isset($request->name) ||
+                !isset($request->lastname) ||
+                !isset($request->_branch)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            if (strlen($request->doc_number) != 8) {
+                throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
+            }
+
+            $userValidation = People::select(['doc_type', 'doc_number'])
+                ->where('doc_type', $request->doc_type)
+                ->where('doc_number', $request->doc_number)
+                ->first();
+
+            if ($userValidation) {
+                throw new Exception("Esta registro ya existe");
+            }
+
+            $peopleJpa = new People();
+            $peopleJpa->doc_type = $request->doc_type;
+            $peopleJpa->doc_number = $request->doc_number;
+            $peopleJpa->name = $request->name;
+            $peopleJpa->lastname = $request->lastname;
+            $peopleJpa->relative_id = guid::short();
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $peopleJpa->image_type = $request->image_type;
+                    $peopleJpa->image_mini = base64_decode($request->image_mini);
+                    $peopleJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $peopleJpa->image_type = null;
+                    $peopleJpa->image_mini = null;
+                    $peopleJpa->image_full = null;
+                }
+            }
+
+            if ($request->birthdate) {
+                $peopleJpa->birthdate = $request->birthdate;
+            }
+
+            if ($request->gender) {
+                $peopleJpa->gender = $request->gender;
+            }
+
+            if ($request->email) {
+                $peopleJpa->email = $request->email;
+            }
+
+            if ($request->phone) {
+                $peopleJpa->phone = $request->phone;
+            }
+
+            if ($request->ubigeo) {
+                $peopleJpa->ubigeo = $request->ubigeo;
+            }
+
+            if ($request->address) {
+                $peopleJpa->address = $request->address;
+            }
+            $peopleJpa->_creation_user = $userid;
+            $peopleJpa->creation_date = gTrace::getDate('mysql');
+            $peopleJpa->_update_user = $userid;
+            $peopleJpa->update_date = gTrace::getDate('mysql');
+            $peopleJpa->type = "EJECUTIVE";
+            $peopleJpa->_branch = $request->_branch;
+
+            $peopleJpa->status = "1";
+
+            $peopleJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Ejecutivo agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
     public function search(Request $request)
     {
         $response = new Response();
@@ -172,6 +284,137 @@ class EjecutivesController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->where('branch__correlative',$branch)->count());
             $response->setData($people);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function update(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para actualizar personas');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $personJpa = People::find($request->id);
+
+            if (!$personJpa) {
+                throw new Exception("Esta persona no existe");
+            }
+
+            if (isset($request->doc_type) && isset($request->doc_number)) {
+                if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
+                    if (strlen($request->doc_number) != 11) {
+                        throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
+                    }
+                }
+                if ($request->doc_type == "DNI") {
+                    if (strlen($request->doc_number) != 8) {
+                        throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
+                    }
+                }
+                $personJpa->doc_type = $request->doc_type;
+                $personJpa->doc_number = $request->doc_number;
+            }
+
+            $userValidation = People::select(['id', 'doc_type', 'doc_number'])
+                ->where('doc_type', $request->doc_type)
+                ->where('doc_number', $request->doc_number)
+                ->where('id', '!=', $request->id)
+                ->first();
+
+            if ($userValidation) {
+                throw new Exception("Esta persona ya existe");
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $personJpa->image_type = $request->image_type;
+                    $personJpa->image_mini = base64_decode($request->image_mini);
+                    $personJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $personJpa->image_type = null;
+                    $personJpa->image_mini = null;
+                    $personJpa->image_full = null;
+                }
+            }
+
+            if (isset($request->name)) {
+                $personJpa->name = $request->name;
+            }
+
+            if (isset($request->lastname)) {
+                $personJpa->lastname = $request->lastname;
+            }
+
+            if (isset($request->birthdate)) {
+                $personJpa->birthdate = $request->birthdate;
+            }
+
+            if (isset($request->gender)) {
+                $personJpa->gender = $request->gender;
+            }
+
+            if (isset($request->email)) {
+                $personJpa->email = $request->email;
+            }
+
+            if (isset($request->phone)) {
+                $personJpa->phone = $request->phone;
+            }
+
+            if (isset($request->ubigeo)) {
+                $personJpa->ubigeo = $request->ubigeo;
+            }
+
+            if (isset($request->address)) {
+                $personJpa->address = $request->address;
+            }
+
+
+            if (isset($request->_branch)) {
+                $personJpa->_branch = $request->_branch;
+            }
+
+            if (gValidate::check($role->permissions, $branch, 'technicals', 'change_status')) {
+                if (isset($request->status)) {
+                    $personJpa->status = $request->status;
+                }
+            }
+
+            $personJpa->_update_user = $userid;
+            $personJpa->update_date = gTrace::getDate('mysql');
+
+            $personJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('La persona se a actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
