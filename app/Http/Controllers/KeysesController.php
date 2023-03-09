@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
-use App\gLibraries\gJSON;
 use App\gLibraries\gValidate;
-use App\Models\People;
 use App\Models\Keyses;
 use App\Models\OperationKeys;
-use App\Models\ViewKeys;
+use App\Models\People;
 use App\Models\Response;
+use App\Models\ViewKeys;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\DB;
 class KeysesController extends Controller
 {
 
-    public function lendKey(Request $request){
+    public function lendKey(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -34,33 +35,144 @@ class KeysesController extends Controller
                 !isset($request->lend_person) ||
                 !isset($request->lend_date) ||
                 !isset($request->lend_hour) ||
-                !isset($request->lend_key) 
+                !isset($request->lend_key)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
             $operationKey = new OperationKeys();
             $operationKey->type_operation = "LEND";
-            $operationKey->date_operation = $request->lend_date.' '.$request->lend_hour;
+            $operationKey->date_operation = $request->lend_date . ' ' . $request->lend_hour;
             $operationKey->date_execute_operation = gTrace::getDate('mysql');
             $operationKey->_user_operation = $userid;
             $operationKey->_key = $request->lend_key['id'];
             $operationKey->_person_operation = $request->lend_person;
-            if(isset($request->lend_reazon)){
+            if (isset($request->lend_reazon)) {
                 $operationKey->reazon = $request->lend_reazon;
             }
             $operationKey->save();
 
             $personJpa = People::find($request->lend_person);
-            $name_person_lend = $personJpa->name.' '.$personJpa->lastname;
+            $name_person_lend = $personJpa->name . ' ' . $personJpa->lastname;
 
             $keyJpa = Keyses::find($request->lend_key['id']);
             $keyJpa->status_key = "EN USO";
-            $keyJpa->description = "Se presto a ".$name_person_lend." la fecha: ".$request->lend_date.' '.$request->lend_hour." por la razon de: ". $request->lend_reazon;
+            $keyJpa->description = "Se presto a " . $name_person_lend . " la fecha: " .
+            $request->lend_date . ' ' . $request->lend_hour . " por la razon de: " .
+            $request->lend_reazon;
+
             $keyJpa->save();
-            
+
             $response->setStatus(200);
-            $response->setMessage("La llave se a agregado correctamente");
+            $response->setMessage("El prestamo de la llave se realizo correctamente");
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function returnKey(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+                throw new Exception("No tienes permisos para actualizar llaves en el sistema");
+            }
+
+            if (
+                !isset($request->return_person) ||
+                !isset($request->return_date) ||
+                !isset($request->return_hour) ||
+                !isset($request->return_key)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $operationKey = new OperationKeys();
+            $operationKey->type_operation = "RETURN";
+            $operationKey->date_operation = $request->return_date . ' ' . $request->return_hour;
+            $operationKey->date_execute_operation = gTrace::getDate('mysql');
+            $operationKey->_user_operation = $userid;
+            $operationKey->_key = $request->return_key['id'];
+            $operationKey->_person_operation = $request->return_person;
+            if (isset($request->return_reazon)) {
+                $operationKey->reazon = $request->return_reazon;
+            }
+            $operationKey->save();
+
+            $personJpa = People::find($request->return_person);
+            $name_person_return = $personJpa->name . ' ' . $personJpa->lastname;
+
+            $keyJpa = Keyses::find($request->return_key['id']);
+            $keyJpa->status_key = "DISPONIBLE";
+            $keyJpa->description =  $name_person_return . " devolvio la llave, en la fecha: " .
+            $request->return_date . ' ' . $request->return_hour . " por la razon de: " .
+            $request->return_reazon;
+
+            $keyJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage("La devolución de la llave se realizo correctamente");
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function searchLendByKey(Request $request, $idkey)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keyses', 'read')) {
+                throw new Exception("No tienes permisos para leer llaves en el sistema");
+            }
+
+            if (
+                !isset($idkey)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $operationKey = OperationKeys::select([
+                'operation_keys.id as id',
+                'operation_keys.type_operation as type_operation',
+                'operation_keys.date_operation as date_operation',
+                'operation_keys.date_execute_operation as date_execute_operation',
+                'operation_keys.reazon as reazon',
+                'people.id as person__id',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])->where('_key', $idkey)
+                            ->join('people','operation_keys._person_operation', 'people.id')
+                              ->where('type_operation', 'LEND')
+                              ->orderByDesc('id')
+                              ->first();
+
+            $keyOperationLen = gJSON::restore($operationKey->toArray(), '__');
+
+            $response->setStatus(200);
+            $response->setMessage("Operación correcta");
+            $response->setData($keyOperationLen);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -90,7 +202,7 @@ class KeysesController extends Controller
                 !isset($request->responsible) ||
                 !isset($request->date_entry) ||
                 !isset($request->price) ||
-                !isset($request->duplicate) 
+                !isset($request->duplicate)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -119,7 +231,7 @@ class KeysesController extends Controller
             $keysesJpa->address = $request->address;
             $keysesJpa->relative_id = guid::short();
             $keysesJpa->status_key = "DISPONIBLE";
-          
+
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -241,17 +353,16 @@ class KeysesController extends Controller
                 }
             });
 
-            
             $iTotalDisplayRecords = $query->count();
             $keysJpa = $query
-            ->skip($request->start)
-            ->take($request->length)
-            ->get();
-            
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
             $keys = [];
-            foreach($keysJpa as $keyJpa){
-                $key = gJSON::restore($keyJpa->toArray(),'__');
-                $keys[] =$key;
+            foreach ($keysJpa as $keyJpa) {
+                $key = gJSON::restore($keyJpa->toArray(), '__');
+                $keys[] = $key;
             }
 
             $response->setStatus(200);
@@ -324,7 +435,6 @@ class KeysesController extends Controller
         $response = new Response();
         try {
 
-            
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
@@ -333,7 +443,7 @@ class KeysesController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
                 throw new Exception('No tienes permisos para actualizar las llaves');
             }
-            
+
             if (
                 !isset($request->id)
             ) {
@@ -374,23 +484,23 @@ class KeysesController extends Controller
                     $keysJpa->image_full = null;
                 }
             }
-            if(isset($request->price)){
+            if (isset($request->price)) {
                 $keysJpa->price = $request->price;
             }
 
-            if(isset($request->address)){
+            if (isset($request->address)) {
                 $keysJpa->address = $request->address;
             }
 
-            if(isset($request->responsible)){
+            if (isset($request->responsible)) {
                 $keysJpa->responsible = $request->responsible;
             }
 
-            if(isset($request->duplicate)){
+            if (isset($request->duplicate)) {
                 $keysJpa->duplicate = $request->duplicate;
             }
 
-            if(isset($request->date_entry)){
+            if (isset($request->date_entry)) {
                 $keysJpa->date_entry = $request->date_entry;
             }
 
@@ -424,7 +534,7 @@ class KeysesController extends Controller
                 $response->getStatus()
             );
         }
-     }
+    }
 
     public function destroy(Request $request)
     {
@@ -510,6 +620,5 @@ class KeysesController extends Controller
             );
         }
     }
-
 
 }

@@ -234,6 +234,8 @@ Route::delete('/keys', [KeysesController::class, 'destroy']);
 Route::post('/keys/restore', [KeysesController::class, 'restore']);
 Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
 Route::post('/keys/lendkey', [KeysesController::class, 'lendKey']);
+Route::post('/keys/returnkey', [KeysesController::class, 'returnKey']);
+Route::get('/keys/lend/{idkey}', [KeysesController::class, 'searchLendByKey']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
 
 // TOWER
