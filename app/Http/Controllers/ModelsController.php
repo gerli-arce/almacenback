@@ -372,8 +372,6 @@ class ModelsController extends Controller
                 throw new Exception('El modelo que deseas eliminar no existe');
             }
 
-            $modelsJpa->update_date = gTrace::getDate('mysql');
-            $modelsJpa->_update_user = $userid;
             $modelsJpa->status = null;
             $modelsJpa->save();
 
