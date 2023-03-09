@@ -376,6 +376,14 @@ class ProductsController extends Controller
             if (isset($request->num_gia)) {
                 $productJpa->num_gia = $request->num_gia;
             }
+            
+            if(isset($request->price_buy)){
+                $productJpa->price_buy = $request->price_buy;
+            }
+
+            if(isset($request->price_sale)){
+                $productJpa->price_sale = $request->price_sale;
+            }
 
             if (isset($request->status_product)) {
                 $productJpa->status_product = $request->status_product;
