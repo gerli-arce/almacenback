@@ -228,7 +228,9 @@ class KeysesController extends Controller
             $keysesJpa->date_entry = $request->date_entry;
             $keysesJpa->price = $request->price;
             $keysesJpa->duplicate = $request->duplicate;
-            $keysesJpa->address = $request->address;
+            if($request->address){
+                $keysesJpa->address = $request->address;
+            }
             $keysesJpa->relative_id = guid::short();
             $keysesJpa->status_key = "DISPONIBLE";
 

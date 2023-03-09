@@ -43,7 +43,7 @@ class ModelsController extends Controller
                 ->first();
 
             if ($modelValidation) {
-                throw new Exception("Escoja otro nombre para el modelo ");
+                throw new Exception("El modelo ya existe, escoja otro nombre para el modelo ");
             }
 
             $modelJpa = new Models();
