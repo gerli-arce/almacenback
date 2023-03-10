@@ -8,6 +8,7 @@ use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\EntryProducts;
+use App\Models\ProducByTechnical;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
@@ -26,7 +27,7 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            
+
             if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
@@ -88,10 +89,10 @@ class ProductsController extends Controller
                     $productJpa->mac = $product['mac'];
                     $productJpa->serie = $product['serie'];
                     $productJpa->mount = "1";
-                    if(isset($request->num_gia)){
+                    if (isset($request->num_gia)) {
                         $productJpa->num_gia = $request->num_gia;
                     }
-                    if(isset($request->num_bill)){
+                    if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
                     }
                     if (isset($request->warranty)) {
@@ -407,6 +408,46 @@ class ProductsController extends Controller
         }
     }
 
+    public function regusterProductByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (!isset($request->id) ||
+                !isset($request->products)) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            foreach ($request->products as $product) {
+                $productByTechnicalJpa = new ProducByTechnical();
+                $productByTechnicalJpa->_user = $userid;
+                $productByTechnicalJpa->_technical = $request->id;
+                $productByTechnicalJpa->_product = $product['id'];
+                $productByTechnicalJpa->mount = $product['mount'];
+                $productByTechnicalJpa->description = $product['description'];
+                $productByTechnicalJpa->date_add = gTrace::getDate('mysql');
+            }
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -475,19 +516,19 @@ class ProductsController extends Controller
                 $productJpa->mac = $request->mac;
                 $productJpa->serie = $request->serie;
             }
-            
+
             if (isset($request->num_gia)) {
                 $productJpa->num_gia = $request->num_gia;
             }
             if (isset($request->num_bill)) {
                 $productJpa->num_bill = $request->num_bill;
             }
-            
-            if(isset($request->price_buy)){
+
+            if (isset($request->price_buy)) {
                 $productJpa->price_buy = $request->price_buy;
             }
 
-            if(isset($request->price_sale)){
+            if (isset($request->price_sale)) {
                 $productJpa->price_sale = $request->price_sale;
             }
 
@@ -530,7 +571,6 @@ class ProductsController extends Controller
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
             }
-
 
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->_update_user = $userid;
@@ -580,6 +620,7 @@ class ProductsController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
+            $productJpa->mount = 0;
             $productJpa->_update_user = $userid;
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->status = null;
