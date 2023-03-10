@@ -623,4 +623,35 @@ class KeysesController extends Controller
         }
     }
 
+    public function RecordKey(Request $request, $idkey){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
+                throw new Exception('No tienes permisos para listar llaves');
+            }
+
+            $operatonsKeyJpa = OperationKeys::where('_key',$idkey)->orderBy('id', 'asc')->get();
+
+          
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($operatonsKeyJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+    
+
 }

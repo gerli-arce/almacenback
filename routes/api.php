@@ -105,6 +105,7 @@ Route::delete('/people', [PeopleController::class, 'delete']);
 Route::post('/people/search', [PeopleController::class, 'search']);
 Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
+Route::get('/people/search/{id}', [PeopleController::class, 'searchById']);
 Route::get('/image_person/{relative_id}/{zize}', [PeopleController::class, 'image']);
 
 // PROVIDERS
@@ -235,6 +236,7 @@ Route::post('/keys/restore', [KeysesController::class, 'restore']);
 Route::post('/keys/paginate', [KeysesController::class, 'paginate']);
 Route::post('/keys/lendkey', [KeysesController::class, 'lendKey']);
 Route::post('/keys/returnkey', [KeysesController::class, 'returnKey']);
+Route::get('/keys/record/{idkey}', [KeysesController::class, 'RecordKey']);
 Route::get('/keys/lend/{idkey}', [KeysesController::class, 'searchLendByKey']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
 
