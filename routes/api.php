@@ -204,6 +204,7 @@ Route::patch('/products', [ProductsController::class, 'update']);
 Route::delete('/products', [ProductsController::class, 'destroy']);
 Route::post('/products/restore', [ProductsController::class, 'restore']);
 Route::post('/products/paginate', [ProductsController::class, 'paginate']);
+Route::post('/products/materials/paginate', [ProductsController::class, 'paginateMaterials']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
