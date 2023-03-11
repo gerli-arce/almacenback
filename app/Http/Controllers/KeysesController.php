@@ -27,7 +27,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'update')) {
                 throw new Exception("No tienes permisos para actualizar llaves en el sistema");
             }
 
@@ -85,7 +85,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'update')) {
                 throw new Exception("No tienes permisos para actualizar llaves en el sistema");
             }
 
@@ -143,7 +143,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
                 throw new Exception("No tienes permisos para leer llaves en el sistema");
             }
 
@@ -193,7 +193,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'create')) {
                 throw new Exception("No tienes permisos para agregar llaves al sistema");
             }
 
@@ -442,7 +442,7 @@ class KeysesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'update')) {
                 throw new Exception('No tienes permisos para actualizar las llaves');
             }
 
@@ -514,7 +514,7 @@ class KeysesController extends Controller
                 $keysJpa->status_key = $request->status_key;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'keyses', 'change_status')) {
+            if (gValidate::check($role->permissions, $branch, 'keys', 'change_status')) {
                 if (isset($request->status)) {
                     $keysJpa->status = $request->status;
                 }
@@ -547,7 +547,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'delete_restore')) {
                 throw new Exception('No tienes permisos para eliminar llaves');
             }
 
@@ -589,7 +589,7 @@ class KeysesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'keyses', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'delete_restore')) {
                 throw new Exception('No tienes permisos para restaurar llaves');
             }
 

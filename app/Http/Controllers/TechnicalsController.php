@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Stock;
+use App\Models\ViewProductByTechnical;
 use App\Models\ProductByTechnical;
 use App\Models\Product;
 use App\Models\People;
@@ -169,7 +170,6 @@ class TechnicalsController extends Controller
         }
     }
 
-    
     public function registerProductByTechnical(Request $request)
     {
         $response = new Response();
@@ -223,6 +223,39 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function getProductsByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicalls', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
+            }
+
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->get();
+
+            $products = array();
+            foreach ($productsJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $product;
+            }
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($products);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
     public function paginate(Request $request)
     {
         $response = new Response();

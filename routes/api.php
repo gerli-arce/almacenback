@@ -128,6 +128,7 @@ Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
+Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 
 // EJECUTIVE
