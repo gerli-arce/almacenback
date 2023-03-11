@@ -326,8 +326,7 @@ class KeysesController extends Controller
                 throw new Exception('No tienes permisos para listar llaves');
             }
 
-            $query = ViewKeys::select(['*'])
-                ->orderBy($request->order['column'], $request->order['dir']);
+            $query = ViewKeys::orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -342,13 +341,16 @@ class KeysesController extends Controller
                     $q->where('name', $type, $value);
                 }
                 if ($column == 'responsible__name' || $column == '*') {
-                    $q->where('responsible__name', $type, $value);
+                    $q->orwhere('responsible__name', $type, $value);
+                }
+                if ($column == 'responsible__lastname' || $column == '*') {
+                    $q->orwhere('responsible__lastname', $type, $value);
                 }
                 if ($column == 'date_entry' || $column == '*') {
-                    $q->where('date_entry', $type, $value);
+                    $q->orwhere('date_entry', $type, $value);
                 }
                 if ($column == 'duplicate' || $column == '*') {
-                    $q->where('duplicate', $type, $value);
+                    $q->orwhere('duplicate', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);

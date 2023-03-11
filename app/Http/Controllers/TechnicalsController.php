@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Stock;
+use App\Models\RecordProductByTechnical;
 use App\Models\ViewProductByTechnical;
 use App\Models\ProductByTechnical;
 use App\Models\Product;
@@ -184,13 +185,23 @@ class TechnicalsController extends Controller
             }
 
             if (!isset($request->id) ||
-                !isset($request->products)) {
+                !isset($request->details)) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
-            foreach ($request->products as $product) {
-                
-                $productJpa = Product::find($product['id']);
+            foreach ($request->details as $product) {
+
+                $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                $recordProductByTechnicalJpa->_user = $userid;
+                $recordProductByTechnicalJpa->_technical = $request->id;
+                $recordProductByTechnicalJpa->_product =  $product['product']['id'];
+                $recordProductByTechnicalJpa->type_operation = "ADD";
+                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                $recordProductByTechnicalJpa->mount = $product['mount'];
+                $recordProductByTechnicalJpa->description = $product['description'];
+                $recordProductByTechnicalJpa->save();
+
+                $productJpa = Product::find($product['product']['id']);
 
                 $mount = $productJpa->mount - $product['mount'];
                 $productJpa->mount = $mount;
@@ -201,14 +212,11 @@ class TechnicalsController extends Controller
                 $productJpa->save();
 
                 $productByTechnicalJpa = new ProductByTechnical();
-                $productByTechnicalJpa->_user = $userid;
                 $productByTechnicalJpa->_technical = $request->id;
-                $productByTechnicalJpa->_product = $product['id'];
+                $productByTechnicalJpa->_product = $product['product']['id'];
                 $productByTechnicalJpa->mount = $product['mount'];
                 $productByTechnicalJpa->description = $product['description'];
-                $productByTechnicalJpa->date_add = gTrace::getDate('mysql');
                 $productByTechnicalJpa->save();
-                
             }
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');
