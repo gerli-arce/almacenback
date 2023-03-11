@@ -198,6 +198,7 @@ class TechnicalsController extends Controller
                 $stock = Stock::where('_model',$productJpa->_model)->first();
                 $stock->mount = $mount;
                 $stock->save();
+                $productJpa->save();
 
                 $productByTechnicalJpa = new ProductByTechnical();
                 $productByTechnicalJpa->_user = $userid;

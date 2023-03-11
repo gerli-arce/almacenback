@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class ProductByTechnical extends Model
 {
     static $rules = [];
-    public $timestamp = false;
+    public $timestamps = false;
     protected $table = "product_by_technical";
 }

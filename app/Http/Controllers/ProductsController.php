@@ -147,7 +147,12 @@ class ProductsController extends Controller
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
                     $material->price_sale = $request->price_sale;
-                    $material->num_gia = $request->num_gia;
+                    if (isset($request->num_gia)) {
+                        $productJpa->num_gia = $request->num_gia;
+                    }
+                    if (isset($request->num_bill)) {
+                        $productJpa->num_bill = $request->num_bill;
+                    }
                     if (isset($request->warranty)) {
                         $material->warranty = $request->warranty;
                     }
@@ -181,7 +186,15 @@ class ProductsController extends Controller
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
                     $productJpa->price_sale = $request->price_sale;
-                    $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_gia)) {
+                        $productJpa->num_gia = $request->num_gia;
+                    }
+                    if (isset($request->num_bill)) {
+                        $productJpa->num_bill = $request->num_bill;
+                    }
+                    if (isset($request->warranty)) {
+                        $material->warranty = $request->warranty;
+                    }
                     if (isset($request->warranty)) {
                         $productJpa->warranty = $request->warranty;
                     }
@@ -530,6 +543,9 @@ class ProductsController extends Controller
 
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
+                $stock = Stock::where('_model',$productJpa->_model)->first();
+                $stock->mount = $request->mount;
+                $stock->save();
             }
 
             $productJpa->update_date = gTrace::getDate('mysql');
