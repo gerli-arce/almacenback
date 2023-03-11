@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProducByTechnical extends Model
+class ProductByTechnical extends Model
 {
     static $rules = [];
     public $timestamp = false;

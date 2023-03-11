@@ -8,7 +8,7 @@ use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\EntryProducts;
-use App\Models\ProducByTechnical;
+use App\Models\ProductByTechnical;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
@@ -400,46 +400,6 @@ class ProductsController extends Controller
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
-    public function regusterProductByTechnical(Request $request)
-    {
-        $response = new Response();
-        try {
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-
-            if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
-                throw new Exception('No tienes permisos para crear productos');
-            }
-
-            if (!isset($request->id) ||
-                !isset($request->products)) {
-                throw new Exception("Error: No deje campos vaciós");
-            }
-
-            foreach ($request->products as $product) {
-                $productByTechnicalJpa = new ProducByTechnical();
-                $productByTechnicalJpa->_user = $userid;
-                $productByTechnicalJpa->_technical = $request->id;
-                $productByTechnicalJpa->_product = $product['id'];
-                $productByTechnicalJpa->mount = $product['mount'];
-                $productByTechnicalJpa->description = $product['description'];
-                $productByTechnicalJpa->date_add = gTrace::getDate('mysql');
-            }
-            $response->setStatus(200);
-            $response->setMessage('Productos agregados correctamente al stock del técnico');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
