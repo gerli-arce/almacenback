@@ -6,14 +6,14 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\Stock;
-use App\Models\RecordProductByTechnical;
-use App\Models\ViewProductByTechnical;
-use App\Models\ProductByTechnical;
-use App\Models\Product;
 use App\Models\People;
+use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
 use App\Models\Response;
+use App\Models\Stock;
 use App\Models\ViewPeople;
+use App\Models\ViewProductByTechnical;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -194,7 +194,7 @@ class TechnicalsController extends Controller
                 $recordProductByTechnicalJpa = new RecordProductByTechnical();
                 $recordProductByTechnicalJpa->_user = $userid;
                 $recordProductByTechnicalJpa->_technical = $request->id;
-                $recordProductByTechnicalJpa->_product =  $product['product']['id'];
+                $recordProductByTechnicalJpa->_product = $product['product']['id'];
                 $recordProductByTechnicalJpa->type_operation = "ADD";
                 $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
                 $recordProductByTechnicalJpa->mount = $product['mount'];
@@ -206,7 +206,7 @@ class TechnicalsController extends Controller
                 $mount = $productJpa->mount - $product['mount'];
                 $productJpa->mount = $mount;
 
-                $stock = Stock::where('_model',$productJpa->_model)->first();
+                $stock = Stock::where('_model', $productJpa->_model)->first();
                 $stock->mount = $mount;
                 $stock->save();
                 $productJpa->save();
@@ -222,7 +222,67 @@ class TechnicalsController extends Controller
             $response->setMessage('Productos agregados correctamente al stock del técnico');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'ln'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateStockTechnicalByProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (!isset($request->product) ||
+                !isset($request->technical)||
+                !isset($request->mount)) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $productByTechnicalJpa =  ProductByTechnical::where('_technical',$request->technical['id'])
+            ->where('_product', $request->product['id'])->first();
+
+            $mountNew = $productByTechnicalJpa->mount +  $request->mount;
+            $productByTechnicalJpa->mount = $mountNew;
+
+            $recordProductByTechnicalJpa = new RecordProductByTechnical();
+            $recordProductByTechnicalJpa->_user = $userid;
+            $recordProductByTechnicalJpa->_technical = $request->id;
+            $recordProductByTechnicalJpa->_product = $request->product['id'];
+            $recordProductByTechnicalJpa->type_operation = "ADD";
+            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+            $recordProductByTechnicalJpa->mount = $request->mount;
+            $recordProductByTechnicalJpa->description = $request->description;
+            $recordProductByTechnicalJpa->save();
+
+            $productJpa = Product::find($request->product['id']);
+
+            $mount = $productJpa->mount - $request->mount;
+            $productJpa->mount = $mount;
+
+            $stock = Stock::where('_model', $productJpa->_model)->first();
+            $stock->mount = $mount;
+            $stock->save();
+
+            $productJpa->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -309,7 +369,7 @@ class TechnicalsController extends Controller
             ])
                 ->orderBy($request->order['column'], $request->order['dir'])
                 ->where('type', 'TECHNICAL')
-                ->where('branch__correlative',$branch);
+                ->where('branch__correlative', $branch);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
@@ -378,7 +438,7 @@ class TechnicalsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->where('branch__correlative',$branch)->count());
+            $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->where('branch__correlative', $branch)->count());
             $response->setData($people);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -492,7 +552,6 @@ class TechnicalsController extends Controller
             if (isset($request->address)) {
                 $personJpa->address = $request->address;
             }
-
 
             if (isset($request->_branch)) {
                 $personJpa->_branch = $request->_branch;
