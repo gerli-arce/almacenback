@@ -122,7 +122,6 @@ Route::post('/providers/search', [ProvidersController::class, 'search']);
 // TECHNICALLS
 Route::get('/technicals', [TechnicalsController::class, 'index']);
 Route::post('/technicals', [TechnicalsController::class, 'store']);
-Route::post('/technicalss', [TechnicalsController::class, 'store']);
 Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
