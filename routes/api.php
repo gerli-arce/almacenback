@@ -209,6 +209,7 @@ Route::delete('/products', [ProductsController::class, 'destroy']);
 Route::post('/products/restore', [ProductsController::class, 'restore']);
 Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 Route::post('/products/materials/paginate', [ProductsController::class, 'paginateMaterials']);
+Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
