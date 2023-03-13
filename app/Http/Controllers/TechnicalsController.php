@@ -180,7 +180,7 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
 
@@ -240,20 +240,20 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
 
             if (!isset($request->product) ||
-                !isset($request->technical)||
+                !isset($request->technical) ||
                 !isset($request->mount)) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
-            $productByTechnicalJpa =  ProductByTechnical::where('_technical',$request->technical['id'])
-            ->where('_product', $request->product['id'])->first();
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('_product', $request->product['id'])->first();
 
-            $mountNew = $productByTechnicalJpa->mount +  $request->mount;
+            $mountNew = $productByTechnicalJpa->mount + $request->mount;
             $productByTechnicalJpa->mount = $mountNew;
 
             $recordProductByTechnicalJpa = new RecordProductByTechnical();
@@ -280,6 +280,64 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa->save();
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function recordTakeOutProductByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (!isset($request->product) ||
+                !isset($request->technical) ||
+                !isset($request->reazon) ||
+                !isset($request->mount)) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('_product', $request->product['id'])
+                ->first();
+
+            $mountNew = $productByTechnicalJpa->mount - $request->mount;
+            if(intval($mountNew)<0){
+                throw new Exception("Error: no puede sacar una cantidad superior a la que tiene en el stock");
+            }
+            $productByTechnicalJpa->mount = $mountNew;
+
+            $recordProductByTechnicalJpa = new RecordProductByTechnical();
+            $recordProductByTechnicalJpa->_user = $userid;
+            $recordProductByTechnicalJpa->_technical = $request->id;
+            $recordProductByTechnicalJpa->_product = $request->product['id'];
+            if($request->reazon == "ILLFATED"){
+                $recordProductByTechnicalJpa->type_operation = "ILLFATED";
+            }else{
+                $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+            }
+            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+            $recordProductByTechnicalJpa->mount = $request->mount;
+            $recordProductByTechnicalJpa->description = $request->description;
+            $recordProductByTechnicalJpa->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Salida de productos registrados correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
