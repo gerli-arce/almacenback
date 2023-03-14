@@ -1,20 +1,22 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Stock;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
+use App\Models\Stock;
 use App\Models\viewInstallations;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 
 class InstallationController extends Controller
 {
@@ -54,9 +56,10 @@ class InstallationController extends Controller
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
 
-            if(isset($request->description)){
+            if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
+
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
             $salesProduct->_update_user = $userid;
@@ -66,25 +69,37 @@ class InstallationController extends Controller
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
-                    $productJpa = Product::find($product['id']);
+                    $productJpa = Product::find($product['product']['id']);
 
-                    if ($product['type'] == "MATERIAL") {
-                        $mount = $productJpa->mount - $product['mount'];
-                        $productJpa->mount = $mount;
+                    if ($product['product']['type'] == "MATERIAL") {
 
-                        $stock = Stock::where('_model',$productJpa->_model)->first();
-                        $stock->mount = $mount;
-                        $stock->save();
+                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                            ->where('_product', $product['product']['id'])->first();
+                        $mountNew = $productByTechnicalJpa->mount - $product['mount'];
+                        $productByTechnicalJpa->mount = $mountNew;
+                        $productByTechnicalJpa->save();
+
+                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                        $recordProductByTechnicalJpa->_user = $userid;
+                        $recordProductByTechnicalJpa->_technical = $request->_technical;
+                        $recordProductByTechnicalJpa->_client = $request->_client;
+                        $recordProductByTechnicalJpa->_product = $productJpa->id;
+                        $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                        $recordProductByTechnicalJpa->mount = $product['mount'];
+                        $recordProductByTechnicalJpa->description = $product['description'];
+                        $recordProductByTechnicalJpa->save();
+
                     } else {
                         $productJpa->status_product = "VENDIENDO";
-                        $stock = Stock::where('_model',$productJpa->_model)->first();
+                        $stock = Stock::where('_model', $productJpa->_model)->first();
                         $stock->mount = intval($stock->mount) - 1;
                         $stock->save();
+                        $productJpa->save();
                     }
-                    $productJpa->save();
 
                     $detailSale = new DetailSale();
-                    $detailSale->_product = $product['id'];
+                    $detailSale->_product = $productJpa->id;
                     $detailSale->mount = $product['mount'];
                     $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
@@ -96,7 +111,7 @@ class InstallationController extends Controller
             $response->setMessage('Instalación agregada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -327,7 +342,7 @@ class InstallationController extends Controller
                                 }
 
                                 if (
-                                    isset($request->image_qr) 
+                                    isset($request->image_qr)
                                 ) {
                                     $salesProduct->image_type = $request->image_type;
                                     $salesProduct->image_qr = base64_decode($request->image_qr);
@@ -414,7 +429,7 @@ class InstallationController extends Controller
                     $q->orWhere('date_sale', $type, $value);
                 }
             })
-            ->where('type_operation__operation', 'INSTALACION')
+                ->where('type_operation__operation', 'INSTALACION')
                 ->where('status_sale', 'CULMINADA');
             $iTotalDisplayRecords = $query->count();
 
@@ -473,10 +488,17 @@ class InstallationController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $mount = intval($request->mount);
-                $productJpa->mount = intval($productJpa->mount) + $mount;
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                    ->where('_product', $detailSale->_product)->first();
+                $mountNew = $productByTechnicalJpa->mount + $request->mount;
+                $productByTechnicalJpa->mount = $mountNew;
+                $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->status_product = "NUEVO";
+                $stock = Stock::where('_model', $productJpa->_model)->first();
+                $stock->mount = intval($stock->mount) + 1;
+                $stock->save();
+                $productJpa->save();
             }
 
             $detailSale->save();
@@ -496,7 +518,8 @@ class InstallationController extends Controller
         }
     }
 
-    public function delete(Request $request){
+    public function delete(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -516,15 +539,15 @@ class InstallationController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
-            $detailsSalesJpa = DetailSale::where('_sales_product',$saleProductJpa->id)
-            ->get();
-            foreach($detailsSalesJpa as $detail){
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status','status_product','mount', 'type')->find($detail['_product']);
+                $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
                 $productJpa->status_product = "DISPONIBLE";
-                if($productJpa->type == "MATERIAL"){
-                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']); 
+                if ($productJpa->type == "MATERIAL") {
+                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']);
                 }
                 $productJpa->save();
                 $detailSale->save();
