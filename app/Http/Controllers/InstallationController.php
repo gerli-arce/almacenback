@@ -27,7 +27,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'create')) {
                 throw new Exception('No tienes permisos para agregar instalaciones');
             }
 
@@ -115,7 +115,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             }
 
@@ -265,7 +265,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'create')) {
                 throw new Exception('No tienes permisos para listar modelos');
             }
 

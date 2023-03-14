@@ -123,6 +123,8 @@ class ProductsController extends Controller
                 $material = Product::select([
                     'id',
                     'mount',
+                    'num_gia',
+                    'num_bill',
                     '_model',
                     '_category',
                     '_brand',
@@ -131,7 +133,7 @@ class ProductsController extends Controller
                     ->where('_category', $request->_category)
                     ->where('_brand', $request->_brand)
                     ->first();
-                if ($material) {
+                if (isset($material)) {
                     $mount_old = $material->mount;
                     $mount_new = $mount_old + $request->mount;
 
@@ -147,10 +149,10 @@ class ProductsController extends Controller
                     $material->price_buy = $request->price_buy;
                     $material->price_sale = $request->price_sale;
                     if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                        $material->num_gia = $request->num_gia;
                     }
                     if (isset($request->num_bill)) {
-                        $productJpa->num_bill = $request->num_bill;
+                        $material->num_bill = $request->num_bill;
                     }
                     if (isset($request->warranty)) {
                         $material->warranty = $request->warranty;
@@ -221,7 +223,7 @@ class ProductsController extends Controller
             $response->setMessage('Producto agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().', ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
