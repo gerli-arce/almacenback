@@ -82,6 +82,7 @@ class ProductsController extends Controller
                     $productJpa->_category = $request->_category;
                     $productJpa->_supplier = $request->_supplier;
                     $productJpa->_model = $request->_model;
+                    $productJpa->_unity = $request->_unity;
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
                     $productJpa->price_sale = $request->price_sale;
@@ -144,6 +145,7 @@ class ProductsController extends Controller
                     $material->_category = $request->_category;
                     $material->_supplier = $request->_supplier;
                     $material->_model = $request->_model;
+                    $productJpa->_unity = $request->_unity;
                     $material->mount = $mount_new;
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
@@ -183,6 +185,7 @@ class ProductsController extends Controller
                     $productJpa->_category = $request->_category;
                     $productJpa->_supplier = $request->_supplier;
                     $productJpa->_model = $request->_model;
+                    $productJpa->_unity = $request->_unity;
                     $productJpa->mount = $request->mount;
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
@@ -591,6 +594,10 @@ class ProductsController extends Controller
             }
             if (isset($request->num_bill)) {
                 $productJpa->num_bill = $request->num_bill;
+            }
+
+            if(isset($request->_unity)){
+                $productJpa->_unity = $request->_unity;
             }
 
             if (isset($request->price_buy)) {

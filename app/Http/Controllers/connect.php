@@ -20,25 +20,14 @@ class connect extends Controller
         $response = new Response();
         try {
             
-            // $data = DB::connection('mysql_sisgein')
-            // ->table('kardex')
-            // ->get();
-            
-            $models = Models::select([
-                'id',
-                'model',
-                'relative_id'
-            ])->get();
-
-            foreach($models as $model){
-                $stock = new Stock();
-                $stock->_model = $model->id;
-                $stock->mount = '0';
-                $stock->stock_min = '5';
-                $stock->_branch ='1';
-                $stock->status = "1";
-                // $stock->save();
-            }
+            $data = DB::connection('mysql_sisgein')
+            ->table('unidades')
+            ->get();
+        
+            // foreach($data as $unity){
+            //     $unity
+            //     // $stock->save();
+            // }
 
             $response->setMessage('Operación correcta');
             $response->setStatus(200);
