@@ -29,6 +29,7 @@ use App\Http\Controllers\TowerController;
 use App\Http\Controllers\KeysesController;
 use App\Http\Controllers\EjecutivesController;
 use App\Http\Controllers\RecordsController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\connect;
 
 /*
@@ -54,6 +55,14 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
+
+
+// HOME
+Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
+Route::get('/providers/count', [HomeController::class, 'countProviders']);
+Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
+Route::get('/clients/count', [HomeController::class, 'countClients']);
+
 
 
 // SESSION
