@@ -179,6 +179,7 @@ Route::get('/unities', [UnityController::class, 'index']);
 Route::post('/unities', [UnityController::class, 'store']);
 Route::patch('/unities', [UnityController::class, 'update']);
 Route::delete('/unities', [UnityController::class, 'destroy']);
+Route::post('/unities/search', [UnityController::class, 'search']);
 Route::post('/unities/restore', [UnityController::class, 'restore']);
 Route::post('/unities/paginate', [UnityController::class, 'paginate']);
 

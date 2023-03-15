@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Unity;
 use App\Models\Response;
+use App\Models\Unity;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,21 +28,21 @@ class UnityController extends Controller
             if (
                 !isset($request->value) ||
                 !isset($request->acronym) ||
-                !isset($request->name) 
+                !isset($request->name)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityValidation = Unity::select(['acronym','name'])
-            ->where('acronym', $request->acronym)
-            ->orWhere('name', $request->name)
-            ->first();
+            $unityValidation = Unity::select(['acronym', 'name'])
+                ->where('acronym', $request->acronym)
+                ->orWhere('name', $request->name)
+                ->first();
 
             if ($unityValidation) {
-                if($unityValidation->acronym == $request->acronym){
+                if ($unityValidation->acronym == $request->acronym) {
                     throw new Exception("Escoja otro acronimo para la unidad");
                 }
-                if($unityValidation->name == $request->name){
+                if ($unityValidation->name == $request->name) {
                     throw new Exception("Escoja otro nombre para la marca");
                 }
             }
@@ -66,6 +65,43 @@ class UnityController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La unidad se a agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            // if (!gValidate::check($role->permissions, $branch, 'unities', 'read')) {
+            //     throw new Exception('No tienes permisos para listar unidades');
+            // }
+
+            $peopleJpa = Unity::select([
+                'id',
+                'acronym',
+                'name',
+            ])->whereNotNull('status')
+                ->WhereRaw("acronym LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

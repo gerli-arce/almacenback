@@ -321,16 +321,20 @@ class InstallationController extends Controller
                         $productJpa = Product::find($product['product']['id']);
                         $detailSale = DetailSale::find($product['id']);
                         if ($product['product']['type'] == "MATERIAL") {
+
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                                ->where('_product', $detailSale->_product)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productJpa->mount = intval($productJpa->mount) + $mount_dif;
+                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productJpa->mount = intval($productJpa->mount) - $mount_dif;
+                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
                                 }
                             }
                             $detailSale->mount = $product['mount'];
+                            $productByTechnicalJpa->save();
                         }
                         $detailSale->description = $product['description'];
                         $detailSale->save();
@@ -547,7 +551,11 @@ class InstallationController extends Controller
                 $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
                 $productJpa->status_product = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
-                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']);
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
+                        ->where('_product', $detail['_product'])->first();
+                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
+                    $productByTechnicalJpa->mount = $mountNew;
+                    $productByTechnicalJpa->save();
                 }
                 $productJpa->save();
                 $detailSale->save();
