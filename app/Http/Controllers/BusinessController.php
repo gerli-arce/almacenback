@@ -6,7 +6,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Response;
 use App\gLibraries\guid;
-use App\Models\Transports;
+use App\Models\Business;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,33 +22,33 @@ class BusinessController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'transports', 'create')) {
-                throw new Exception('No tienes permisos para agregar tipo de transporte');
+            if (!gValidate::check($role->permissions, $branch, 'business', 'create')) {
+                throw new Exception('No tienes permisos para agregar empresas');
             }
 
             if (
                 !isset($request->name) ||
-                !isset($request->doc_type) ||
-                !isset($request->doc_number) ||
-                !isset($request->phone_number)
+                !isset($request->ruc) 
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $roleValidation = Transports::select(['name'])->where('name', $request->name)->first();
-
-            if ($roleValidation) {
-                throw new Exception("Error: El tipo de transporte ya existe");
+            $businessValidation = Business::select(['name'])->where('name', $request->name)->first();
+            if ($businessValidation) {
+                throw new Exception("Error: El nombre de la empresa ya existe");
             }
 
-            $transportJpa = new Transports();
-            $transportJpa->name = $request->name;
-            $transportJpa->doc_type = $request->doc_type;
-            $transportJpa->doc_number = $request->doc_number;
-            $transportJpa->relative_id = guid::short();
-            $transportJpa->phone_number = $request->phone_number;
-            if (isset($request->phone_number_secondary)) {
-                $transportJpa->phone_number_secondary = $request->phone_number_secondary;
+            $businessJpa = new Business();
+            $businessJpa->name = $request->name;
+            $businessJpa->ruc = $request->ruc;
+            $businessJpa->relative_id = guid::short();
+
+            if (isset($request->business_name)) {
+                $businessJpa->business_name = $request->business_name;
+            }
+
+            if (isset($request->description)) {
+                $businessJpa->description = $request->description;
             }
 
             if (
@@ -61,21 +61,21 @@ class BusinessController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $transportJpa->image_type = $request->image_type;
-                    $transportJpa->image_mini = base64_decode($request->image_mini);
-                    $transportJpa->image_full = base64_decode($request->image_full);
+                    $businessJpa->image_type = $request->image_type;
+                    $businessJpa->image_mini = base64_decode($request->image_mini);
+                    $businessJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    $transportJpa->image_type = null;
-                    $transportJpa->image_mini = null;
-                    $transportJpa->image_full = null;
+                    $businessJpa->image_type = null;
+                    $businessJpa->image_mini = null;
+                    $businessJpa->image_full = null;
                 }
             }
 
-            $transportJpa->status = "1";
-            $transportJpa->save();
+            $businessJpa->status = "1";
+            $businessJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El tipo de transporte se a agregado correctamente');
+            $response->setMessage('La empresa se a agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -212,19 +212,18 @@ class BusinessController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'transports', 'read')) {
-                throw new Exception('No tienes permisos para listar los tipos de transporte ');
+            if (!gValidate::check($role->permissions, $branch, 'business', 'read')) {
+                throw new Exception('No tienes permisos para listar empresas ');
             }
 
-            $query = Transports::select(
+            $query = Business::select(
                 [
                     'id',
                     'name',
-                    'doc_type',
-                    'doc_number',
+                    'business_name',
+                    'ruc',
                     'relative_id',
-                    'phone_number',
-                    'phone_number_secondary',
+                    'description',
                     'status',
                 ]
             )
@@ -242,22 +241,22 @@ class BusinessController extends Controller
                 if ($column == 'name' || $column == '*') {
                     $q->where('name', $type, $value);
                 }
-                if ($column == 'doc_type' || $column == '*') {
-                    $q->orWhere('doc_type', $type, $value);
+                if ($column == 'business_name' || $column == '*') {
+                    $q->orWhere('business_name', $type, $value);
                 }
-                if ($column == 'doc_number' || $column == '*') {
-                    $q->orWhere('doc_number', $type, $value);
+                if ($column == 'ruc' || $column == '*') {
+                    $q->orWhere('ruc', $type, $value);
                 }
-                if ($column == 'phone_number' || $column == '*') {
-                    $q->orWhere('phone_number', $type, $value);
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
                 }
-                if ($column == 'phone_number_secondary' || $column == '*') {
-                    $q->orWhere('phone_number_secondary', $type, $value);
+                if ($column == 'status' || $column == '*') {
+                    $q->orWhere('status', $type, $value);
                 }
             });
 
             $iTotalDisplayRecords = $query->count();
-            $transportsJpa = $query
+            $businessJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -266,8 +265,8 @@ class BusinessController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Transports::count());
-            $response->setData($transportsJpa->toArray());
+            $response->setITotalRecords(Business::count());
+            $response->setData($businessJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

@@ -31,6 +31,7 @@ use App\Http\Controllers\EjecutivesController;
 use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransportsController;
+use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\connect;
 
 /*
@@ -269,6 +270,14 @@ Route::delete('/transports', [TransportsController::class, 'destroy']);
 Route::post('/transports/restore', [TransportsController::class, 'restore']);
 Route::post('/transports/paginate', [TransportsController::class, 'paginate']);
 Route::get('/transportimg/{relative_id}/{zize}', [TransportsController::class, 'image']);
+
+// BUSINESS
+Route::post('/business', [BusinessController::class, 'store']);
+Route::patch('/business', [BusinessController::class, 'update']);
+Route::delete('/business', [BusinessController::class, 'destroy']);
+Route::post('/business/restore', [BusinessController::class, 'restore']);
+Route::post('/business/paginate', [BusinessController::class, 'paginate']);
+Route::get('/businessimg/{relative_id}/{zize}', [BusinessController::class, 'image']);
 
 
 // RECORDS
