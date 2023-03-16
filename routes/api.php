@@ -30,6 +30,7 @@ use App\Http\Controllers\KeysesController;
 use App\Http\Controllers\EjecutivesController;
 use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\TransportsController;
 use App\Http\Controllers\connect;
 
 /*
@@ -262,6 +263,16 @@ Route::delete('/towers', [TowerController::class, 'destroy']);
 Route::post('/towers/restore', [TowerController::class, 'restore']);
 Route::post('/towers/paginate', [TowerController::class, 'paginate']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
+
+
+// TRANSPORTS
+Route::post('/transports', [TransportsController::class, 'store']);
+Route::patch('/transports', [TransportsController::class, 'update']);
+Route::delete('/transports', [TransportsController::class, 'destroy']);
+Route::post('/transports/restore', [TransportsController::class, 'restore']);
+Route::post('/transports/paginate', [TransportsController::class, 'paginate']);
+Route::get('/transportimg/{relative_id}/{zize}', [TransportsController::class, 'image']);
+
 
 // RECORDS
 

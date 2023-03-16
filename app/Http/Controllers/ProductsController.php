@@ -550,6 +550,8 @@ class ProductsController extends Controller
                     $productValidation = Product::select(['id', 'mac'])
                         ->where('mac', $request->mac)
                         ->where('id', '!=', $request->id)
+                        ->where('mac', '!=', "")
+                        ->whereNotNull('mac')
                         ->first();
 
                     if ($productValidation->mac == $request->mac) {
@@ -572,8 +574,10 @@ class ProductsController extends Controller
                 $productValidation = Product::select(['id', 'mac', 'serie'])
                     ->where('mac', $request->mac)
                     ->where('id', '!=', $request->id)
+                    ->whereNotNull('mac')
                     ->orWhere('serie', $request->serie)
                     ->where('id', '!=', $request->id)
+                    ->whereNotNull('serie')
                     ->first();
 
                 if ($productValidation) {
@@ -630,6 +634,10 @@ class ProductsController extends Controller
 
             if (isset($request->_brand)) {
                 $productJpa->_brand = $request->_brand;
+            }
+
+            if (isset($request->_branch)) {
+                $productJpa->_branch = $request->_branch;
             }
 
             if (isset($request->_category)) {
