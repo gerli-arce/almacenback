@@ -294,41 +294,70 @@ class TransportsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'update')) {
-                throw new Exception('No tienes permisos para actualizar categorias');
+            if (!gValidate::check($role->permissions, $branch, 'transports', 'update')) {
+                throw new Exception('No tienes permisos para actualizar tipos de transporte');
             }
 
-            $categoriesJpa = Category::find($request->id);
-            if (!$categoriesJpa) {
+            $transportsJpa = Transports::find($request->id);
+            if (!$transportsJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
-            if (isset($request->category)) {
-                $verifyCatJpa = Category::select(['id', 'category', 'status'])
-                    ->where('category', $request->category)
+            if (isset($request->name)) {
+                $verifyCatJpa = Transports::select(['id', 'name', 'status'])
+                    ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->whereNotNull('status')
                     ->first();
                 if ($verifyCatJpa) {
                     throw new Exception("Elija otro nombre para esta categoria");
                 }
-                $categoriesJpa->category = $request->category;
+                $transportsJpa->name = $request->name;
             }
 
-            if (isset($request->description)) {
-                $categoriesJpa->description = $request->description;
-            }
-
-            if (gValidate::check($role->permissions, $branch, 'categories', 'change_status')) {
-                if (isset($request->status)) {
-                    $categoriesJpa->status = $request->status;
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $transportsJpa->image_type = $request->image_type;
+                    $transportsJpa->image_mini = base64_decode($request->image_mini);
+                    $transportsJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $transportsJpa->image_type = null;
+                    $transportsJpa->image_mini = null;
+                    $transportsJpa->image_full = null;
                 }
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
 
-            $categoriesJpa->save();
+            if (isset($request->doc_type)) {
+                $transportsJpa->doc_type = $request->doc_type;
+            }
+
+            if (isset($request->doc_number)) {
+                $transportsJpa->doc_number = $request->doc_number;
+            }
+            if (isset($request->phone_number)) {
+                $transportsJpa->phone_number = $request->phone_number;
+            }
+
+            if (isset($request->phone_number_secondary)) {
+                $transportsJpa->phone_number_secondary = $request->phone_number_secondary;
+            }
+
+            if (gValidate::check($role->permissions, $branch, 'transports', 'change_status')) {
+                if (isset($request->status)) {
+                    $transportsJpa->status = $request->status;
+                }
+            }
+
+            $transportsJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La categoria ha sido actualizado correctamente');
@@ -352,8 +381,8 @@ class TransportsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar categorias en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'transports', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar tipos de transporte');
             }
 
             if (
@@ -362,15 +391,14 @@ class TransportsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Category::find($request->id);
-            if (!$categoriesJpa) {
-                throw new Exception('La categoria que deseas eliminar no existe');
+            $transportsJpa = Transports::find($request->id);
+            if (!$transportsJpa) {
+                throw new Exception('El tipo de trasporte que deseas eliminar no existe');
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = null;
-            $categoriesJpa->save();
+          
+            $transportsJpa->status = null;
+            $transportsJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La categoria a sido eliminada correctamente');
@@ -394,8 +422,8 @@ class TransportsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar categorias en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'transports', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar tipos de transporte');
             }
 
             if (
@@ -404,18 +432,16 @@ class TransportsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Category::find($request->id);
-            if (!$categoriesJpa) {
-                throw new Exception('La categoria que deseas restaurar no existe');
+            $transportsJpa = Transports::find($request->id);
+            if (!$transportsJpa) {
+                throw new Exception('El tipo de transporte que deseas restaurar no existe');
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = "1";
-            $categoriesJpa->save();
+            $transportsJpa->status = "1";
+            $transportsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria a sido restaurada correctamente');
+            $response->setMessage('El tipo de transporte a sido restaurado correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);

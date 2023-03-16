@@ -235,9 +235,6 @@ Route::get('/installation/{id}', [InstallationController::class, 'getSaleInstall
 Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
 Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 
-
-// 
-
 // FAULDS
 Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
@@ -275,7 +272,6 @@ Route::get('/transportimg/{relative_id}/{zize}', [TransportsController::class, '
 
 
 // RECORDS
-
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
 
