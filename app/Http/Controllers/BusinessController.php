@@ -11,7 +11,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class TransportsController extends Controller
+class BusinessController extends Controller
 {
     public function store(Request $request)
     {
