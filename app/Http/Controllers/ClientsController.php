@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
-use App\gLibraries\gUid;
+use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\People;
 use App\Models\Response;
@@ -13,8 +13,49 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ProvidersController extends Controller
+class ClientsController extends Controller
 {
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
+            }
+
+            $peopleJpa = ViewPeople::select([
+                'id',
+                'type',
+                'doc_number',
+                'name',
+                'lastname',
+            ])->whereNotNull('status')
+                ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("lastname LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('doc_number', 'asc')
+                ->where('type', 'CLIENT')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -24,8 +65,8 @@ class ProvidersController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'providers', 'create')) {
-                throw new Exception('No tienes permisos para agregar proveedores');
+            if (!gValidate::check($role->permissions, $branch, 'clients', 'create')) {
+                throw new Exception('No tienes permisos para agregar clientes');
             }
 
             if (
@@ -37,16 +78,8 @@ class ProvidersController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
-                if (strlen($request->doc_number) != 11) {
-                    throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
-                }
-            }
-
-            if ($request->doc_type == "DNI") {
-                if (strlen($request->doc_number) != 8) {
-                    throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
-                }
+            if (strlen($request->doc_number) != 8) {
+                throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
             }
 
             $userValidation = People::select(['doc_type', 'doc_number'])
@@ -55,7 +88,7 @@ class ProvidersController extends Controller
                 ->first();
 
             if ($userValidation) {
-                throw new Exception("Este proveedor ya existe");
+                throw new Exception("Esta registro ya existe");
             }
 
             $peopleJpa = new People();
@@ -108,60 +141,17 @@ class ProvidersController extends Controller
             if ($request->address) {
                 $peopleJpa->address = $request->address;
             }
-
             $peopleJpa->_creation_user = $userid;
             $peopleJpa->creation_date = gTrace::getDate('mysql');
             $peopleJpa->_update_user = $userid;
             $peopleJpa->update_date = gTrace::getDate('mysql');
-            $peopleJpa->type = 'PROVIDER';
+            $peopleJpa->type = "CLIENT";
             $peopleJpa->_branch = $request->_branch;
             $peopleJpa->status = "1";
             $peopleJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Proveedor agregado correctamente');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
-    public function search(Request $request)
-    {
-        $response = new Response();
-        try {
-
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'providers', 'read')) {
-                throw new Exception('No tienes permisos para listar marcas');
-            }
-
-            $peopleJpa = People::select([
-                'id',
-                'doc_number',
-                'relative_id',
-                'name',
-                'lastname',
-                'type',
-            ])
-            ->whereNotNull('status')
-            ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
-            ->orWhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-            ->orderBy('name', 'asc')
-            ->where('type', 'PROVIDER')
-            ->get();
-
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-            $response->setData($peopleJpa->toArray());
+            $response->setMessage('Cliente agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -182,8 +172,8 @@ class ProvidersController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'providers', 'read')) {
-                throw new Exception('No tienes permisos para listar pereedores');
+            if (!gValidate::check($role->permissions, $branch, 'clients', 'read')) {
+                throw new Exception('No tienes permisos para listar clientes');
             }
 
             $query = ViewPeople::select([
@@ -217,7 +207,7 @@ class ProvidersController extends Controller
                 'status',
             ])
                 ->orderBy($request->order['column'], $request->order['dir'])
-                ->where('type', 'PROVIDER');
+                ->where('type', 'CLIENT');
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
@@ -286,7 +276,7 @@ class ProvidersController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPeople::where('type', 'PROVIDER')->count());
+            $response->setITotalRecords(ViewPeople::where('type', 'CLIENT')->count());
             $response->setData($people);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -298,4 +288,139 @@ class ProvidersController extends Controller
             );
         }
     }
+
+    public function update(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'clients', 'update')) {
+                throw new Exception('No tienes permisos para actualizar clientes');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $personJpa = People::find($request->id);
+
+            if (!$personJpa) {
+                throw new Exception("Esta persona no existe");
+            }
+
+            if (isset($request->doc_type) && isset($request->doc_number)) {
+                if ($request->doc_type == "RUC" && $request->doc_type == "RUC10") {
+                    if (strlen($request->doc_number) != 11) {
+                        throw new Exception("Para el tipo de documento RUC es nesesario que tenga 11 números.");
+                    }
+                }
+                if ($request->doc_type == "DNI") {
+                    if (strlen($request->doc_number) != 8) {
+                        throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
+                    }
+                }
+                $personJpa->doc_type = $request->doc_type;
+                $personJpa->doc_number = $request->doc_number;
+            }
+
+            $userValidation = People::select(['id', 'doc_type', 'doc_number'])
+                ->where('doc_type', $request->doc_type)
+                ->where('doc_number', $request->doc_number)
+                ->where('id', '!=', $request->id)
+                ->first();
+
+            if ($userValidation) {
+                throw new Exception("Esta persona ya existe");
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $personJpa->image_type = $request->image_type;
+                    $personJpa->image_mini = base64_decode($request->image_mini);
+                    $personJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $personJpa->image_type = null;
+                    $personJpa->image_mini = null;
+                    $personJpa->image_full = null;
+                }
+            }
+
+            if (isset($request->name)) {
+                $personJpa->name = $request->name;
+            }
+
+            if (isset($request->lastname)) {
+                $personJpa->lastname = $request->lastname;
+            }
+
+            if (isset($request->birthdate)) {
+                $personJpa->birthdate = $request->birthdate;
+            }
+
+            if (isset($request->gender)) {
+                $personJpa->gender = $request->gender;
+            }
+
+            if (isset($request->email)) {
+                $personJpa->email = $request->email;
+            }
+
+            if (isset($request->phone)) {
+                $personJpa->phone = $request->phone;
+            }
+
+            if (isset($request->ubigeo)) {
+                $personJpa->ubigeo = $request->ubigeo;
+            }
+
+            if (isset($request->address)) {
+                $personJpa->address = $request->address;
+            }
+
+            if (isset($request->type)) {
+                $personJpa->type = $request->type;
+            }
+
+            if (isset($request->_branch)) {
+                $personJpa->_branch = $request->_branch;
+            }
+
+            if (gValidate::check($role->permissions, $branch, 'clients', 'change_status')) {
+                if (isset($request->status)) {
+                    $personJpa->status = $request->status;
+                }
+            }
+
+            $personJpa->_update_user = $userid;
+            $personJpa->update_date = gTrace::getDate('mysql');
+
+            $personJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El cliente se a actualizado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 }

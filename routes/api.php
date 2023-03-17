@@ -32,6 +32,7 @@ use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransportsController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\connect;
 
 /*
@@ -128,10 +129,14 @@ Route::delete('/providers', [ProvidersController::class, 'delete']);
 Route::post('/providers/search', [ProvidersController::class, 'search']);
 Route::post('/providers/restore', [ProvidersController::class, 'restore']);
 Route::post('/providers/paginate', [ProvidersController::class, 'paginate']);
-Route::post('/providers/search', [ProvidersController::class, 'search']);
+
+// CLIENTS
+Route::post('/client', [ClientsController::class, 'store']);
+Route::patch('/client', [ClientsController::class, 'update']);
+Route::post('/client/search', [ClientsController::class, 'search']);
+Route::post('/client/paginate', [ClientsController::class, 'paginate']);
 
 // TECHNICALLS
-Route::get('/technicals', [TechnicalsController::class, 'index']);
 Route::post('/technicals', [TechnicalsController::class, 'store']);
 Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
@@ -278,7 +283,6 @@ Route::delete('/business', [BusinessController::class, 'destroy']);
 Route::post('/business/restore', [BusinessController::class, 'restore']);
 Route::post('/business/paginate', [BusinessController::class, 'paginate']);
 Route::get('/businessimg/{relative_id}/{zize}', [BusinessController::class, 'image']);
-
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
