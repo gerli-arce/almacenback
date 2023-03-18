@@ -33,7 +33,8 @@ class ModelsController extends Controller
             if (
                 !isset($request->model) ||
                 !isset($request->_brand) ||
-                !isset($request->_category)
+                !isset($request->_category) ||
+                !isset($request->_unity)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -50,7 +51,11 @@ class ModelsController extends Controller
             $modelJpa->model = $request->model;
             $modelJpa->_brand = $request->_brand;
             $modelJpa->_category = $request->_category;
+            $modelJpa->_unity = $request->_unity;
             $modelJpa->relative_id = guid::short();
+            $modelJpa->currency = $request->currency;
+            $modelJpa->price_buy = $request->price_buy;
+            $modelJpa->price_sale = $request->price_sale;
 
             if (
                 isset($request->image_type) &&
@@ -75,7 +80,6 @@ class ModelsController extends Controller
             if (isset($request->description)) {
                 $modelJpa->description = $request->description;
             }
-
             
             $modelJpa->status = "1";
             $modelJpa->save();
@@ -303,6 +307,22 @@ class ModelsController extends Controller
 
             if (isset($request->_category)) {
                 $modelJpa->_category = $request->_category;
+            }
+
+            if(isset($request->_unity)){
+                $modelJpa->_unity = $request->_unity;
+            }
+
+            if(isset($request->currency)){
+                $modelJpa->currency = $request->currency;
+            }
+
+            if(isset($request->price_buy)){
+                $modelJpa->price_buy = $request->price_buy;
+            }
+
+            if(isset($request->price_sale)){
+                $modelJpa->price_sale = $request->price_sale;
             }
 
             if (
