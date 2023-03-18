@@ -141,7 +141,7 @@ class ProvidersController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'providers', 'read')) {
-                throw new Exception('No tienes permisos para listar marcas');
+                throw new Exception('No tienes permisos para listar proveedores');
             }
 
             $peopleJpa = People::select([
