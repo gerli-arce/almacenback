@@ -30,7 +30,9 @@ class PermissionsController extends Controller
                 'view__path',
                 'view__description',
                 'view__status'
-            ])->get();
+            ])
+            ->whereNotNull('status')
+            ->get();
            
 
             $permissions = array();

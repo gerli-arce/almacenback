@@ -55,6 +55,7 @@ class ModelsController extends Controller
             $modelJpa->relative_id = guid::short();
             $modelJpa->currency = $request->currency;
             $modelJpa->price_buy = $request->price_buy;
+            $modelJpa->mr_revenue = $request->mr_revenue;
             $modelJpa->price_sale = $request->price_sale;
 
             if (
@@ -175,13 +176,13 @@ class ModelsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'model' || $column == '*') {
-                    $q->where('model', $type, $value);
+                    $q->orWhere('model', $type, $value);
                 }
                 if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                    $q->orWhere('brand__brand', $type, $value);
                 }
                 if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                    $q->orWhere('category__category', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -323,6 +324,10 @@ class ModelsController extends Controller
 
             if(isset($request->price_sale)){
                 $modelJpa->price_sale = $request->price_sale;
+            }
+
+            if(isset($request->mr_revenue)){
+                $modelJpa->mr_revenue = $request->mr_revenue;
             }
 
             if (
