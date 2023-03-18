@@ -310,7 +310,7 @@ class TransportsController extends Controller
                     ->whereNotNull('status')
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta categoria");
+                    throw new Exception("Elija otro nombre para este tipo de transporte");
                 }
                 $transportsJpa->name = $request->name;
             }
@@ -360,7 +360,7 @@ class TransportsController extends Controller
             $transportsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria ha sido actualizado correctamente');
+            $response->setMessage('El tipo de transporte ha sido actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -401,7 +401,7 @@ class TransportsController extends Controller
             $transportsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria a sido eliminada correctamente');
+            $response->setMessage('El tipo de transporte a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);

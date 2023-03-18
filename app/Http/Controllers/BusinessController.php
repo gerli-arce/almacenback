@@ -138,9 +138,9 @@ class BusinessController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelJpa = Transports::select([
-                "transport.image_$size as image_content",
-                'transport.image_type',
+            $modelJpa = Business::select([
+                "business.image_$size as image_content",
+                'business.image_type',
 
             ])
                 ->where('relative_id', $relative_id)
@@ -156,13 +156,13 @@ class BusinessController extends Controller
             $type = $modelJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable$th) {
-            $ruta = '../storage/images/transport_default.jpg';
+            $ruta = '../storage/images/business_default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
-            $type = 'image/jpeg';
+            $type = 'image/png';
             $response->setStatus(400);
         } finally {
             return response(
@@ -293,25 +293,25 @@ class BusinessController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'transports', 'update')) {
-                throw new Exception('No tienes permisos para actualizar tipos de transporte');
+            if (!gValidate::check($role->permissions, $branch, 'business', 'update')) {
+                throw new Exception('No tienes permisos para actualizar empresas');
             }
 
-            $transportsJpa = Transports::find($request->id);
-            if (!$transportsJpa) {
+            $businessJpa = Business::find($request->id);
+            if (!$businessJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
             if (isset($request->name)) {
-                $verifyCatJpa = Transports::select(['id', 'name', 'status'])
+                $verifyCatJpa = Business::select(['id', 'name', 'status'])
                     ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->whereNotNull('status')
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta categoria");
+                    throw new Exception("Error: La empresa ya existe, use otro nombre.");
                 }
-                $transportsJpa->name = $request->name;
+                $businessJpa->name = $request->name;
             }
 
             if (
@@ -324,42 +324,41 @@ class BusinessController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $transportsJpa->image_type = $request->image_type;
-                    $transportsJpa->image_mini = base64_decode($request->image_mini);
-                    $transportsJpa->image_full = base64_decode($request->image_full);
+                    $businessJpa->image_type = $request->image_type;
+                    $businessJpa->image_mini = base64_decode($request->image_mini);
+                    $businessJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    $transportsJpa->image_type = null;
-                    $transportsJpa->image_mini = null;
-                    $transportsJpa->image_full = null;
+                    $businessJpa->image_type = null;
+                    $businessJpa->image_mini = null;
+                    $businessJpa->image_full = null;
                 }
             }
 
-
-            if (isset($request->doc_type)) {
-                $transportsJpa->doc_type = $request->doc_type;
+            if (isset($request->name)) {
+                $businessJpa->name = $request->name;
             }
 
-            if (isset($request->doc_number)) {
-                $transportsJpa->doc_number = $request->doc_number;
+            if (isset($request->ruc)) {
+                $businessJpa->ruc = $request->ruc;
             }
-            if (isset($request->phone_number)) {
-                $transportsJpa->phone_number = $request->phone_number;
-            }
-
-            if (isset($request->phone_number_secondary)) {
-                $transportsJpa->phone_number_secondary = $request->phone_number_secondary;
+            if (isset($request->business_name)) {
+                $businessJpa->business_name = $request->business_name;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'transports', 'change_status')) {
+            if (isset($request->description)) {
+                $businessJpa->description = $request->description;
+            }
+
+            if (gValidate::check($role->permissions, $branch, 'business', 'change_status')) {
                 if (isset($request->status)) {
-                    $transportsJpa->status = $request->status;
+                    $businessJpa->status = $request->status;
                 }
             }
 
-            $transportsJpa->save();
+            $businessJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria ha sido actualizado correctamente');
+            $response->setMessage('La empresa ha sido actualizado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -380,8 +379,8 @@ class BusinessController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'transports', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar tipos de transporte');
+            if (!gValidate::check($role->permissions, $branch, 'business', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar empresas');
             }
 
             if (
@@ -390,17 +389,15 @@ class BusinessController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $transportsJpa = Transports::find($request->id);
-            if (!$transportsJpa) {
-                throw new Exception('El tipo de trasporte que deseas eliminar no existe');
+            $businessJpa = Business::find($request->id);
+            if (!$businessJpa) {
+                throw new Exception('La empresa que deseas eliminar no existe');
             }
-
-          
-            $transportsJpa->status = null;
-            $transportsJpa->save();
+            $businessJpa->status = null;
+            $businessJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria a sido eliminada correctamente');
+            $response->setMessage('La empresa a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -422,8 +419,8 @@ class BusinessController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'transports', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar tipos de transporte');
+            if (!gValidate::check($role->permissions, $branch, 'business', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar empresas');
             }
 
             if (
@@ -432,16 +429,16 @@ class BusinessController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $transportsJpa = Transports::find($request->id);
-            if (!$transportsJpa) {
-                throw new Exception('El tipo de transporte que deseas restaurar no existe');
+            $businessJpa = Business::find($request->id);
+            if (!$businessJpa) {
+                throw new Exception('La empresa que deseas restaurar no existe');
             }
 
-            $transportsJpa->status = "1";
-            $transportsJpa->save();
+            $businessJpa->status = "1";
+            $businessJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El tipo de transporte a sido restaurado correctamente');
+            $response->setMessage('La empresa se ha restaurado correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
