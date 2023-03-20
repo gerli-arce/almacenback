@@ -145,7 +145,7 @@ class ProductsController extends Controller
                     $material->_category = $request->_category;
                     $material->_supplier = $request->_supplier;
                     $material->_model = $request->_model;
-                    $productJpa->_unity = $request->_unity;
+                    $material->_unity = $request->_unity;
                     $material->mount = $mount_new;
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
