@@ -133,7 +133,9 @@ class ProductsController extends Controller
                     ->where('_model', $request->_model)
                     ->where('_category', $request->_category)
                     ->where('_brand', $request->_brand)
+                    ->where('_branch', $branch)
                     ->first();
+
                 if (isset($material)) {
                     $mount_old = $material->mount;
                     $mount_new = $mount_old + $request->mount;
