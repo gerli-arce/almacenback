@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\Response;
-use App\Models\ViewStock;
 use App\Models\Stock;
-use App\Models\Models;
-use App\Models\Branch;
+use App\Models\ViewStock;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +29,10 @@ class StockController extends Controller
 
             $query = ViewStock::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
+
+            if ($request->all) {
+                $query->where('mount','>', '0');
+            }
 
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
@@ -100,15 +102,13 @@ class StockController extends Controller
 
             $stockJpa = Stock::find($request->id);
 
-            if(isset($request->stock_min)){
+            if (isset($request->stock_min)) {
                 $stockJpa->stock_min = $request->stock_min;
             }
 
-            // if (gValidate::check($role->permissions, $branch, 'products', 'change_status')) {
-            //     if (isset($request->status)) {
-            //         $stockJpa->status = $request->status;
-            //     }
-            // }
+            if (isset($request->mount)) {
+                $stockJpa->mount = $request->mount;
+            }
 
             $stockJpa->save();
             $response->setStatus(200);
