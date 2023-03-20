@@ -27,8 +27,8 @@ class FauldController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'create')) {
-                throw new Exception('No tienes permisos para agregar instalaciones');
+            if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'create')) {
+                throw new Exception('No tienes permisos para agregar averias');
             }
 
             if (!isset($request->_client) ||
@@ -128,8 +128,8 @@ class FauldController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar las averias pendientes');
             }
 
             $query = viewInstallations::select([
@@ -203,8 +203,8 @@ class FauldController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'create')) {
-                throw new Exception('No tienes permisos para listar modelos');
+            if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'create')) {
+                throw new Exception('No tienes permisos para actualizar averias');
             }
 
             if (!isset($request->id)) {
@@ -408,8 +408,8 @@ class FauldController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'installations_completed', 'read')) {
-                throw new Exception('No tienes permisos para listar las instataciónes completadas');
+            if (!gValidate::check($role->permissions, $branch, 'faulds_finished', 'read')) {
+                throw new Exception('No tienes permisos para listar las averias completadas');
             }
 
             $query = viewInstallations::select([

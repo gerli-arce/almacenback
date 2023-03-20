@@ -180,7 +180,7 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
 
@@ -358,8 +358,8 @@ class TechnicalsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'technicalls', 'read')) {
-                throw new Exception('No tienes permisos para listar técnicos');
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
             }
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->get();
