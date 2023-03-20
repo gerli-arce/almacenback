@@ -7,6 +7,8 @@ use App\gLibraries\gValidate;
 use App\Models\Response;
 use App\Models\ViewStock;
 use App\Models\Stock;
+use App\Models\Models;
+use App\Models\Branch;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -121,4 +123,48 @@ class StockController extends Controller
             );
         }
     }
+
+    // public function regularizar(Request $request)
+    // {
+    //     $response = new Response();
+    //     try {
+    //         $models = Models::select('id','model')->get();
+    //         $branchs = Branch::select('id', 'name')->get();
+    //         $exist = [];
+    //         foreach($branchs as $branch){
+    //             foreach($models as $model){
+    //                 $stockIsExist = Stock::select('id','_model','_branch')
+    //                 ->where('_model', $model['id'])
+    //                 ->where('_branch', $branch['id'])
+    //                 ->first();
+    //                 if(!$stockIsExist){
+    //                     $stockJpa = new Stock();
+    //                     $stockJpa->_model = $model['id'];
+    //                     $stockJpa->mount = '0';
+    //                     $stockJpa->stock_min = '5';
+    //                     $stockJpa->_branch = $branch['id'];
+    //                     $stockJpa->status = '1';
+    //                     $stockJpa->save();
+    //                 }else{
+    //                     $exist[] = [
+    //                         'model'=>$model['model'],
+    //                         'branch'=>$branch['name']
+    //                     ];
+    //                 }
+    //             }
+    //         }
+
+    //         $response->setData($exist);
+    //         $response->setStatus(200);
+    //         $response->setMessage('stocks actualizados correctamente');
+    //     } catch (\Throwable$th) {
+    //         $response->setStatus(400);
+    //         $response->setMessage($th->getMessage());
+    //     } finally {
+    //         return response(
+    //             $response->toArray(),
+    //             $response->getStatus()
+    //         );
+    //     }
+    // }
 }

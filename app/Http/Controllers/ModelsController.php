@@ -85,18 +85,30 @@ class ModelsController extends Controller
             $modelJpa->status = "1";
             $modelJpa->save();
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $branchesJpa = Branch::select('id')->get();
+
+            foreach($branchesJpa as $branch){
+                $stockJpa = new Stock();
+                $stockJpa->_model = $modelJpa->id;
+                $stockJpa->mount = '0';
+                $stockJpa->stock_min = '5';
+                $stockJpa->_branch = $branch['id'];
+                $stockJpa->status = '1';
+                $stockJpa->save();
+            }
             
-            $stockJpa = new Stock();
-            $stockJpa->_model = $modelJpa->id;
-            $stockJpa->mount = '0';
-            $stockJpa->stock_min = '5';
-            $stockJpa->_branch = $branch_->id;
-            $stockJpa->status = '1';
-            $stockJpa->save();
+            // $stockJpa = new Stock();
+            // $stockJpa->_model = $modelJpa->id;
+            // $stockJpa->mount = '0';
+            // $stockJpa->stock_min = '5';
+            // $stockJpa->_branch = $branch_->id;
+            // $stockJpa->status = '1';
+            // $stockJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El modelo se a agregado correctamente');
+            $response->setMessage('El modelo se a agregado correctamente en todas las sucursales');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

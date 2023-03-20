@@ -230,6 +230,8 @@ Route::post('/products/equipment/paginate', [ProductsController::class, 'paginat
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
+Route::get('/stock/regularize', [StockController::class, 'regularizar']);
+
 
 // INTALLATIONS
 Route::post('/install', [InstallationController::class, 'registerInstallation']);

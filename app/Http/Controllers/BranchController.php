@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\Models;
+use App\Models\Stock;
 use App\Models\Response;
 use Exception;
 use Illuminate\Http\Request;
@@ -20,7 +22,7 @@ class BranchController extends Controller
             // if ($status != 200) {
             //     throw new Exception($message);
             // }
-            
+
             // if (!gValidate::check($role->permissions, $branch, 'branches', 'read')) {
             //     throw new Exception('No tienes permisos para listar las sucursales');
             // }
@@ -53,7 +55,7 @@ class BranchController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'branches', 'create')) {
                 throw new Exception('No tienes permisos para listar las sucursales');
             }
-            
+
             if (
                 !isset($request->name) ||
                 !isset($request->correlative) ||
@@ -90,6 +92,18 @@ class BranchController extends Controller
             $branchJpa->status = "1";
 
             $branchJpa->save();
+
+            $models = Models::select('id', 'model')->get();
+
+            foreach ($models as $model) {
+                $stockJpa = new Stock();
+                $stockJpa->_model = $model['id'];
+                $stockJpa->mount = '0';
+                $stockJpa->stock_min = '5';
+                $stockJpa->_branch = $branchJpa->id;
+                $stockJpa->status = '1';
+                $stockJpa->save();
+            }
 
             $response->setStatus(200);
             $response->setMessage('Sucursal agregada correctamente');
@@ -172,16 +186,17 @@ class BranchController extends Controller
         }
     }
 
-    public function getBranch(Request $request){
+    public function getBranch(Request $request)
+    {
         $response = new Response();
         try {
 
-            if(!isset($request->id)){
+            if (!isset($request->id)) {
                 throw new Exception("Error: No deje campos vacios");
             }
 
             $branchJpa = Branch::find($request->id);
-            if(!$branchJpa){
+            if (!$branchJpa) {
                 throw new Exception("Error: El reguistro solicitado no existe");
             }
 
