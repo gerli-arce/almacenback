@@ -226,7 +226,7 @@ class ProductsController extends Controller
             $response->setMessage('Producto agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().', ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -488,11 +488,11 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('branch__correlative', $branch)
+                ->where('status_product', '!=', 'VENDIDO')
                 ->where('type', 'EQUIPO');
+
             $iTotalDisplayRecords = $query->count();
-
             $productsJpa = $query
-
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -600,7 +600,7 @@ class ProductsController extends Controller
                 $productJpa->num_bill = $request->num_bill;
             }
 
-            if(isset($request->_unity)){
+            if (isset($request->_unity)) {
                 $productJpa->_unity = $request->_unity;
             }
 
