@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 class FauldController extends Controller
 {
 
-    public function registerInstallation(Request $request)
+    public function registerFauld(Request $request)
     {
         $response = new Response();
         try {
@@ -192,7 +192,7 @@ class FauldController extends Controller
             );
         }
     }
-    
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -461,6 +461,61 @@ class FauldController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Viewinstallations::where('status_sale', 'CULMINADA')->count());
             $response->setData($installations);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
+                $productJpa->status_product = "DISPONIBLE";
+                if ($productJpa->type == "MATERIAL") {
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
+                        ->where('_product', $detail['_product'])->first();
+                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
+                    $productByTechnicalJpa->mount = $mountNew;
+                    $productByTechnicalJpa->save();
+                }
+                $productJpa->save();
+                $detailSale->save();
+            }
+
+            $saleProductJpa->update_date = gTrace::getDate('mysql');
+            $saleProductJpa->status = null;
+            $saleProductJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('La instalación se elimino correctamente.');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

@@ -244,10 +244,13 @@ Route::post('/install/completed/paginate', [InstallationController::class, 'pagi
 Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 
 // FAULDS
+Route::post('/fauld', [FauldController::class, 'registerFauld']);
 Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
+Route::delete('/fauld', [FauldController::class, 'delete']);
+
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);

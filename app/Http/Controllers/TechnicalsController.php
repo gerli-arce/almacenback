@@ -6,9 +6,9 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
+use App\Models\Branch;
 use App\Models\People;
 use App\Models\Product;
-use App\Models\Branch;
 use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
 use App\Models\Response;
@@ -279,8 +279,8 @@ class TechnicalsController extends Controller
             $productJpa->mount = $mount;
 
             $stock = Stock::where('_model', $productJpa->_model)
-            ->where('_branch', $branch_->id)
-            ->first();
+                ->where('_branch', $branch_->id)
+                ->first();
             $stock->mount = $mount;
             $stock->save();
 
@@ -310,7 +310,7 @@ class TechnicalsController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
-                throw new Exception('No tienes permisos para crear productos');
+                throw new Exception('No tienes permisos para actualizar productos de técnico');
             }
 
             if (!isset($request->product) ||
@@ -323,7 +323,6 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->where('_product', $request->product['id'])
                 ->first();
-            
 
             $mountNew = $productByTechnicalJpa->mount - $request->mount;
             if (intval($mountNew) < 0) {
@@ -331,14 +330,28 @@ class TechnicalsController extends Controller
             }
             $productByTechnicalJpa->mount = $mountNew;
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $recordProductByTechnicalJpa = new RecordProductByTechnical();
             $recordProductByTechnicalJpa->_user = $userid;
             $recordProductByTechnicalJpa->_technical = $request->id;
             $recordProductByTechnicalJpa->_product = $request->product['id'];
+
             if ($request->reazon == "ILLFATED") {
                 $recordProductByTechnicalJpa->type_operation = "ILLFATED";
-            } else {
+            } else if ($request->reazon == "TAKEOUT") {
                 $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+            } else if ($request->reazon == "RETURN") {
+                $recordProductByTechnicalJpa->type_operation = "RETURN";
+                $productJpa = Product::find($request->product['id']);
+                $mount = $productJpa->mount + $request->mount;
+                $productJpa->mount = $mount;
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                $stock->mount = $mount;
+                $stock->save();
+                $productJpa->save();
             }
             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
             $recordProductByTechnicalJpa->mount = $request->mount;
