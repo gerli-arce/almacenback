@@ -6,6 +6,8 @@ use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\Response;
 use App\Models\Stock;
+use App\Models\Models;
+use App\Models\Branch;
 use App\Models\ViewStock;
 use Exception;
 use Illuminate\Http\Request;

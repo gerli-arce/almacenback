@@ -8,6 +8,7 @@ use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\People;
 use App\Models\Product;
+use App\Models\Branch;
 use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
 use App\Models\Response;
@@ -189,6 +190,8 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: No deje campos vaciós");
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             foreach ($request->details as $product) {
 
                 $recordProductByTechnicalJpa = new RecordProductByTechnical();
@@ -206,7 +209,9 @@ class TechnicalsController extends Controller
                 $mount = $productJpa->mount - $product['mount'];
                 $productJpa->mount = $mount;
 
-                $stock = Stock::where('_model', $productJpa->_model)->first();
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
                 $stock->mount = $mount;
                 $stock->save();
                 $productJpa->save();
@@ -253,6 +258,8 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->where('_product', $request->product['id'])->first();
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $mountNew = $productByTechnicalJpa->mount + $request->mount;
             $productByTechnicalJpa->mount = $mountNew;
 
@@ -271,7 +278,9 @@ class TechnicalsController extends Controller
             $mount = $productJpa->mount - $request->mount;
             $productJpa->mount = $mount;
 
-            $stock = Stock::where('_model', $productJpa->_model)->first();
+            $stock = Stock::where('_model', $productJpa->_model)
+            ->where('_branch', $branch_->id)
+            ->first();
             $stock->mount = $mount;
             $stock->save();
 
@@ -314,9 +323,10 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->where('_product', $request->product['id'])
                 ->first();
+            
 
             $mountNew = $productByTechnicalJpa->mount - $request->mount;
-            if(intval($mountNew)<0){
+            if (intval($mountNew) < 0) {
                 throw new Exception("Error: no puede sacar una cantidad superior a la que tiene en el stock");
             }
             $productByTechnicalJpa->mount = $mountNew;
@@ -325,9 +335,9 @@ class TechnicalsController extends Controller
             $recordProductByTechnicalJpa->_user = $userid;
             $recordProductByTechnicalJpa->_technical = $request->id;
             $recordProductByTechnicalJpa->_product = $request->product['id'];
-            if($request->reazon == "ILLFATED"){
+            if ($request->reazon == "ILLFATED") {
                 $recordProductByTechnicalJpa->type_operation = "ILLFATED";
-            }else{
+            } else {
                 $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
             }
             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');

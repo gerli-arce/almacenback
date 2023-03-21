@@ -92,7 +92,9 @@ class InstallationController extends Controller
 
                     } else {
                         $productJpa->status_product = "VENDIENDO";
-                        $stock = Stock::where('_model', $productJpa->_model)->first();
+                        $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
                         $stock->mount = intval($stock->mount) - 1;
                         $stock->save();
                         $productJpa->save();
@@ -163,7 +165,8 @@ class InstallationController extends Controller
                 }
             })
                 ->where('status_sale', 'PENDIENTE')
-                ->where('type_operation__operation', 'INSTALACION');
+                ->where('type_operation__operation', 'INSTALACION')
+                ->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -181,7 +184,7 @@ class InstallationController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->count());
+            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->where('branch__correlative', $branch)->count());
             $response->setData($installations);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -354,6 +357,7 @@ class InstallationController extends Controller
 
                                 $salesProduct->issue_date = gTrace::getDate('mysql');
                                 $salesProduct->_issue_user = $userid;
+
                             }
                         }
                         $productJpa->save();
@@ -435,7 +439,8 @@ class InstallationController extends Controller
                 }
             })
                 ->where('type_operation__operation', 'INSTALACION')
-                ->where('status_sale', 'CULMINADA');
+                ->where('status_sale', 'CULMINADA')
+                ->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -453,7 +458,7 @@ class InstallationController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::where('status_sale', 'CULMINADA')->count());
+            $response->setITotalRecords(Viewinstallations::where('status_sale', 'CULMINADA')->where('branch__correlative', $branch)->count());
             $response->setData($installations);
         } catch (\Throwable$th) {
             $response->setStatus(400);

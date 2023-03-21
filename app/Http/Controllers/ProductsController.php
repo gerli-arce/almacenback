@@ -112,7 +112,9 @@ class ProductsController extends Controller
                     $productJpa->status = "1";
                     $productJpa->save();
 
-                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock = Stock::where('_model', $request->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
                     $stock->mount = intval($stock->mount) + 1;
                     $stock->save();
                 }
@@ -133,7 +135,7 @@ class ProductsController extends Controller
                     ->where('_model', $request->_model)
                     ->where('_category', $request->_category)
                     ->where('_brand', $request->_brand)
-                    ->where('_branch', $branch)
+                    ->where('_branch', $branch_->id)
                     ->first();
 
                 if (isset($material)) {
@@ -175,7 +177,9 @@ class ProductsController extends Controller
                     $material->status = "1";
                     $material->save();
 
-                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock = Stock::where('_model', $request->_model)
+                    ->where('_branch',$branch_->id)
+                    ->first();
                     $stock->mount = intval($stock->mount) + intval($request->mount);
                     $stock->save();
                 } else {
@@ -218,7 +222,9 @@ class ProductsController extends Controller
                     $productJpa->status = "1";
                     $productJpa->save();
 
-                    $stock = Stock::where('_model', $request->_model)->first();
+                    $stock = Stock::where('_model', $request->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
                     $stock->mount = intval($stock->mount) + intval($request->mount);
                     $stock->save();
                 }
