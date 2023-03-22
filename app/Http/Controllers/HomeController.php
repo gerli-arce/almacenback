@@ -142,7 +142,7 @@ class HomeController extends Controller
                 'type',
                 DB::raw('COUNT(id) AS quantity')
             ])
-                ->where('type', 'PERSON')
+                ->where('type', 'CLIENTS')
                 ->where('_branch', $branch_->id)
                 ->groupBy('status', 'type','_branch')
                 ->get();
