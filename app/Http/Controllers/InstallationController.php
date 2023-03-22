@@ -91,7 +91,7 @@ class InstallationController extends Controller
                         $recordProductByTechnicalJpa->save();
 
                     } else {
-                        $productJpa->status_product = "VENDIENDO";
+                        $productJpa->disponibility = "VENDIENDO";
                         $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
@@ -233,7 +233,9 @@ class InstallationController extends Controller
                 'products.price_sale AS product__price_sale',
                 'products.currency AS product__currency',
                 'products.num_gia AS product__num_gia',
-                'products.status_product AS product__status_product',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
                 'detail_sales.mount as mount',
                 'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
@@ -345,7 +347,7 @@ class InstallationController extends Controller
                         if (isset($request->status_sale)) {
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->status_product = 'VENDIDO';
+                                    $productJpa->disponibility = 'VENDIDO';
                                 }
 
                                 if (
@@ -368,7 +370,7 @@ class InstallationController extends Controller
                             $mount = $productJpa->mount - $product['mount'];
                             $productJpa->mount = $mount;
                         } else {
-                            $productJpa->status_product = "VENDIENDO";
+                            $productJpa->disponibility = "VENDIENDO";
                         }
 
                         $productJpa->save();
@@ -504,7 +506,7 @@ class InstallationController extends Controller
                 $productByTechnicalJpa->mount = $mountNew;
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
-                $productJpa->status_product = "NUEVO";
+                $productJpa->disponibility = "NUEVO";
                 $stock = Stock::where('_model', $productJpa->_model)->first();
                 $stock->mount = intval($stock->mount) + 1;
                 $stock->save();
@@ -554,8 +556,8 @@ class InstallationController extends Controller
             foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
-                $productJpa->status_product = "DISPONIBLE";
+                $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
+                $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
                         ->where('_product', $detail['_product'])->first();

@@ -275,7 +275,13 @@ class ProductsController extends Controller
             if (isset($request->search['model'])) {
                 $query->where('model__id', $request->search['model']);
             }
-
+            if (isset($request->search['product_status'])) {
+                $query->where('product_status', $request->search['product_status']);
+            }
+            if (isset($request->search['condition_product'])) {
+                $query->where('condition_product', $request->search['condition_product']);
+            }
+            
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
