@@ -93,8 +93,8 @@ class InstallationController extends Controller
                     } else {
                         $productJpa->disponibility = "VENDIENDO";
                         $stock = Stock::where('_model', $productJpa->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
+                            ->where('_branch', $branch_->id)
+                            ->first();
                         $stock->mount = intval($stock->mount) - 1;
                         $stock->save();
                         $productJpa->save();
@@ -289,7 +289,8 @@ class InstallationController extends Controller
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
-            if (!isset($request->id)) {
+            if (!isset($request->id) ||
+                !isset($request->_technical)) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
@@ -327,7 +328,7 @@ class InstallationController extends Controller
                         $detailSale = DetailSale::find($product['id']);
                         if ($product['product']['type'] == "MATERIAL") {
 
-                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $detailSale->_product)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
@@ -367,14 +368,17 @@ class InstallationController extends Controller
                         $productJpa = Product::find($product['product']['id']);
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $mount = $productJpa->mount - $product['mount'];
-                            $productJpa->mount = $mount;
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                                ->where('_product', $productJpa->id)->first();
+                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
+                            $productByTechnicalJpa->mount = $mountNew;
+                            $productByTechnicalJpa->save();
+                            $productByTechnicalJpa->save();
+
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
                         }
-
                         $productJpa->save();
-
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
                         $detailSale->mount = $product['mount'];
@@ -407,7 +411,7 @@ class InstallationController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            
+
             if (!gValidate::check($role->permissions, $branch, 'installation_finished', 'read')) {
                 throw new Exception('No tienes permisos para listar las instataciónes finalizadas');
             }
