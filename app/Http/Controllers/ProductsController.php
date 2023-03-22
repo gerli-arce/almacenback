@@ -395,8 +395,8 @@ class ProductsController extends Controller
                 if ($column == 'price_buy' || $column == '*') {
                     $q->orWhere('price_buy', $type, $value);
                 }
-                if ($column == 'status_product' || $column == '*') {
-                    $q->orWhere('status_product', $type, $value);
+                if ($column == 'disponibility' || $column == '*') {
+                    $q->orWhere('disponibility', $type, $value);
                 }
                 if ($column == 'num_gia' || $column == '*') {
                     $q->orWhere('num_gia', $type, $value);
@@ -490,8 +490,8 @@ class ProductsController extends Controller
                 if ($column == 'price_buy' || $column == '*') {
                     $q->orWhere('price_buy', $type, $value);
                 }
-                if ($column == 'status_product' || $column == '*') {
-                    $q->orWhere('status_product', $type, $value);
+                if ($column == 'disponibility' || $column == '*') {
+                    $q->orWhere('disponibility', $type, $value);
                 }
                 if ($column == 'num_gia' || $column == '*') {
                     $q->orWhere('num_gia', $type, $value);
@@ -500,7 +500,7 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-                ->where('status_product', '!=', 'VENDIDO')
+                ->where('disponibility', '!=', 'VENDIDO')
                 ->where('type', 'EQUIPO');
 
             $iTotalDisplayRecords = $query->count();
@@ -624,13 +624,18 @@ class ProductsController extends Controller
                 $productJpa->price_sale = $request->price_sale;
             }
 
-            if (isset($request->status_product)) {
-                $productJpa->status_product = $request->status_product;
+            if (isset($request->product_status)) {
+                $productJpa->product_status = $request->product_status;
             }
 
             if (isset($request->condition_product)) {
                 $productJpa->condition_product = $request->condition_product;
             }
+
+            if (isset($request->product_status)) {
+                $productJpa->product_status = $request->product_status;
+            }
+
 
             if (isset($request->description)) {
                 $productJpa->description = $request->description;
