@@ -9,6 +9,7 @@ use App\gLibraries\gValidate;
 use App\Models\Keyses;
 use App\Models\OperationKeys;
 use App\Models\People;
+use App\Models\Branch;
 use App\Models\Response;
 use App\Models\ViewKeys;
 use Exception;
@@ -214,18 +215,22 @@ class KeysesController extends Controller
                 throw new Exception("Error: para agregar una llave es nesesario una imagen de esta.");
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $keyValidateExistence = Keyses::select(['name'])
                 ->where('name', $request->name)
+                ->where('_branch', $branch_->id)
                 ->first();
 
             if ($keyValidateExistence) {
-                throw new Exception("Escoja otro nombre para esta llave");
+                throw new Exception("Error: La llave ya existe, escoja otro nombre para esta llave");
             }
 
             $keysesJpa = new Keyses();
             $keysesJpa->name = $request->name;
             $keysesJpa->responsible = $request->responsible;
             $keysesJpa->date_entry = $request->date_entry;
+            $keysesJpa->_branch = $branch_->id;
             $keysesJpa->price = $request->price;
             $keysesJpa->duplicate = $request->duplicate;
             if($request->address){
@@ -274,43 +279,44 @@ class KeysesController extends Controller
         }
     }
 
-    public function search(Request $request)
-    {
-        $response = new Response();
-        try {
+    // public function search(Request $request)
+    // {
+    //     $response = new Response();
+    //     try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar marcas');
-            }
+    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+    //         if ($status != 200) {
+    //             throw new Exception($message);
+    //         }
+    //         if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+    //             throw new Exception('No tienes permisos para listar marcas');
+    //         }
 
-            $peopleJpa = Brand::select([
-                'id',
-                'correlative',
-                'brand',
-                'relative_id',
-            ])->whereNotNull('status')
-                ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('brand', 'asc')
-                ->get();
+    //         $peopleJpa = Brand::select([
+    //             'id',
+    //             'correlative',
+    //             'brand',
+    //             'relative_id',
+    //         ])->whereNotNull('status')
+    //             ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
+    //             ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
+    //             ->where('_branch', '')
+    //             ->orderBy('brand', 'asc')
+    //             ->get();
 
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-            $response->setData($peopleJpa->toArray());
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
+    //         $response->setStatus(200);
+    //         $response->setMessage('Operación correcta');
+    //         $response->setData($peopleJpa->toArray());
+    //     } catch (\Throwable$th) {
+    //         $response->setStatus(400);
+    //         $response->setMessage($th->getMessage());
+    //     } finally {
+    //         return response(
+    //             $response->toArray(),
+    //             $response->getStatus()
+    //         );
+    //     }
+    // }
 
     public function paginate(Request $request)
     {
@@ -325,6 +331,7 @@ class KeysesController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
                 throw new Exception('No tienes permisos para listar llaves');
             }
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $query = ViewKeys::orderBy($request->order['column'], $request->order['dir']);
 
@@ -355,7 +362,7 @@ class KeysesController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-            });
+            })->where('branch__correlative', $branch);
 
             $iTotalDisplayRecords = $query->count();
             $keysJpa = $query
@@ -373,7 +380,7 @@ class KeysesController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewKeys::count());
+            $response->setITotalRecords(ViewKeys::where('branch__correlative', $branch)->count());
             $response->setData($keys);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -458,10 +465,14 @@ class KeysesController extends Controller
                 throw new Exception("No se puede actualizar este registro");
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+
             if (isset($request->name)) {
                 $verifyCatJpa = Keyses::select(['id', 'name'])
                     ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
+                    ->where('_branch', $branch_->id)
                     ->first();
                 if ($verifyCatJpa) {
                     throw new Exception("Elija otro nombre para esta llave, el nombre ya existe.");
