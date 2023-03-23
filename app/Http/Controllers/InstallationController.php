@@ -38,6 +38,9 @@ class InstallationController extends Controller
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
+                !isset($request->price_all) ||
+                !isset($request->type_pay) ||
+                !isset($request->mount_dues) ||
                 !isset($request->date_sale)) {
                 throw new Exception('Error: No deje campos vacíos');
             }
@@ -53,9 +56,11 @@ class InstallationController extends Controller
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
             $salesProduct->price_all = $request->price_all;
+            $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
-
+            $salesProduct->type_pay = $request->type_pay;
+            $salesProduct->mount_dues = $request->mount_dues;
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -314,7 +319,12 @@ class InstallationController extends Controller
             if (isset($request->type_intallation)) {
                 $salesProduct->type_intallation = $request->type_intallation;
             }
-
+            if (isset($request->type_pay)) {
+                $salesProduct->type_pay = $request->type_pay;
+            }
+            if (isset($request->mount_dues)) {
+                $salesProduct->mount_dues = $request->mount_dues;
+            }
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
@@ -350,17 +360,14 @@ class InstallationController extends Controller
                                 if ($product['product']['type'] == "EQUIPO") {
                                     $productJpa->disponibility = 'VENDIDO';
                                 }
-
                                 if (
                                     isset($request->image_qr)
                                 ) {
                                     $salesProduct->image_type = $request->image_type;
                                     $salesProduct->image_qr = base64_decode($request->image_qr);
                                 }
-
                                 $salesProduct->issue_date = gTrace::getDate('mysql');
                                 $salesProduct->_issue_user = $userid;
-
                             }
                         }
                         $productJpa->save();
