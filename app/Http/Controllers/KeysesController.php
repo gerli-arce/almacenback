@@ -255,6 +255,18 @@ class KeysesController extends Controller
                 $keysesJpa->image_full = null;
             }
 
+            if(isset($request->position_x)){
+                $keysesJpa->position_x = $request->position_x;
+            }
+
+            if(isset($request->position_y)){
+                $keysesJpa->position_y = $request->position_y;
+            }
+
+            if(isset($request->n_duplicates)){
+                $keysesJpa->n_duplicates = $request->n_duplicates;
+            }
+
             if (isset($request->description)) {
                 $keysesJpa->description = $request->description;
             }
