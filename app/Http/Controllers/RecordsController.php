@@ -67,14 +67,14 @@ class RecordsController extends Controller
                 if ($column == 'price_buy' || $column == '*') {
                     $q->orWhere('price_buy', $type, $value);
                 }
-                if ($column == 'status_product' || $column == '*') {
-                    $q->orWhere('status_product', $type, $value);
+                if ($column == 'product_status' || $column == '*') {
+                    $q->orWhere('product_status', $type, $value);
                 }
                 if ($column == 'status' || $column == '*') {
                     $q->orWhere('status', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-                ->where('status_product', '=', 'VENDIDO');
+                ->where('disponibility', '=', 'VENDIDO');
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
