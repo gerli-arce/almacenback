@@ -531,6 +531,19 @@ class KeysesController extends Controller
                 $keysJpa->date_entry = $request->date_entry;
             }
 
+            
+            if(isset($request->position_x)){
+                $keysJpa->position_x = $request->position_x;
+            }
+
+            if(isset($request->position_y)){
+                $keysJpa->position_y = $request->position_y;
+            }
+
+            if(isset($request->n_duplicates)){
+                $keysJpa->n_duplicates = $request->n_duplicates;
+            }
+
             if (isset($request->description)) {
                 $keysJpa->description = $request->description;
             }
