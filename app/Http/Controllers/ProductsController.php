@@ -115,8 +115,8 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $stock = Stock::where('_model', $request->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
+                        ->where('_branch', $branch_->id)
+                        ->first();
                     $stock->mount = intval($stock->mount) + 1;
                     $stock->save();
                 }
@@ -181,8 +181,8 @@ class ProductsController extends Controller
                     $material->save();
 
                     $stock = Stock::where('_model', $request->_model)
-                    ->where('_branch',$branch_->id)
-                    ->first();
+                        ->where('_branch', $branch_->id)
+                        ->first();
                     $stock->mount = intval($stock->mount) + intval($request->mount);
                     $stock->save();
                 } else {
@@ -227,8 +227,8 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $stock = Stock::where('_model', $request->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
+                        ->where('_branch', $branch_->id)
+                        ->first();
                     $stock->mount = intval($stock->mount) + intval($request->mount);
                     $stock->save();
                 }
@@ -281,7 +281,7 @@ class ProductsController extends Controller
             if (isset($request->search['condition_product'])) {
                 $query->where('condition_product', $request->search['condition_product']);
             }
-            
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -642,7 +642,6 @@ class ProductsController extends Controller
                 $productJpa->product_status = $request->product_status;
             }
 
-
             if (isset($request->description)) {
                 $productJpa->description = $request->description;
             }
@@ -730,11 +729,19 @@ class ProductsController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $productJpa->mount = 0;
             $productJpa->_update_user = $userid;
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->status = null;
             $productJpa->save();
+
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+            $stock->mount = 0;
+            $stock->save();
 
             $response->setStatus(200);
             $response->setMessage('El producto se a eliminado correctamente');
