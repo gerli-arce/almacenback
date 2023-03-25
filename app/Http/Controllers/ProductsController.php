@@ -289,13 +289,13 @@ class ProductsController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'id' || $column == '*') {
-                    $q->where('id', $type, $value);
+                    $q->orWhere('id', $type, $value);
                 }
                 if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                    $q->orWhere('brand__brand', $type, $value);
                 }
                 if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                    $q->orWhere('category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
