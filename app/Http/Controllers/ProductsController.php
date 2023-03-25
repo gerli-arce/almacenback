@@ -288,6 +288,9 @@ class ProductsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
+                if ($column == 'id' || $column == '*') {
+                    $q->where('id', $type, $value);
+                }
                 if ($column == 'brand__brand' || $column == '*') {
                     $q->where('brand__brand', $type, $value);
                 }
