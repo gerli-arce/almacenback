@@ -274,6 +274,8 @@ Route::delete('/transports', [TransportsController::class, 'destroy']);
 Route::post('/transports/restore', [TransportsController::class, 'restore']);
 Route::post('/transports/paginate', [TransportsController::class, 'paginate']);
 Route::get('/transportimg/{relative_id}/{zize}', [TransportsController::class, 'image']);
+Route::post('/transports/search', [TransportsController::class, 'search']);
+
 
 // BUSINESS
 Route::post('/business', [BusinessController::class, 'store']);
