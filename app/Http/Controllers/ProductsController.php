@@ -677,9 +677,12 @@ class ProductsController extends Controller
                 $productJpa->warranty = $request->warranty;
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
-                $stock = Stock::where('_model', $productJpa->_model)->first();
+                $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)->first();
                 $stock->mount = $request->mount;
                 $stock->save();
             }

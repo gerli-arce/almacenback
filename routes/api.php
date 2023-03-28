@@ -142,7 +142,7 @@ Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
-Route::post('/technicals/stock/update', [TechnicalsController::class, 'updateStockTechnicalByProduct']);
+Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
