@@ -78,9 +78,9 @@ class ClientsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            if (strlen($request->doc_number) != 8) {
-                throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
-            }
+            // if (strlen($request->doc_number) != 8) {
+            //     throw new Exception("Para el tipo de documento DNI es nesesario que tenga 8 números.");
+            // }
 
             $userValidation = People::select(['doc_type', 'doc_number'])
                 ->where('doc_type', $request->doc_type)
