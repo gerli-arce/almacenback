@@ -221,7 +221,7 @@ class ProductsController extends Controller
                     }
                     $productJpa->creation_date = gTrace::getDate('mysql');
                     $productJpa->_creation_user = $userid;
-                    $productJpa->update_date = gTrace::getDate('mysql');
+                    $productJpa->update_date = gTrace::getDate('mysql');gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
                     $productJpa->save();
