@@ -62,18 +62,42 @@ class ProductsController extends Controller
                     throw new Exception("Error: No deje campos vacíos");
                 }
                 foreach ($request->data as $product) {
-                    // $productValidation = Product::select(['mac', 'serie'])
-                    //     ->where('mac', $product['mac'])
-                    //     ->orWhere('serie', $product['serie'])
-                    //     ->first();
-                    // if ($productValidation) {
-                    //     if ($productValidation->mac == $product['mac']) {
-                    //         throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
-                    //     }
-                    //     if ($productValidation->serie == $product['serie']) {
-                    //         throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
-                    //     }
-                    // }
+
+                    if (isset($product['mac']) && isset($product['serie'])) {
+                        $productValidation = Product::select(['mac', 'serie'])
+                            ->whereNotNull('mac')
+                            ->whereNotNull('serie')
+                            ->where('mac', $product['mac'])
+                            ->orWhere('serie', $product['serie'])
+                            ->first();
+                        if ($productValidation) {
+                            if ($productValidation->mac == $product['mac']) {
+                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                            }
+                            if ($productValidation->serie == $product['serie']) {
+                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                            }
+                        }
+                    } else {
+                        if (isset($product['mac'])) {
+                            $productValidation = Product::select(['mac', 'serie'])
+                                ->whereNotNull('mac')
+                                ->where('mac', $product['mac'])
+                                ->first();
+                            if ($productValidation) {
+                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                            }
+                        }
+                        if (isset($product['serie'])) {
+                            $productValidation = Product::select(['mac', 'serie'])
+                                ->whereNotNull('serie')
+                                ->orWhere('serie', $product['serie'])
+                                ->first();
+                            if ($productValidation) {
+                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                            }
+                        }
+                    }
 
                     $productJpa = new Product();
                     $productJpa->type = $request->type;
@@ -238,7 +262,7 @@ class ProductsController extends Controller
             $response->setMessage('Producto agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
@@ -682,7 +706,7 @@ class ProductsController extends Controller
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
                 $stock = Stock::where('_model', $productJpa->_model)
-                ->where('_branch', $branch_->id)->first();
+                    ->where('_branch', $branch_->id)->first();
                 $stock->mount = $request->mount;
                 $stock->save();
             }
