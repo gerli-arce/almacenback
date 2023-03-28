@@ -59,11 +59,14 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
+
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
+
+
 
 // SESSION
 Route::post('/session/login', [SessionController::class, 'login']);
@@ -139,7 +142,7 @@ Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
-Route::post('/technicals/stock/update', [TechnicalsController::class, 'updateStockTechnicalByProduct']);
+Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
@@ -229,6 +232,7 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::get('/stock/regularize', [StockController::class, 'regularizar']);
 
+
 // INTALLATIONS
 Route::post('/install', [InstallationController::class, 'registerInstallation']);
 Route::patch('/install', [InstallationController::class, 'update']);
@@ -246,6 +250,7 @@ Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPe
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
+
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
@@ -266,6 +271,7 @@ Route::delete('/towers', [TowerController::class, 'destroy']);
 Route::post('/towers/restore', [TowerController::class, 'restore']);
 Route::post('/towers/paginate', [TowerController::class, 'paginate']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
+
 
 // TRANSPORTS
 Route::post('/transports', [TransportsController::class, 'store']);

@@ -236,7 +236,7 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function updateStockTechnicalByProduct(Request $request)
+    public function addStockTechnicalByProduct(Request $request)
     {
         $response = new Response();
         try {

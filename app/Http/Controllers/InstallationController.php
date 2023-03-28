@@ -502,6 +502,8 @@ class InstallationController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $salesProduct = SalesProducts::find($request->_sales_product);
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
@@ -518,7 +520,8 @@ class InstallationController extends Controller
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "NUEVO";
-                $stock = Stock::where('_model', $productJpa->_model)->first();
+                $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch',$branch_->id)->first();
                 $stock->mount = intval($stock->mount) + 1;
                 $stock->save();
                 $productJpa->save();

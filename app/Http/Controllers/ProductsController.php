@@ -221,7 +221,7 @@ class ProductsController extends Controller
                     }
                     $productJpa->creation_date = gTrace::getDate('mysql');
                     $productJpa->_creation_user = $userid;
-                    $productJpa->update_date = gTrace::getDate('mysql');gTrace::getDate('mysql');
+                    $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
                     $productJpa->save();
@@ -371,13 +371,13 @@ class ProductsController extends Controller
             }
 
             if (isset($request->search['brand'])) {
-                $query->where('brand__id', $request->search['brand']);
+                $query->orWhere('brand__id', $request->search['brand']);
             }
             if (isset($request->search['category'])) {
-                $query->where('category__id', $request->search['category']);
+                $query->orWhere('category__id', $request->search['category']);
             }
             if (isset($request->search['model'])) {
-                $query->where('model__id', $request->search['model']);
+                $query->orWhere('model__id', $request->search['model']);
             }
 
             $query->where(function ($q) use ($request) {
@@ -387,10 +387,10 @@ class ProductsController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                    $q->orWhere('brand__brand', $type, $value);
                 }
                 if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                    $q->orWhere('category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
@@ -677,9 +677,12 @@ class ProductsController extends Controller
                 $productJpa->warranty = $request->warranty;
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
-                $stock = Stock::where('_model', $productJpa->_model)->first();
+                $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)->first();
                 $stock->mount = $request->mount;
                 $stock->save();
             }
