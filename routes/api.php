@@ -59,14 +59,11 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
-
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
-
-
 
 // SESSION
 Route::post('/session/login', [SessionController::class, 'login']);
@@ -232,7 +229,6 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::get('/stock/regularize', [StockController::class, 'regularizar']);
 
-
 // INTALLATIONS
 Route::post('/install', [InstallationController::class, 'registerInstallation']);
 Route::patch('/install', [InstallationController::class, 'update']);
@@ -250,7 +246,6 @@ Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPe
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
-
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
@@ -272,7 +267,6 @@ Route::post('/towers/restore', [TowerController::class, 'restore']);
 Route::post('/towers/paginate', [TowerController::class, 'paginate']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
-
 // TRANSPORTS
 Route::post('/transports', [TransportsController::class, 'store']);
 Route::patch('/transports', [TransportsController::class, 'update']);
@@ -288,10 +282,10 @@ Route::delete('/business', [BusinessController::class, 'destroy']);
 Route::post('/business/restore', [BusinessController::class, 'restore']);
 Route::post('/business/paginate', [BusinessController::class, 'paginate']);
 Route::get('/businessimg/{relative_id}/{zize}', [BusinessController::class, 'image']);
+Route::post('/business/search', [BusinessController::class, 'search']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
-
 
 // Route::get('/traslat', [connect::class, 'dats']);
