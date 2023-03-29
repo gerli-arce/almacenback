@@ -33,6 +33,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransportsController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\ParcelsController;
 use App\Http\Controllers\connect;
 
 /*
@@ -250,6 +251,11 @@ Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPe
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
+
+// FAULDS
+Route::post('/parcels', [ParcelsController::class, 'store']);
+Route::patch('/parcels', [ParcelsController::class, 'update']);
+Route::delete('/parcels', [ParcelsController::class, 'delete']);
 
 
 // KEYS
