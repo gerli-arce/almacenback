@@ -254,9 +254,9 @@ Route::delete('/fauld', [FauldController::class, 'delete']);
 
 // FAULDS
 Route::post('/parcels', [ParcelsController::class, 'store']);
+Route::post('/parcels/paginate', [ParcelsController::class, 'paginate']);
 Route::patch('/parcels', [ParcelsController::class, 'update']);
 Route::delete('/parcels', [ParcelsController::class, 'delete']);
-
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);

@@ -5,16 +5,21 @@ namespace App\Http\Controllers;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
+use App\gLibraries\gJson;
 use App\Models\Branch;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
+use App\Models\ViewParcels;
 use App\Models\Models;
+use App\Models\ViewProducts;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 
 class ParcelsController extends Controller
 {
@@ -36,6 +41,7 @@ class ParcelsController extends Controller
                 !isset($request->date_entry) ||
                 !isset($request->_business_designed) ||
                 !isset($request->_business_transport) ||
+                !isset($request->price_transport) ||
                 !isset($request->_provider) ||
                 !isset($request->_model) ||
                 !isset($request->currency) ||
@@ -83,6 +89,7 @@ class ParcelsController extends Controller
             $parcelJpa->date_entry = $request->date_entry;
             $parcelJpa->_business_designed = $request->_business_designed;
             $parcelJpa->_business_transport = $request->_business_transport;
+            $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->_provider = $request->_provider;
             $parcelJpa->parcel_type = "REGISTED";
             
@@ -143,6 +150,7 @@ class ParcelsController extends Controller
 
             $parcelJpa->price_buy = $request->price_buy;
             $parcelJpa->_entry_product = $entryProductJpa->id;
+            $parcelJpa->_branch = $branch_->id;
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
@@ -212,8 +220,8 @@ class ParcelsController extends Controller
                     if (isset($request->num_voucher)) {
                         $productJpa->num_voucher = $request->num_voucher;
                     }
-                    if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
@@ -222,11 +230,12 @@ class ParcelsController extends Controller
                         $productJpa->warranty = $request->warranty;
                     }
                     $productJpa->condition_product = $request->condition_product;
-                    $productJpa->product_status = $request->product_status;
                     $productJpa->date_entry = $request->date_entry;
                     if (isset($request->description)) {
                         $productJpa->description = $request->description;
                     }
+                    $productJpa->condition_product = "POR_ENCOMIENDA";
+                    $productJpa->product_status = "NUEVO";
                     $productJpa->disponibility = "DISPONIBLE";
                     $productJpa->creation_date = gTrace::getDate('mysql');
                     $productJpa->_creation_user = $userid;
@@ -413,27 +422,11 @@ class ParcelsController extends Controller
                 throw new Exception('No tienes permisos para listar encomiedas');
             }
 
-            $query = ViewProducts::select(['*'])
+            $query = ViewParcels::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
                 $query->whereNotNull('status');
-            }
-
-            if (isset($request->search['brand'])) {
-                $query->where('brand__id', $request->search['brand']);
-            }
-            if (isset($request->search['category'])) {
-                $query->where('category__id', $request->search['category']);
-            }
-            if (isset($request->search['model'])) {
-                $query->where('model__id', $request->search['model']);
-            }
-            if (isset($request->search['product_status'])) {
-                $query->where('product_status', $request->search['product_status']);
-            }
-            if (isset($request->search['condition_product'])) {
-                $query->where('condition_product', $request->search['condition_product']);
             }
 
             $query->where(function ($q) use ($request) {
@@ -445,55 +438,71 @@ class ParcelsController extends Controller
                 if ($column == 'id' || $column == '*') {
                     $q->orWhere('id', $type, $value);
                 }
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->orWhere('brand__brand', $type, $value);
+                if ($column == 'date_send' || $column == '*') {
+                    $q->orWhere('date_send', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->orWhere('category__category', $type, $value);
+                if ($column == 'date_entry' || $column == '*') {
+                    $q->orWhere('date_entry', $type, $value);
                 }
-                if ($column == 'model__model' || $column == '*') {
-                    $q->orWhere('model__model', $type, $value);
+                if ($column == 'business_designed__name' || $column == '*') {
+                    $q->orWhere('business_designed__name', $type, $value);
                 }
-                if ($column == 'mac' || $column == '*') {
-                    $q->orWhere('mac', $type, $value);
+                if ($column == 'business_designed__ruc' || $column == '*') {
+                    $q->orWhere('business_designed__ruc', $type, $value);
                 }
-                if ($column == 'serie' || $column == '*') {
-                    $q->orWhere('serie', $type, $value);
+                if ($column == 'business_transport__name' || $column == '*') {
+                    $q->orWhere('business_transport__name', $type, $value);
                 }
-                if ($column == 'price_buy' || $column == '*') {
-                    $q->orWhere('price_buy', $type, $value);
+                if ($column == 'business_transport__doc_number' || $column == '*') {
+                    $q->orWhere('business_transport__doc_number', $type, $value);
                 }
-                if ($column == 'disponibility' || $column == '*') {
-                    $q->orWhere('disponibility', $type, $value);
+                if ($column == 'provider__doc_number' || $column == '*') {
+                    $q->orWhere('provider__doc_number', $type, $value);
                 }
-                if ($column == 'num_gia' || $column == '*') {
-                    $q->orWhere('num_gia', $type, $value);
+                if ($column == 'provider__name' || $column == '*') {
+                    $q->orWhere('provider__name', $type, $value);
+                }
+                if ($column == 'provider__lastname' || $column == '*') {
+                    $q->orWhere('provider__lastname', $type, $value);
+                }
+                if ($column == 'num_voucher' || $column == '*') {
+                    $q->orWhere('num_voucher', $type, $value);
+                }
+                if ($column == 'num_guia' || $column == '*') {
+                    $q->orWhere('num_guia', $type, $value);
                 }
                 if ($column == 'num_bill' || $column == '*') {
                     $q->orWhere('num_bill', $type, $value);
                 }
-            })->where('branch__correlative', $branch)
-                ->where('disponibility', '!=', 'VENDIDO');
+                if ($column == 'model__model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+                if ($column == 'total' || $column == '*') {
+                    $q->orWhere('total', $type, $value);
+                }
+            })->where('branch__correlative', $branch);
+
             $iTotalDisplayRecords = $query->count();
-
-            $productsJpa = $query
-
+            $parcelsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $products = array();
-            foreach ($productsJpa as $product_) {
-                $product = gJSON::restore($product_->toArray(), '__');
-                $products[] = $product;
+            $parcels = array();
+            foreach ($parcelsJpa as $parcelJpa) {
+                $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+                $parcels[] = $parcel;
             }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
-            $response->setData($products);
+            $response->setITotalRecords(ViewParcels::where('branch__correlative', $branch)->count());
+            $response->setData($parcels);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
@@ -503,11 +512,6 @@ class ParcelsController extends Controller
                 $response->getStatus()
             );
         }
-    }
-
-    public function update(Request $request)
-    {
-        // pending
     }
 
 }
