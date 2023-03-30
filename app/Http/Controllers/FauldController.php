@@ -8,6 +8,8 @@ use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\viewInstallations;
@@ -36,6 +38,9 @@ class FauldController extends Controller
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
+                !isset($request->price_all) ||
+                !isset($request->type_pay) ||
+                !isset($request->mount_dues) ||
                 !isset($request->date_sale)) {
                 throw new Exception('Error: No deje campos vacíos');
             }
@@ -51,8 +56,11 @@ class FauldController extends Controller
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
             $salesProduct->price_all = $request->price_all;
+            $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
+            $salesProduct->type_pay = $request->type_pay;
+            $salesProduct->mount_dues = $request->mount_dues;
 
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
@@ -89,8 +97,10 @@ class FauldController extends Controller
                         $recordProductByTechnicalJpa->save();
 
                     } else {
-                        $productJpa->status_product = "VENDIENDO";
-                        $stock = Stock::where('_model', $productJpa->_model)->first();
+                        $productJpa->disponibility = "VENDIENDO";
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
                         $stock->mount = intval($stock->mount) - 1;
                         $stock->save();
                         $productJpa->save();
@@ -106,7 +116,7 @@ class FauldController extends Controller
                 }
             }
             $response->setStatus(200);
-            $response->setMessage('Instalación agregada correctamente');
+            $response->setMessage('Avería agregada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
@@ -118,7 +128,7 @@ class FauldController extends Controller
         }
     }
 
-    public function paginateFauldPending(Request $request)
+    public function paginateFauldsPending(Request $request)
     {
         $response = new Response();
         try {
@@ -129,13 +139,14 @@ class FauldController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'read')) {
-                throw new Exception('No tienes permisos para listar las averias pendientes');
+                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             }
 
             $query = viewInstallations::select([
                 '*',
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->orderBy('id', 'desc');
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -161,8 +172,8 @@ class FauldController extends Controller
                 }
             })
                 ->where('status_sale', 'PENDIENTE')
-                ->where('type_operation__operation', 'AVERIA');
-
+                ->where('type_operation__operation', 'AVERIA')
+                ->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -180,8 +191,86 @@ class FauldController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->count());
+            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->where('branch__correlative', $branch)->count());
             $response->setData($installations);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getSale(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+
+            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            // }
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__brand__id',
+                'brands.correlative AS product__brand__correlative',
+                'brands.brand AS product__brand__brand',
+                'brands.relative_id AS product__brand__relative_id',
+                'categories.id AS product__category__id',
+                'categories.category AS product__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_gia AS product__num_gia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount as mount',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('brands', 'products._brand', 'brands.id')
+                ->join('categories', 'products._category', 'categories.id')
+                ->join('models', 'products._model', 'models.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $InstallationJpa = viewInstallations::find($id);
+
+            $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
+            $installJpa['products'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($installJpa);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -204,10 +293,11 @@ class FauldController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'create')) {
-                throw new Exception('No tienes permisos para actualizar averias');
+                throw new Exception('No tienes permisos para listar modelos');
             }
 
-            if (!isset($request->id)) {
+            if (!isset($request->id) ||
+                !isset($request->_technical)) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
@@ -231,10 +321,18 @@ class FauldController extends Controller
             if (isset($request->type_intallation)) {
                 $salesProduct->type_intallation = $request->type_intallation;
             }
-
+            if (isset($request->type_pay)) {
+                $salesProduct->type_pay = $request->type_pay;
+            }
+            if (isset($request->mount_dues)) {
+                $salesProduct->mount_dues = $request->mount_dues;
+            }
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
+            
+            $salesProduct->description = $request->description;
+
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
@@ -245,7 +343,7 @@ class FauldController extends Controller
                         $detailSale = DetailSale::find($product['id']);
                         if ($product['product']['type'] == "MATERIAL") {
 
-                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $detailSale->_product)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
@@ -265,16 +363,14 @@ class FauldController extends Controller
                         if (isset($request->status_sale)) {
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->status_product = 'VENDIDO';
+                                    $productJpa->disponibility = 'VENDIDO';
                                 }
-
                                 if (
                                     isset($request->image_qr)
                                 ) {
                                     $salesProduct->image_type = $request->image_type;
                                     $salesProduct->image_qr = base64_decode($request->image_qr);
                                 }
-
                                 $salesProduct->issue_date = gTrace::getDate('mysql');
                                 $salesProduct->_issue_user = $userid;
                             }
@@ -284,14 +380,17 @@ class FauldController extends Controller
                         $productJpa = Product::find($product['product']['id']);
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $mount = $productJpa->mount - $product['mount'];
-                            $productJpa->mount = $mount;
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                                ->where('_product', $productJpa->id)->first();
+                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
+                            $productByTechnicalJpa->mount = $mountNew;
+                            $productByTechnicalJpa->save();
+                            $productByTechnicalJpa->save();
+
                         } else {
-                            $productJpa->status_product = "VENDIENDO";
+                            $productJpa->disponibility = "VENDIENDO";
                         }
-
                         $productJpa->save();
-
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
                         $detailSale->mount = $product['mount'];
