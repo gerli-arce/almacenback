@@ -253,7 +253,7 @@ Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauld
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
 
-// FAULDS
+// PARCELS
 Route::post('/parcels', [ParcelsController::class, 'store']);
 Route::post('/parcels/paginate', [ParcelsController::class, 'paginate']);
 Route::patch('/parcels', [ParcelsController::class, 'update']);
