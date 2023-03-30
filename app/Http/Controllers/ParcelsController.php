@@ -514,51 +514,51 @@ class ParcelsController extends Controller
         }
     }
 
-    public function image($id, $size)
-    {
-        $response = new Response();
-        $content = null;
-        $type = null;
-        try {
-            if ($size != 'full') {
-                $size = 'mini';
-            }
-            if (
-                !isset($id)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
+    // public function image($id, $size)
+    // {
+    //     $response = new Response();
+    //     $content = null;
+    //     $type = null;
+    //     try {
+    //         if ($size != 'full') {
+    //             $size = 'mini';
+    //         }
+    //         if (
+    //             !isset($id)
+    //         ) {
+    //             throw new Exception("Error: No deje campos vacíos");
+    //         }
 
-            $parcelJpa = Parcel::select([
-                "parcels.image_$size as image_content",
-                'parcels.image_type',
+    //         $parcelJpa = Parcel::select([
+    //             "parcels.image_$size as image_content",
+    //             'parcels.image_type',
 
-            ])->find($id)
+    //         ])->find($id)
 
-            if (!$parcelJpa) {
-                throw new Exception('No se encontraron datos');
-            }
-            if (!$parcelJpa->image_content) {
-                throw new Exception('No existe imagen');
-            }
-            $content = $parcelJpa->image_content;
-            $type = $parcelJpa->image_type;
-            $response->setStatus(200);
-        } catch (\Throwable$th) {
-            $ruta = '../storage/images/factura-default.png';
-            $fp = fopen($ruta, 'r');
-            $datos_image = fread($fp, filesize($ruta));
-            $datos_image = addslashes($datos_image);
-            fclose($fp);
-            $content = stripslashes($datos_image);
-            $type = 'image/png';
-            $response->setStatus(400);
-        } finally {
-            return response(
-                $content,
-                $response->getStatus()
-            )->header('Content-Type', $type);
-        }
-    }
+    //         if (!$parcelJpa) {
+    //             throw new Exception('No se encontraron datos');
+    //         }
+    //         if (!$parcelJpa->image_content) {
+    //             throw new Exception('No existe imagen');
+    //         }
+    //         $content = $parcelJpa->image_content;
+    //         $type = $parcelJpa->image_type;
+    //         $response->setStatus(200);
+    //     } catch (\Throwable$th) {
+    //         $ruta = '../storage/images/factura-default.png';
+    //         $fp = fopen($ruta, 'r');
+    //         $datos_image = fread($fp, filesize($ruta));
+    //         $datos_image = addslashes($datos_image);
+    //         fclose($fp);
+    //         $content = stripslashes($datos_image);
+    //         $type = 'image/png';
+    //         $response->setStatus(400);
+    //     } finally {
+    //         return response(
+    //             $content,
+    //             $response->getStatus()
+    //         )->header('Content-Type', $type);
+    //     }
+    // }
 
 }
