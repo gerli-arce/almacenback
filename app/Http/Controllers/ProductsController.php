@@ -291,10 +291,10 @@ class ProductsController extends Controller
             }
 
             if (isset($request->search['brand'])) {
-                $query->where('brand__id', $request->search['brand']);
+                $query->where('model__brand__id', $request->search['brand']);
             }
             if (isset($request->search['category'])) {
-                $query->where('category__id', $request->search['category']);
+                $query->where('model__category__id', $request->search['category']);
             }
             if (isset($request->search['model'])) {
                 $query->where('model__id', $request->search['model']);
@@ -315,11 +315,11 @@ class ProductsController extends Controller
                 if ($column == 'id' || $column == '*') {
                     $q->orWhere('id', $type, $value);
                 }
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->orWhere('brand__brand', $type, $value);
+                if ($column == 'model__brand__brand' || $column == '*') {
+                    $q->orWhere('model__brand__brand', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->orWhere('category__category', $type, $value);
+                if ($column == 'model__category__category' || $column == '*') {
+                    $q->orWhere('model__category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
@@ -336,8 +336,8 @@ class ProductsController extends Controller
                 if ($column == 'disponibility' || $column == '*') {
                     $q->orWhere('disponibility', $type, $value);
                 }
-                if ($column == 'num_gia' || $column == '*') {
-                    $q->orWhere('num_gia', $type, $value);
+                if ($column == 'num_guia' || $column == '*') {
+                    $q->orWhere('num_guia', $type, $value);
                 }
                 if ($column == 'num_bill' || $column == '*') {
                     $q->orWhere('num_bill', $type, $value);
