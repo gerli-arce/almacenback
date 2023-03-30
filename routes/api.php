@@ -257,6 +257,7 @@ Route::post('/parcels', [ParcelsController::class, 'store']);
 Route::post('/parcels/paginate', [ParcelsController::class, 'paginate']);
 Route::patch('/parcels', [ParcelsController::class, 'update']);
 Route::delete('/parcels', [ParcelsController::class, 'delete']);
+Route::get('/parcelimg/{id}/{zize}', [ParcelsController::class, 'image']);
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
