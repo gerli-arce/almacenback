@@ -114,8 +114,8 @@ class ProductsController extends Controller
                     $productJpa->mac = $product['mac'];
                     $productJpa->serie = $product['serie'];
                     $productJpa->mount = "1";
-                    if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
@@ -152,7 +152,7 @@ class ProductsController extends Controller
                 $material = Product::select([
                     'id',
                     'mount',
-                    'num_gia',
+                    'num_guia',
                     'num_bill',
                     '_model',
                     '_category',
@@ -180,8 +180,8 @@ class ProductsController extends Controller
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
                     $material->price_sale = $request->price_sale;
-                    if (isset($request->num_gia)) {
-                        $material->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $material->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $material->num_bill = $request->num_bill;
@@ -223,8 +223,8 @@ class ProductsController extends Controller
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
                     $productJpa->price_sale = $request->price_sale;
-                    if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
@@ -431,8 +431,8 @@ class ProductsController extends Controller
                 if ($column == 'disponibility' || $column == '*') {
                     $q->orWhere('disponibility', $type, $value);
                 }
-                if ($column == 'num_gia' || $column == '*') {
-                    $q->orWhere('num_gia', $type, $value);
+                if ($column == 'num_guia' || $column == '*') {
+                    $q->orWhere('num_guia', $type, $value);
                 }
                 if ($column == 'num_bill' || $column == '*') {
                     $q->orWhere('num_bill', $type, $value);
@@ -526,8 +526,8 @@ class ProductsController extends Controller
                 if ($column == 'disponibility' || $column == '*') {
                     $q->orWhere('disponibility', $type, $value);
                 }
-                if ($column == 'num_gia' || $column == '*') {
-                    $q->orWhere('num_gia', $type, $value);
+                if ($column == 'num_guia' || $column == '*') {
+                    $q->orWhere('num_guia', $type, $value);
                 }
                 if ($column == 'num_bill' || $column == '*') {
                     $q->orWhere('num_bill', $type, $value);
@@ -638,8 +638,8 @@ class ProductsController extends Controller
                 $productJpa->serie = $request->serie;
             }
 
-            if (isset($request->num_gia)) {
-                $productJpa->num_gia = $request->num_gia;
+            if (isset($request->num_guia)) {
+                $productJpa->num_guia = $request->num_guia;
             }
             if (isset($request->num_bill)) {
                 $productJpa->num_bill = $request->num_bill;

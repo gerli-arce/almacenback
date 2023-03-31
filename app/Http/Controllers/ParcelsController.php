@@ -258,16 +258,12 @@ class ParcelsController extends Controller
                 $productJpa = Product::select([
                     'id',
                     'mount',
-                    'num_gia',
+                    'num_guia',
                     'num_bill',
                     '_model',
-                    '_category',
-                    '_brand',
                     '_branch',
                 ])
                     ->where('_model', $request->_model)
-                    ->where('_category', $request->_category)
-                    ->where('_brand', $request->_brand)
                     ->where('_branch', $branch_->id)
                     ->first();
 
@@ -280,7 +276,6 @@ class ParcelsController extends Controller
                     $productJpa->relative_id = guid::short();
                     $productJpa->_model = $request->_model;
                     $productJpa->_provider = $request->_provider;
-                    $productJpa->_unity = $request->_unity;
                     $productJpa->mount = $mount_new;
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
@@ -297,8 +292,8 @@ class ParcelsController extends Controller
                     if (isset($request->num_voucher)) {
                         $productJpa->num_voucher = $request->num_voucher;
                     }
-                    if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
@@ -306,8 +301,8 @@ class ParcelsController extends Controller
                     if (isset($request->warranty)) {
                         $productJpa->warranty = $request->warranty;
                     }
-                    $productJpa->condition_product = $request->condition_product;
-                    $productJpa->product_status = $request->product_status;
+                    $productJpa->condition_product = "POR_ENCOMIENDA";
+                    $productJpa->product_status = "NUEVO";
                     $productJpa->date_entry = $request->date_entry;
                     if (isset($request->description)) {
                         $productJpa->description = $request->description;
@@ -336,9 +331,7 @@ class ParcelsController extends Controller
                     $productJpa->_provider = $request->_provider;
                     $productJpa->_model = $request->_model;
                     $productJpa->relative_id = guid::short();
-                    $productJpa->mac = $product['mac'];
-                    $productJpa->serie = $product['serie'];
-                    $productJpa->mount = "1";
+                    $productJpa->mount = $request->mount_product;
 
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
@@ -355,8 +348,8 @@ class ParcelsController extends Controller
                     if (isset($request->num_voucher)) {
                         $productJpa->num_voucher = $request->num_voucher;
                     }
-                    if (isset($request->num_gia)) {
-                        $productJpa->num_gia = $request->num_gia;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
                     }
                     if (isset($request->num_bill)) {
                         $productJpa->num_bill = $request->num_bill;
@@ -364,8 +357,8 @@ class ParcelsController extends Controller
                     if (isset($request->warranty)) {
                         $productJpa->warranty = $request->warranty;
                     }
-                    $productJpa->condition_product = $request->condition_product;
-                    $productJpa->product_status = $request->product_status;
+                    $productJpa->condition_product = "POR_ENCOMIENDA";
+                    $productJpa->product_status = "NUEVO";
                     $productJpa->date_entry = $request->date_entry;
                     if (isset($request->description)) {
                         $productJpa->description = $request->description;
@@ -579,7 +572,7 @@ class ParcelsController extends Controller
             }
 
             $parcelJpa =  Parcel::select(['id'])->find($request->id);
-            
+
             if(isset($request->date_send)){
                 $parcelJpa->date_send = $request->date_send;
             }
