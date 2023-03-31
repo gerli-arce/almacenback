@@ -223,12 +223,12 @@ class InstallationController extends Controller
                 'branches.id AS product__branch__id',
                 'branches.name AS product__branch__name',
                 'branches.correlative AS product__branch__correlative',
-                'brands.id AS product__brand__id',
-                'brands.correlative AS product__brand__correlative',
-                'brands.brand AS product__brand__brand',
-                'brands.relative_id AS product__brand__relative_id',
-                'categories.id AS product__category__id',
-                'categories.category AS product__category__category',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
                 'models.id AS product__model__id',
                 'models.model AS product__model__model',
                 'models.relative_id AS product__model__relative_id',
@@ -237,7 +237,7 @@ class InstallationController extends Controller
                 'products.serie AS product__serie',
                 'products.price_sale AS product__price_sale',
                 'products.currency AS product__currency',
-                'products.num_gia AS product__num_gia',
+                'products.num_guia AS product__num_guia',
                 'products.condition_product AS product__condition_product',
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
@@ -248,9 +248,9 @@ class InstallationController extends Controller
             ])
                 ->join('products', 'detail_sales._product', 'products.id')
                 ->join('branches', 'products._branch', 'branches.id')
-                ->join('brands', 'products._brand', 'brands.id')
-                ->join('categories', 'products._category', 'categories.id')
                 ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
                 ->whereNotNull('detail_sales.status')
                 ->where('_sales_product', $id)
                 ->get();

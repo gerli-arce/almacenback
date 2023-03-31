@@ -36,7 +36,7 @@ class ProductsController extends Controller
                 !isset($request->type) ||
                 !isset($request->_brand) ||
                 !isset($request->_category) ||
-                !isset($request->_supplier) ||
+                !isset($request->_provider) ||
                 !isset($request->_model) ||
                 !isset($request->currency) ||
                 !isset($request->price_buy) ||
@@ -52,7 +52,7 @@ class ProductsController extends Controller
             $entryProduct = new EntryProducts();
             $entryProduct->_user = $userid;
             $entryProduct->entry_date = gTrace::getDate('mysql');
-            $entryProduct->_type_entry = $request->_type_entry;
+            $entryProduct->_type_operation = $request->_type_operation;
             $entryProduct->status = "1";
             $entryProduct->save();
 
@@ -104,11 +104,8 @@ class ProductsController extends Controller
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
                     $productJpa->relative_id = guid::short();
-                    $productJpa->_brand = $request->_brand;
-                    $productJpa->_category = $request->_category;
-                    $productJpa->_supplier = $request->_supplier;
+                    $productJpa->_provider = $request->_provider;
                     $productJpa->_model = $request->_model;
-                    $productJpa->_unity = $request->_unity;
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
                     $productJpa->price_sale = $request->price_sale;
@@ -156,12 +153,9 @@ class ProductsController extends Controller
                     'num_guia',
                     'num_bill',
                     '_model',
-                    '_category',
-                    '_brand',
+                    '_branch',
                 ])
                     ->where('_model', $request->_model)
-                    ->where('_category', $request->_category)
-                    ->where('_brand', $request->_brand)
                     ->where('_branch', $branch_->id)
                     ->first();
 
@@ -172,11 +166,8 @@ class ProductsController extends Controller
                     $material->type = $request->type;
                     $material->_branch = $branch_->id;
                     $material->relative_id = guid::short();
-                    $material->_brand = $request->_brand;
-                    $material->_category = $request->_category;
-                    $material->_supplier = $request->_supplier;
+                    $material->_provider = $request->_provider;
                     $material->_model = $request->_model;
-                    $material->_unity = $request->_unity;
                     $material->mount = $mount_new;
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
@@ -411,11 +402,11 @@ class ProductsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->orWhere('brand__brand', $type, $value);
+                if ($column == 'model__brand__brand' || $column == '*') {
+                    $q->orWhere('model__brand__brand', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->orWhere('category__category', $type, $value);
+                if ($column == 'model__category__category' || $column == '*') {
+                    $q->orWhere('model__category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
@@ -506,11 +497,11 @@ class ProductsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                if ($column == 'model__brand__brand' || $column == '*') {
+                    $q->where('model__brand__brand', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                if ($column == 'model__category__category' || $column == '*') {
+                    $q->where('model__category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
@@ -645,57 +636,35 @@ class ProductsController extends Controller
             if (isset($request->num_bill)) {
                 $productJpa->num_bill = $request->num_bill;
             }
-
-            if (isset($request->_unity)) {
-                $productJpa->_unity = $request->_unity;
-            }
-
             if (isset($request->price_buy)) {
                 $productJpa->price_buy = $request->price_buy;
             }
-
             if (isset($request->price_sale)) {
                 $productJpa->price_sale = $request->price_sale;
             }
-
             if (isset($request->product_status)) {
                 $productJpa->product_status = $request->product_status;
             }
-
             if (isset($request->condition_product)) {
                 $productJpa->condition_product = $request->condition_product;
             }
-
             if (isset($request->product_status)) {
                 $productJpa->product_status = $request->product_status;
             }
-
             if (isset($request->description)) {
                 $productJpa->description = $request->description;
             }
-
             if (isset($request->currency)) {
                 $productJpa->currency = $request->currency;
             }
-
             if (isset($request->_model)) {
                 $productJpa->_model = $request->_model;
             }
-
-            if (isset($request->_brand)) {
-                $productJpa->_brand = $request->_brand;
-            }
-
             if (isset($request->_branch)) {
                 $productJpa->_branch = $request->_branch;
             }
-
-            if (isset($request->_category)) {
-                $productJpa->_category = $request->_category;
-            }
-
-            if (isset($request->_supplier)) {
-                $productJpa->_supplier = $request->_supplier;
+            if (isset($request->_provider)) {
+                $productJpa->_provider = $request->_provider;
             }
 
             if (isset($request->warranty)) {
