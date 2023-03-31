@@ -123,7 +123,7 @@ class ParcelsController extends Controller
             }
 
             if (isset($request->num_bill)) {
-                $parcelJpa->num_guia = $request->num_bill;
+                $parcelJpa->num_bill = $request->num_bill;
             }
 
             $parcelJpa->_model = $request->_model;
@@ -618,7 +618,7 @@ class ParcelsController extends Controller
                 $parcelJpa->num_guia = $request->num_guia;
             }
             if (isset($request->num_bill)) {
-                $parcelJpa->num_guia = $request->num_bill;
+                $parcelJpa->num_bill = $request->num_bill;
             }
             if(isset($request->_model)){
                 $parcelJpa->_model = $request->_model;
@@ -644,7 +644,7 @@ class ParcelsController extends Controller
             if(isset($request->value_unity)){
                 $parcelJpa->value_unity = $request->value_unity;
             }
-            if(isset($request)){
+            if(isset($request->price_unity)){
                 $parcelJpa->price_unity = $request->price_unity;
             }
             if (isset($request->mr_revenue)) {
@@ -670,6 +670,87 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar encomiendas');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $parcelJpa = Parcel::find($request->id);
+            if (!$parcelJpa) {
+                throw new Exception('La encomienda que deseas eliminar no existe');
+            }
+
+            $parcelJpa->status = null;
+            $parcelJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('La encomienda a sido eliminada correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcles', 'delete_restore')) {
+                throw new Exception('No tienes permisos para encomiendas.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelsJpa = Models::find($request->id);
+            if (!$modelsJpa) {
+                throw new Exception('La encomienda que deseas restaurar no existe');
+            }
+
+            $modelsJpa->status = "1";
+            $modelsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('La encomienda a sido restaurada correctamente');
+            $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
