@@ -339,8 +339,8 @@ class TechnicalsController extends Controller
 
             if ($request->reazon == "ILLFATED") {
                 $recordProductByTechnicalJpa->type_operation = "ILLFATED";
-            } else if ($request->reazon == "TAKEOUT") {
-                $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+            } else if ($request->reazon == "STORE") {
+                $recordProductByTechnicalJpa->type_operation = "STORE";
             } else if ($request->reazon == "RETURN") {
                 $recordProductByTechnicalJpa->type_operation = "RETURN";
                 $productJpa = Product::find($request->product['id']);
