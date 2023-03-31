@@ -632,6 +632,9 @@ class ParcelsController extends Controller
             if (isset($request->description)) {
                 $parcelJpa->description = $request->description;
             }
+            if (isset($request->mount_product)) {
+                $parcelJpa->mount_product = $request->mount_product;
+            }
             if(isset($request->total)){
                 $parcelJpa->total = $request->total;
             }
