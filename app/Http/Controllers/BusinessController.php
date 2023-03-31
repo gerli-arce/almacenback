@@ -92,21 +92,22 @@ class BusinessController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'categories', 'read')) {
-                throw new Exception('No tienes permisos para listar categorias');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'categories', 'read')) {
+            //     throw new Exception('No tienes permisos para listar categorias');
+            // }
 
-            $peopleJpa = Category::select([
+            $peopleJpa = Business::select([
                 'id',
-                'category',
+                'name',
+                'ruc',
             ])->whereNotNull('status')
-                ->WhereRaw("category LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('category', 'asc')
+                ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhereRaw("ruc LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('name', 'asc')
                 ->get();
 
             $response->setStatus(200);

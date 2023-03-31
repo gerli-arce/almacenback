@@ -33,6 +33,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransportsController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\ParcelsController;
 use App\Http\Controllers\connect;
 
 /*
@@ -246,11 +247,18 @@ Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 // FAULDS
 Route::post('/fauld', [FauldController::class, 'registerFauld']);
 Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateByClient']);
-Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldPending']);
+Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldsPending']);
+Route::get('/fauld/{id}', [FauldController::class, 'getSale']);
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
 
+// PARCELS
+Route::post('/parcels', [ParcelsController::class, 'store']);
+Route::post('/parcels/paginate', [ParcelsController::class, 'paginate']);
+Route::patch('/parcels', [ParcelsController::class, 'update']);
+Route::delete('/parcels', [ParcelsController::class, 'delete']);
+Route::get('/parcelimg/{id}/{zize}', [ParcelsController::class, 'image']);
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
@@ -280,6 +288,8 @@ Route::delete('/transports', [TransportsController::class, 'destroy']);
 Route::post('/transports/restore', [TransportsController::class, 'restore']);
 Route::post('/transports/paginate', [TransportsController::class, 'paginate']);
 Route::get('/transportimg/{relative_id}/{zize}', [TransportsController::class, 'image']);
+Route::post('/transports/search', [TransportsController::class, 'search']);
+
 
 // BUSINESS
 Route::post('/business', [BusinessController::class, 'store']);
@@ -288,10 +298,10 @@ Route::delete('/business', [BusinessController::class, 'destroy']);
 Route::post('/business/restore', [BusinessController::class, 'restore']);
 Route::post('/business/paginate', [BusinessController::class, 'paginate']);
 Route::get('/businessimg/{relative_id}/{zize}', [BusinessController::class, 'image']);
+Route::post('/business/search', [BusinessController::class, 'search']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
-
 
 // Route::get('/traslat', [connect::class, 'dats']);

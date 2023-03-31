@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EntryProducts extends Model
+class EntryDetail extends Model
 {
     static $rules = [];
     public $timestamps = false;
-    protected $table = 'entry_products';
+    protected $table = 'entry_detail';
 }
 
