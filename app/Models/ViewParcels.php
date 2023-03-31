@@ -10,3 +10,4 @@ class ViewParcels extends Model
     public $timestamps = false;
     protected $table = 'view_parcels';
 }
+

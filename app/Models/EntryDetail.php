@@ -10,3 +10,4 @@ class EntryDetail extends Model
     public $timestamps = false;
     protected $table = 'entry_detail';
 }
+

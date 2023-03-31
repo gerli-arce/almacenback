@@ -26,6 +26,7 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
+            
 
             if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
                 throw new Exception('No tienes permisos para crear productos');

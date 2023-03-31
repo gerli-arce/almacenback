@@ -83,6 +83,7 @@ class ParcelsController extends Controller
             }
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
+            
 
             $parcelJpa = new Parcel();
             $parcelJpa->date_send = $request->date_send;

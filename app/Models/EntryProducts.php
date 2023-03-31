@@ -10,3 +10,4 @@ class EntryProducts extends Model
     public $timestamps = false;
     protected $table = 'entry_products';
 }
+
