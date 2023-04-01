@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Models;
@@ -45,12 +46,7 @@ class ParcelsController extends Controller
                 !isset($request->currency) ||
                 !isset($request->warranty) ||
                 !isset($request->mount_product) ||
-                !isset($request->total) ||
-                !isset($request->amount) ||
-                !isset($request->value_unity) ||
-                !isset($request->price_buy) ||
-                !isset($request->_type_operation) ||
-                !isset($request->total)
+                !isset($request->_type_operation)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -409,6 +405,7 @@ class ParcelsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
+
             if (!gValidate::check($role->permissions, $branch, 'parcel', 'read')) {
                 throw new Exception('No tienes permisos para listar encomiedas');
             }
@@ -721,6 +718,7 @@ class ParcelsController extends Controller
             );
         }
     }
+    
     public function restore(Request $request)
     {
         $response = new Response();
@@ -772,72 +770,68 @@ class ParcelsController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'parcels', 'create')) {
-                throw new Exception('No tienes permisos para registrar encomiendas');
+                throw new Exception('No tienes permisos para crear encomiendas');
             }
 
             if (
                 !isset($request->date_send) ||
-                !isset($request->_branch_send) ||
                 !isset($request->_branch_destination) ||
                 !isset($request->_business_transport) ||
                 !isset($request->price_transport) ||
-                !isset($request->_type_operation) ||
-                !isset($request->responsible_pickup) 
+                !isset($request->_responsible_pickup)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $parcelJpa = new Parcel();
             $parcelJpa->date_send = $request->date_send;
             $parcelJpa->_branch_destination = $request->_branch_destination;
             $parcelJpa->_business_transport = $request->_business_transport;
+            $parcelJpa->_responsible_pickup = $request->responsible_pickup;
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->parcel_type = "GENERATED";
-
-
-            if (isset($request->num_voucher)) {
-                $parcelJpa->num_voucher = $request->num_voucher;
-            }
-
-            if (isset($request->num_guia)) {
-                $parcelJpa->num_guia = $request->num_guia;
-            }
-
-            if (isset($request->num_bill)) {
-                $parcelJpa->num_bill = $request->num_bill;
-            }
-
-            $parcelJpa->_model = $request->_model;
-            $parcelJpa->currency = $request->currency;
-            $parcelJpa->warranty = $request->warranty;
+            $parcelJpa->parcel_status = "ENVIADO";
 
             if (isset($request->description)) {
                 $parcelJpa->description = $request->description;
             }
 
-            $parcelJpa->mount_product = $request->mount_product;
-            $parcelJpa->total = $request->total;
-
-            if (isset($request->igv)) {
-                $parcelJpa->igv = $request->igv;
-            }
-
-            $parcelJpa->amount = $request->amount;
-            $parcelJpa->value_unity = $request->value_unity;
-            $parcelJpa->price_unity = $request->price_unity;
-
-            if (isset($request->mr_revenue)) {
-                $parcelJpa->mr_revenue = $request->mr_revenue;
-            }
-
-            $parcelJpa->price_buy = $request->price_buy;
-            $parcelJpa->_entry_product = $entryProductJpa->id;
+            $parcelJpa->_branch_send = $branch_->id;
             $parcelJpa->_branch = $branch_->id;
+            $parcelJpa->creation_date = gTrace::getDate('mysql');
+            $parcelJpa->_creation_user = $userid;
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
+            if (isset($request->products)) {
+                foreach ($request->products as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+                    if ($product['product']['type'] == "MATERIAL") {
+                        $detailsParcelJpa = new DetailsParcel();
+                        $detailsParcelJpa->_product = $productJpa->id;
+                        $detailsParcelJpa->_parcel = $parcelJpa->id;
+                        $detailsParcelJpa->mount = $product['mount'];
+                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->save();
+                    } else {
+                        $detailsParcelJpa = new DetailsParcel();
+                        $detailsParcelJpa->_product = $productJpa->id;
+                        $detailsParcelJpa->_parcel = $parcelJpa->id;
+                        $detailsParcelJpa->mount = $product['mount'];
+                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->save();
+                        $productJpa->disponibility = "EN ENCOMIENDA";
+                        $productJpa->save();
+                    }
+                }
+            }
+
             $response->setStatus(200);
-            $response->setMessage('Producto agregado correctamente');
+            $response->setMessage('Encomienda creada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
