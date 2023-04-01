@@ -2,24 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\gLibraries\gJson;
 use App\Models\Branch;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
-use App\Models\ViewParcels;
 use App\Models\Models;
-use App\Models\ViewProducts;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
+use App\Models\ViewParcels;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 
 class ParcelsController extends Controller
 {
@@ -83,7 +81,6 @@ class ParcelsController extends Controller
             }
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
-            
 
             $parcelJpa = new Parcel();
             $parcelJpa->date_send = $request->date_send;
@@ -93,7 +90,7 @@ class ParcelsController extends Controller
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->_provider = $request->_provider;
             $parcelJpa->parcel_type = "REGISTED";
-            
+
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -572,24 +569,24 @@ class ParcelsController extends Controller
                 throw new Exception('No tienes permisos para actualizar encomiendas');
             }
 
-            $parcelJpa =  Parcel::select(['id'])->find($request->id);
+            $parcelJpa = Parcel::select(['id'])->find($request->id);
 
-            if(isset($request->date_send)){
+            if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-            if(isset($request->date_entry)){
+            if (isset($request->date_entry)) {
                 $parcelJpa->date_entry = $request->date_entry;
             }
-            if(isset($request->_business_designed)){
+            if (isset($request->_business_designed)) {
                 $parcelJpa->_business_designed = $request->_business_designed;
             }
-            if(isset($request->_business_transport)){
+            if (isset($request->_business_transport)) {
                 $parcelJpa->_business_transport = $request->_business_transport;
             }
-            if(isset($request->price_transport)){
+            if (isset($request->price_transport)) {
                 $parcelJpa->price_transport = $request->price_transport;
             }
-            if(isset($request->_provider)){
+            if (isset($request->_provider)) {
                 $parcelJpa->_provider = $request->_provider;
             }
             if (
@@ -620,13 +617,13 @@ class ParcelsController extends Controller
             if (isset($request->num_bill)) {
                 $parcelJpa->num_bill = $request->num_bill;
             }
-            if(isset($request->_model)){
+            if (isset($request->_model)) {
                 $parcelJpa->_model = $request->_model;
             }
-            if(isset($request->currency)){
+            if (isset($request->currency)) {
                 $parcelJpa->currency = $request->currency;
             }
-            if(isset($request->warranty)){
+            if (isset($request->warranty)) {
                 $parcelJpa->warranty = $request->warranty;
             }
             if (isset($request->description)) {
@@ -635,40 +632,40 @@ class ParcelsController extends Controller
             if (isset($request->mount_product)) {
                 $parcelJpa->mount_product = $request->mount_product;
             }
-            if(isset($request->total)){
+            if (isset($request->total)) {
                 $parcelJpa->total = $request->total;
             }
             if (isset($request->igv)) {
                 $parcelJpa->igv = $request->igv;
             }
-            if(isset($request->amount)){
+            if (isset($request->amount)) {
                 $parcelJpa->amount = $request->amount;
             }
-            if(isset($request->value_unity)){
+            if (isset($request->value_unity)) {
                 $parcelJpa->value_unity = $request->value_unity;
             }
-            if(isset($request->price_unity)){
+            if (isset($request->price_unity)) {
                 $parcelJpa->price_unity = $request->price_unity;
             }
             if (isset($request->mr_revenue)) {
                 $parcelJpa->mr_revenue = $request->mr_revenue;
             }
-            if(isset($request->price_buy)){
+            if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
             }
-            if(isset($request->_entry_product)){
+            if (isset($request->_entry_product)) {
                 $parcelJpa->_entry_product = $entryProductJpa->id;
             }
-            if(isset($request->_branch)){
+            if (isset($request->_branch)) {
                 $parcelJpa->_branch = $branch_->id;
             }
-            
+
             if (gValidate::check($role->permissions, $branch, 'parcels', 'change_status')) {
                 if (isset($request->status)) {
                     $parcelJpa->status = $request->status;
                 }
             }
-            
+
             $parcelJpa->save();
 
             $response->setStatus(200);
@@ -763,6 +760,94 @@ class ParcelsController extends Controller
                 $response->getStatus()
             );
         }
+    }
+
+    public function createParcel(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels', 'create')) {
+                throw new Exception('No tienes permisos para registrar encomiendas');
+            }
+
+            if (
+                !isset($request->date_send) ||
+                !isset($request->_branch_send) ||
+                !isset($request->_branch_destination) ||
+                !isset($request->_business_transport) ||
+                !isset($request->price_transport) ||
+                !isset($request->_type_operation) ||
+                !isset($request->responsible_pickup) 
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $parcelJpa = new Parcel();
+            $parcelJpa->date_send = $request->date_send;
+            $parcelJpa->_branch_destination = $request->_branch_destination;
+            $parcelJpa->_business_transport = $request->_business_transport;
+            $parcelJpa->price_transport = $request->price_transport;
+            $parcelJpa->parcel_type = "GENERATED";
+
+
+            if (isset($request->num_voucher)) {
+                $parcelJpa->num_voucher = $request->num_voucher;
+            }
+
+            if (isset($request->num_guia)) {
+                $parcelJpa->num_guia = $request->num_guia;
+            }
+
+            if (isset($request->num_bill)) {
+                $parcelJpa->num_bill = $request->num_bill;
+            }
+
+            $parcelJpa->_model = $request->_model;
+            $parcelJpa->currency = $request->currency;
+            $parcelJpa->warranty = $request->warranty;
+
+            if (isset($request->description)) {
+                $parcelJpa->description = $request->description;
+            }
+
+            $parcelJpa->mount_product = $request->mount_product;
+            $parcelJpa->total = $request->total;
+
+            if (isset($request->igv)) {
+                $parcelJpa->igv = $request->igv;
+            }
+
+            $parcelJpa->amount = $request->amount;
+            $parcelJpa->value_unity = $request->value_unity;
+            $parcelJpa->price_unity = $request->price_unity;
+
+            if (isset($request->mr_revenue)) {
+                $parcelJpa->mr_revenue = $request->mr_revenue;
+            }
+
+            $parcelJpa->price_buy = $request->price_buy;
+            $parcelJpa->_entry_product = $entryProductJpa->id;
+            $parcelJpa->_branch = $branch_->id;
+            $parcelJpa->status = "1";
+            $parcelJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Producto agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
     }
 
 }
