@@ -145,6 +145,10 @@ class ParcelsController extends Controller
             $parcelJpa->price_buy = $request->price_buy;
             $parcelJpa->_entry_product = $entryProductJpa->id;
             $parcelJpa->_branch = $branch_->id;
+            $parcelJpa->creation_date = gTrace::getDate('mysql');
+            $parcelJpa->_creation_user = $userid;
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
@@ -656,6 +660,9 @@ class ParcelsController extends Controller
             if (isset($request->_branch)) {
                 $parcelJpa->_branch = $branch_->id;
             }
+
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
 
             if (gValidate::check($role->permissions, $branch, 'parcels', 'change_status')) {
                 if (isset($request->status)) {
