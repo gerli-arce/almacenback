@@ -58,9 +58,9 @@ class KeysesController extends Controller
 
             $keyJpa = Keyses::find($request->lend_key['id']);
             $keyJpa->status_key = "EN USO";
-            $keyJpa->description = "Se presto a " . $name_person_lend . " la fecha: " .
-            $request->lend_date . ' ' . $request->lend_hour . " por la razon de: " .
-            $request->lend_reazon;
+            // $keyJpa->description = "Se presto a " . $name_person_lend . " la fecha: " .
+            // $request->lend_date . ' ' . $request->lend_hour . " por la razon de: " .
+            // $request->lend_reazon;
 
             $keyJpa->save();
 
@@ -116,9 +116,9 @@ class KeysesController extends Controller
 
             $keyJpa = Keyses::find($request->return_key['id']);
             $keyJpa->status_key = "DISPONIBLE";
-            $keyJpa->description =  $name_person_return . " devolvio la llave, en la fecha: " .
-            $request->return_date . ' ' . $request->return_hour . " por la razon de: " .
-            $request->return_reazon;
+            // $keyJpa->description =  $name_person_return . " devolvio la llave, en la fecha: " .
+            // $request->return_date . ' ' . $request->return_hour . " por la razon de: " .
+            // $request->return_reazon;
 
             $keyJpa->save();
 
@@ -291,45 +291,6 @@ class KeysesController extends Controller
         }
     }
 
-    // public function search(Request $request)
-    // {
-    //     $response = new Response();
-    //     try {
-
-    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-    //         if ($status != 200) {
-    //             throw new Exception($message);
-    //         }
-    //         if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-    //             throw new Exception('No tienes permisos para listar marcas');
-    //         }
-
-    //         $peopleJpa = Brand::select([
-    //             'id',
-    //             'correlative',
-    //             'brand',
-    //             'relative_id',
-    //         ])->whereNotNull('status')
-    //             ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
-    //             ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
-    //             ->where('_branch', '')
-    //             ->orderBy('brand', 'asc')
-    //             ->get();
-
-    //         $response->setStatus(200);
-    //         $response->setMessage('Operación correcta');
-    //         $response->setData($peopleJpa->toArray());
-    //     } catch (\Throwable$th) {
-    //         $response->setStatus(400);
-    //         $response->setMessage($th->getMessage());
-    //     } finally {
-    //         return response(
-    //             $response->toArray(),
-    //             $response->getStatus()
-    //         );
-    //     }
-    // }
-
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -349,6 +310,14 @@ class KeysesController extends Controller
 
             if (!$request->all) {
                 $query->whereNotNull('status');
+            }
+
+            if($request->borrowed){
+                $query->where('status_key','EN USO');
+            }
+            
+            if($request->available){
+                $query->where('status_key','DISPONIBLE');
             }
 
             $query->where(function ($q) use ($request) {
