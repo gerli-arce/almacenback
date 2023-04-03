@@ -256,7 +256,8 @@ Route::delete('/fauld', [FauldController::class, 'delete']);
 // PARCELS
 Route::post('/parcels', [ParcelsController::class, 'store']);
 Route::post('/create/parcels', [ParcelsController::class, 'createParcel']);
-Route::post('/parcels/paginate', [ParcelsController::class, 'paginate']);
+Route::post('/parcels/registred/paginate', [ParcelsController::class, 'paginateParcelsRegisters']);
+Route::post('/parcels/created/paginate', [ParcelsController::class, 'paginateParcelsCreated']);
 Route::patch('/parcels', [ParcelsController::class, 'update']);
 Route::delete('/parcels', [ParcelsController::class, 'delete']);
 Route::get('/parcelimg/{id}/{zize}', [ParcelsController::class, 'image']);

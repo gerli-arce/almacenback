@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ViewParcels extends Model
+class ViewParcelsCreated extends Model
 {
     static $rules = [];
     public $timestamps = false;
-    protected $table = 'view_parcels';
+    protected $table = 'view_parcels_created';
 }
-

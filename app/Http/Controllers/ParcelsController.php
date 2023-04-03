@@ -15,7 +15,9 @@ use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
-use App\Models\ViewParcels;
+use App\Models\ViewParcelsRegisters;
+use App\Models\ViewParcelsCreated;
+use App\Models\ViewParcelss;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -401,7 +403,7 @@ class ParcelsController extends Controller
 
     }
 
-    public function paginate(Request $request)
+    public function paginateParcelsRegisters(Request $request)
     {
         $response = new Response();
         try {
@@ -410,11 +412,11 @@ class ParcelsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'parcel', 'read')) {
-                throw new Exception('No tienes permisos para listar encomiedas');
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas registradas');
             }
 
-            $query = ViewParcels::select(['*'])
+            $query = ViewParcelsRegisters::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -493,7 +495,95 @@ class ParcelsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewParcels::where('branch__correlative', $branch)->count());
+            $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
+            $response->setData($parcels);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateParcelsCreated(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+
+            $query = ViewParcelsCreated::select(['*'])
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                if ($column == 'date_send' || $column == '*') {
+                    $q->orWhere('date_send', $type, $value);
+                }
+                if ($column == 'date_entry' || $column == '*') {
+                    $q->orWhere('date_entry', $type, $value);
+                }
+                if ($column == 'branch_send__name' || $column == '*') {
+                    $q->orWhere('branch_send__name', $type, $value);
+                }
+                if ($column == 'branch_destination__name' || $column == '*') {
+                    $q->orWhere('branch_destination__name', $type, $value);
+                }
+                if ($column == 'business_transport__name' || $column == '*') {
+                    $q->orWhere('business_transport__name', $type, $value);
+                }
+                if ($column == 'responsible_pickup__doc_number' || $column == '*') {
+                    $q->orWhere('responsible_pickup__doc_number', $type, $value);
+                }
+                if ($column == 'responsible_pickup__name' || $column == '*') {
+                    $q->orWhere('responsible_pickup__name', $type, $value);
+                }
+                if ($column == 'responsible_pickup__lastname' || $column == '*') {
+                    $q->orWhere('responsible_pickup__lastname', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+               
+            })->where('branch__correlative', $branch);
+
+            $iTotalDisplayRecords = $query->count();
+            $parcelsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $parcels = array();
+            foreach ($parcelsJpa as $parcelJpa) {
+                $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+                $parcels[] = $parcel;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewParcelsCreated::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
         } catch (\Throwable$th) {
             $response->setStatus(400);
