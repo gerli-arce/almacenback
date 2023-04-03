@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\gLibraries\gJson;
 use App\Models\Branch;
+use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
-use App\Models\ViewParcels;
 use App\Models\Models;
-use App\Models\ViewProducts;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
+use App\Models\ViewParcelsRegisters;
+use App\Models\ViewParcelsCreated;
+use App\Models\ViewParcelss;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 
 class ParcelsController extends Controller
 {
@@ -47,12 +48,7 @@ class ParcelsController extends Controller
                 !isset($request->currency) ||
                 !isset($request->warranty) ||
                 !isset($request->mount_product) ||
-                !isset($request->total) ||
-                !isset($request->amount) ||
-                !isset($request->value_unity) ||
-                !isset($request->price_buy) ||
-                !isset($request->_type_operation) ||
-                !isset($request->total)
+                !isset($request->_type_operation)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -83,7 +79,6 @@ class ParcelsController extends Controller
             }
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
-            
 
             $parcelJpa = new Parcel();
             $parcelJpa->date_send = $request->date_send;
@@ -93,7 +88,7 @@ class ParcelsController extends Controller
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->_provider = $request->_provider;
             $parcelJpa->parcel_type = "REGISTED";
-            
+
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -152,6 +147,10 @@ class ParcelsController extends Controller
             $parcelJpa->price_buy = $request->price_buy;
             $parcelJpa->_entry_product = $entryProductJpa->id;
             $parcelJpa->_branch = $branch_->id;
+            $parcelJpa->creation_date = gTrace::getDate('mysql');
+            $parcelJpa->_creation_user = $userid;
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
@@ -404,7 +403,7 @@ class ParcelsController extends Controller
 
     }
 
-    public function paginate(Request $request)
+    public function paginateParcelsRegisters(Request $request)
     {
         $response = new Response();
         try {
@@ -412,11 +411,12 @@ class ParcelsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'parcel', 'read')) {
-                throw new Exception('No tienes permisos para listar encomiedas');
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas registradas');
             }
 
-            $query = ViewParcels::select(['*'])
+            $query = ViewParcelsRegisters::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -495,7 +495,95 @@ class ParcelsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewParcels::where('branch__correlative', $branch)->count());
+            $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
+            $response->setData($parcels);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateParcelsCreated(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+
+            $query = ViewParcelsCreated::select(['*'])
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                if ($column == 'date_send' || $column == '*') {
+                    $q->orWhere('date_send', $type, $value);
+                }
+                if ($column == 'date_entry' || $column == '*') {
+                    $q->orWhere('date_entry', $type, $value);
+                }
+                if ($column == 'branch_send__name' || $column == '*') {
+                    $q->orWhere('branch_send__name', $type, $value);
+                }
+                if ($column == 'branch_destination__name' || $column == '*') {
+                    $q->orWhere('branch_destination__name', $type, $value);
+                }
+                if ($column == 'business_transport__name' || $column == '*') {
+                    $q->orWhere('business_transport__name', $type, $value);
+                }
+                if ($column == 'responsible_pickup__doc_number' || $column == '*') {
+                    $q->orWhere('responsible_pickup__doc_number', $type, $value);
+                }
+                if ($column == 'responsible_pickup__name' || $column == '*') {
+                    $q->orWhere('responsible_pickup__name', $type, $value);
+                }
+                if ($column == 'responsible_pickup__lastname' || $column == '*') {
+                    $q->orWhere('responsible_pickup__lastname', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+               
+            })->where('branch__correlative', $branch);
+
+            $iTotalDisplayRecords = $query->count();
+            $parcelsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $parcels = array();
+            foreach ($parcelsJpa as $parcelJpa) {
+                $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+                $parcels[] = $parcel;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewParcelsCreated::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -572,24 +660,24 @@ class ParcelsController extends Controller
                 throw new Exception('No tienes permisos para actualizar encomiendas');
             }
 
-            $parcelJpa =  Parcel::select(['id'])->find($request->id);
+            $parcelJpa = Parcel::select(['id'])->find($request->id);
 
-            if(isset($request->date_send)){
+            if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-            if(isset($request->date_entry)){
+            if (isset($request->date_entry)) {
                 $parcelJpa->date_entry = $request->date_entry;
             }
-            if(isset($request->_business_designed)){
+            if (isset($request->_business_designed)) {
                 $parcelJpa->_business_designed = $request->_business_designed;
             }
-            if(isset($request->_business_transport)){
+            if (isset($request->_business_transport)) {
                 $parcelJpa->_business_transport = $request->_business_transport;
             }
-            if(isset($request->price_transport)){
+            if (isset($request->price_transport)) {
                 $parcelJpa->price_transport = $request->price_transport;
             }
-            if(isset($request->_provider)){
+            if (isset($request->_provider)) {
                 $parcelJpa->_provider = $request->_provider;
             }
             if (
@@ -620,13 +708,13 @@ class ParcelsController extends Controller
             if (isset($request->num_bill)) {
                 $parcelJpa->num_bill = $request->num_bill;
             }
-            if(isset($request->_model)){
+            if (isset($request->_model)) {
                 $parcelJpa->_model = $request->_model;
             }
-            if(isset($request->currency)){
+            if (isset($request->currency)) {
                 $parcelJpa->currency = $request->currency;
             }
-            if(isset($request->warranty)){
+            if (isset($request->warranty)) {
                 $parcelJpa->warranty = $request->warranty;
             }
             if (isset($request->description)) {
@@ -635,40 +723,43 @@ class ParcelsController extends Controller
             if (isset($request->mount_product)) {
                 $parcelJpa->mount_product = $request->mount_product;
             }
-            if(isset($request->total)){
+            if (isset($request->total)) {
                 $parcelJpa->total = $request->total;
             }
             if (isset($request->igv)) {
                 $parcelJpa->igv = $request->igv;
             }
-            if(isset($request->amount)){
+            if (isset($request->amount)) {
                 $parcelJpa->amount = $request->amount;
             }
-            if(isset($request->value_unity)){
+            if (isset($request->value_unity)) {
                 $parcelJpa->value_unity = $request->value_unity;
             }
-            if(isset($request->price_unity)){
+            if (isset($request->price_unity)) {
                 $parcelJpa->price_unity = $request->price_unity;
             }
             if (isset($request->mr_revenue)) {
                 $parcelJpa->mr_revenue = $request->mr_revenue;
             }
-            if(isset($request->price_buy)){
+            if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
             }
-            if(isset($request->_entry_product)){
+            if (isset($request->_entry_product)) {
                 $parcelJpa->_entry_product = $entryProductJpa->id;
             }
-            if(isset($request->_branch)){
+            if (isset($request->_branch)) {
                 $parcelJpa->_branch = $branch_->id;
             }
-            
+
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
+
             if (gValidate::check($role->permissions, $branch, 'parcels', 'change_status')) {
                 if (isset($request->status)) {
                     $parcelJpa->status = $request->status;
                 }
             }
-            
+
             $parcelJpa->save();
 
             $response->setStatus(200);
@@ -724,6 +815,7 @@ class ParcelsController extends Controller
             );
         }
     }
+    
     public function restore(Request $request)
     {
         $response = new Response();
@@ -763,6 +855,90 @@ class ParcelsController extends Controller
                 $response->getStatus()
             );
         }
+    }
+
+    public function createParcel(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels', 'create')) {
+                throw new Exception('No tienes permisos para crear encomiendas');
+            }
+
+            if (
+                !isset($request->date_send) ||
+                !isset($request->_branch_destination) ||
+                !isset($request->_business_transport) ||
+                !isset($request->price_transport) ||
+                !isset($request->_responsible_pickup)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $parcelJpa = new Parcel();
+            $parcelJpa->date_send = $request->date_send;
+            $parcelJpa->_branch_destination = $request->_branch_destination;
+            $parcelJpa->_business_transport = $request->_business_transport;
+            $parcelJpa->_responsible_pickup = $request->_responsible_pickup;
+            $parcelJpa->price_transport = $request->price_transport;
+            $parcelJpa->parcel_type = "GENERATED";
+            $parcelJpa->parcel_status = "ENVIADO";
+
+            if (isset($request->description)) {
+                $parcelJpa->description = $request->description;
+            }
+
+            $parcelJpa->_branch_send = $branch_->id;
+            $parcelJpa->_branch = $branch_->id;
+            $parcelJpa->creation_date = gTrace::getDate('mysql');
+            $parcelJpa->_creation_user = $userid;
+            $parcelJpa->update_date = gTrace::getDate('mysql');
+            $parcelJpa->_update_user = $userid;
+            $parcelJpa->status = "1";
+            $parcelJpa->save();
+
+            if (isset($request->products)) {
+                foreach ($request->products as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+                    if ($product['product']['type'] == "MATERIAL") {
+                        $detailsParcelJpa = new DetailsParcel();
+                        $detailsParcelJpa->_product = $productJpa->id;
+                        $detailsParcelJpa->_parcel = $parcelJpa->id;
+                        $detailsParcelJpa->mount = $product['mount'];
+                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->save();
+                    } else {
+                        $detailsParcelJpa = new DetailsParcel();
+                        $detailsParcelJpa->_product = $productJpa->id;
+                        $detailsParcelJpa->_parcel = $parcelJpa->id;
+                        $detailsParcelJpa->mount = $product['mount'];
+                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->save();
+                        $productJpa->disponibility = "EN ENCOMIENDA";
+                        $productJpa->save();
+                    }
+                }
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Encomienda creada correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
     }
 
 }
