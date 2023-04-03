@@ -886,7 +886,7 @@ class ParcelsController extends Controller
             $parcelJpa->date_send = $request->date_send;
             $parcelJpa->_branch_destination = $request->_branch_destination;
             $parcelJpa->_business_transport = $request->_business_transport;
-            $parcelJpa->_responsible_pickup = $request->responsible_pickup;
+            $parcelJpa->_responsible_pickup = $request->_responsible_pickup;
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->parcel_type = "GENERATED";
             $parcelJpa->parcel_status = "ENVIADO";
