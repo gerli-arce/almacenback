@@ -513,9 +513,7 @@ class KeysesController extends Controller
                 $keysJpa->n_duplicates = $request->n_duplicates;
             }
 
-            if (isset($request->description)) {
-                $keysJpa->description = $request->description;
-            }
+            $keysJpa->description = $request->description;
 
             if (isset($request->status_key)) {
                 $keysJpa->status_key = $request->status_key;
