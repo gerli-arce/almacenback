@@ -206,11 +206,8 @@ class ProductsController extends Controller
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
                     $productJpa->relative_id = guid::short();
-                    $productJpa->_brand = $request->_brand;
-                    $productJpa->_category = $request->_category;
-                    $productJpa->_supplier = $request->_supplier;
+                    $productJpa->_provider = $request->_provider;
                     $productJpa->_model = $request->_model;
-                    $productJpa->_unity = $request->_unity;
                     $productJpa->mount = $request->mount;
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
