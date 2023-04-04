@@ -391,7 +391,7 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Producto agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -497,7 +497,7 @@ class ParcelsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -564,7 +564,7 @@ class ParcelsController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-               
+
             })->where('branch__correlative', $branch);
 
             $iTotalDisplayRecords = $query->count();
@@ -585,7 +585,7 @@ class ParcelsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsCreated::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -625,7 +625,7 @@ class ParcelsController extends Controller
             $content = $parcelJpa->image_content;
             $type = $parcelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/factura-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -764,7 +764,7 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -805,7 +805,7 @@ class ParcelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -815,7 +815,7 @@ class ParcelsController extends Controller
             );
         }
     }
-    
+
     public function restore(Request $request)
     {
         $response = new Response();
@@ -846,7 +846,7 @@ class ParcelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -875,6 +875,7 @@ class ParcelsController extends Controller
                 !isset($request->_branch_destination) ||
                 !isset($request->_business_transport) ||
                 !isset($request->price_transport) ||
+                !isset($request->_type_operation) ||
                 !isset($request->_responsible_pickup)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
@@ -882,6 +883,7 @@ class ParcelsController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            // DATOS DE ENCOMIENDA
             $parcelJpa = new Parcel();
             $parcelJpa->date_send = $request->date_send;
             $parcelJpa->_branch_destination = $request->_branch_destination;
@@ -895,6 +897,26 @@ class ParcelsController extends Controller
                 $parcelJpa->description = $request->description;
             }
 
+            // REGISTRO DE SALIDA DE PRODUCTOS
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->date_sale = $request->date_send;
+            $salesProduct->status_sale = "PENDIENG";
+            $salesProduct->_issue_user = $userid;
+
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            $parcelJpa->_sale_product = $salesProduct->id;
             $parcelJpa->_branch_send = $branch_->id;
             $parcelJpa->_branch = $branch_->id;
             $parcelJpa->creation_date = gTrace::getDate('mysql');
@@ -912,24 +934,49 @@ class ParcelsController extends Controller
                         $detailsParcelJpa->_product = $productJpa->id;
                         $detailsParcelJpa->_parcel = $parcelJpa->id;
                         $detailsParcelJpa->mount = $product['mount'];
-                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->status = "ENVIANDO";
                         $detailsParcelJpa->save();
+
+                        $mount = $productJpa->mount - $product['mount'];
+                        $productJpa->mount = $mount;
+
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+
+                        $stock->mount = $mount;
+                        $stock->save();
+
                     } else {
                         $detailsParcelJpa = new DetailsParcel();
                         $detailsParcelJpa->_product = $productJpa->id;
                         $detailsParcelJpa->_parcel = $parcelJpa->id;
                         $detailsParcelJpa->mount = $product['mount'];
-                        $detailsParcelJpa->status = "ENVIANDO_ENCOMIENDA";
+                        $detailsParcelJpa->status = "ENVIANDO";
                         $detailsParcelJpa->save();
                         $productJpa->disponibility = "EN ENCOMIENDA";
                         $productJpa->save();
+
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+
+                        $stock->mount = $stock->mount - 1;
+                        $stock->save();
                     }
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount = $product['mount'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
                 }
             }
 
             $response->setStatus(200);
             $response->setMessage('Encomienda creada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
