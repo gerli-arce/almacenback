@@ -1011,24 +1011,34 @@ class ParcelsController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $parcelJpa = Parcel::select([
-                'id',
-                'date_send',
-                'date_entry',
-                '_business_transport',
-                '_branch_send',
-                '_branch_destination',
-                'price_transport',
-                '_responsible_pickup',
-                'parcel_type',
-                'parcel_status',
-                'description',
-                '_branch',
-                'creation_date',
-                '_creation_user',
-                'update_date',
-                '_update_user',
-                'status'
-            ])->where('_responsible_pickup', $request->id)
+                'parcels.id as id',
+                'parcels.date_send as date_send',
+                'parcels.date_entry as date_entry',
+                'parcels._business_transport as _business_transport',
+                'transport.id as business_transport__id',
+                'transport.name as business_transport__name',
+                'parcels._branch_send as _branch_send',
+                'br_send.id as branch_send__id',
+                'br_send.name as branch_send__name',
+                'parcels._branch_destination as _branch_destination',
+                'br_des.id as branch_destination__id',
+                'br_des.name as branch_destination__name',
+                'parcels.price_transport as price_transport',
+                'parcels._responsible_pickup as _responsible_pickup',
+                'parcels.parcel_type as parcel_type',
+                'parcels.parcel_status as parcel_status',
+                'parcels.description as description',
+                'parcels._branch as _branch',
+                'parcels.creation_date as creation_date',
+                'parcels._creation_user as _creation_user',
+                'parcels.update_date as update_date',
+                'parcels._update_user as _update_user',
+                'parcels.status as status'
+            ])
+            ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
+            ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+            ->join('transport', 'parcels._business_transport', 'transport.id')
+            ->where('_responsible_pickup', $request->id)
             ->where('_branch_destination', $branch_->id)->get();
 
             if (!$parcelJpa) {
@@ -1037,8 +1047,27 @@ class ParcelsController extends Controller
 
             $parcels = [];
             foreach($parcelJpa as $parcel){
-                $detailsParcelJpa = DetailsParcel::where('_parcel',$parcel['id'])->get(); 
-                $parcel['details'] = $detailsParcelJpa;
+                $parcel = gJSON::restore($parcel->toArray(), '__');
+                $detailsParcelJpa = DetailsParcel::select(
+                    'details_parcel.id',
+                    'details_parcel._parcel',
+                    'details_parcel.mount',
+                    'products.id as product__id',
+                    'products.type as product__type',
+                    'models.id as product__model__id',
+                    'models.model as product__model__model',
+                    'models.relative_id as product__model__relative_id',
+                    'details_parcel.description',
+                    'details_parcel.status'
+                )
+                ->join('products', 'details_parcel._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('_parcel',$parcel['id'])->get(); 
+                $details = [];
+                foreach($detailsParcelJpa as $detail){
+                    $details[]= gJSON::restore($detail->toArray(), '__');
+                }
+                $parcel['details'] = $details;
                 $parcels[] = $parcel;
             }
 
