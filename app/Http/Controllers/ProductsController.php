@@ -26,7 +26,6 @@ class ProductsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            
 
             if (!gValidate::check($role->permissions, $branch, 'products', 'create')) {
                 throw new Exception('No tienes permisos para crear productos');
@@ -781,6 +780,47 @@ class ProductsController extends Controller
             $productJpa->status = "1";
             $productJpa->save();
 
+            $response->setStatus(200);
+            $response->setMessage('El producto a sido restaurado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductById(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para ver productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $productJpa = Product::select('*')
+                ->join('models', 'products._model', 'models.id')
+                ->find($request->id);
+
+            if (!$productJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $response->setDate($productJpa);
             $response->setStatus(200);
             $response->setMessage('El producto a sido restaurado correctamente');
         } catch (\Throwable$th) {

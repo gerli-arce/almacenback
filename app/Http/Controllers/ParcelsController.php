@@ -16,6 +16,8 @@ use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
 use App\Models\ViewParcelsRegisters;
+use App\Models\SalesProducts;
+use App\Models\DetailSale;
 use App\Models\ViewParcelsCreated;
 use App\Models\ViewParcelss;
 use Exception;
@@ -986,6 +988,72 @@ class ParcelsController extends Controller
             );
         }
 
+    }
+
+    public function getParcelByPerson(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $parcelJpa = Parcel::select([
+                'id',
+                'date_send',
+                'date_entry',
+                '_business_transport',
+                '_branch_send',
+                '_branch_destination',
+                'price_transport',
+                '_responsible_pickup',
+                'parcel_type',
+                'parcel_status',
+                'description',
+                '_branch',
+                'creation_date',
+                '_creation_user',
+                'update_date',
+                '_update_user',
+                'status'
+            ])->where('_responsible_pickup', $request->id)
+            ->where('_branch_destination', $branch_->id)->get();
+
+            if (!$parcelJpa) {
+                throw new Exception('Usted no tiene encomiendas por recibir');
+            }
+
+            $parcels = [];
+            foreach($parcelJpa as $parcel){
+                $detailsParcelJpa = DetailsParcel::where('_parcel',$parcel['id'])->get(); 
+                $parcel['details'] = $detailsParcelJpa;
+                $parcels[] = $parcel;
+            }
+
+            $response->setStatus(200);
+            $response->setData($parcels);
+            $response->setMessage('Encomiendas listadas correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().'Ln. '.$th->getLine().$th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
 
 }
