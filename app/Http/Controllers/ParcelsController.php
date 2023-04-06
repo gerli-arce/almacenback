@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\DetailSale;
 use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
@@ -14,12 +15,10 @@ use App\Models\Models;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
-use App\Models\Stock;
-use App\Models\ViewParcelsRegisters;
 use App\Models\SalesProducts;
-use App\Models\DetailSale;
+use App\Models\Stock;
 use App\Models\ViewParcelsCreated;
-use App\Models\ViewParcelss;
+use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -393,7 +392,7 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Producto agregado correctamente');
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -499,7 +498,7 @@ class ParcelsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -587,7 +586,7 @@ class ParcelsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsCreated::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -627,7 +626,7 @@ class ParcelsController extends Controller
             $content = $parcelJpa->image_content;
             $type = $parcelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $ruta = '../storage/images/factura-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -766,7 +765,7 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -807,7 +806,7 @@ class ParcelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -848,7 +847,7 @@ class ParcelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -894,6 +893,7 @@ class ParcelsController extends Controller
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->parcel_type = "GENERATED";
             $parcelJpa->parcel_status = "ENVIADO";
+            $parcelJpa->property = "SEND";
 
             if (isset($request->description)) {
                 $parcelJpa->description = $request->description;
@@ -941,6 +941,7 @@ class ParcelsController extends Controller
 
                         $mount = $productJpa->mount - $product['mount'];
                         $productJpa->mount = $mount;
+                        $productJpa->save();
 
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
@@ -978,7 +979,7 @@ class ParcelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Encomienda creada correctamente');
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -990,7 +991,8 @@ class ParcelsController extends Controller
 
     }
 
-    public function getParcelByPerson(Request $request){
+    public function getParcelByPerson(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1033,20 +1035,23 @@ class ParcelsController extends Controller
                 'parcels._creation_user as _creation_user',
                 'parcels.update_date as update_date',
                 'parcels._update_user as _update_user',
-                'parcels.status as status'
+                'parcels.status as status',
             ])
-            ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
-            ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
-            ->join('transport', 'parcels._business_transport', 'transport.id')
-            ->where('_responsible_pickup', $request->id)
-            ->where('_branch_destination', $branch_->id)->get();
+                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
+                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+                ->join('transport', 'parcels._business_transport', 'transport.id')
+                ->where('_responsible_pickup', $request->id)
+                ->where('_branch_destination', $branch_->id)
+                ->where('parcels.parcel_status', '!=', 'ENTREGADO')
+                ->orderBy('parcels.id', 'desc')
+                ->get();
 
             if (!$parcelJpa) {
                 throw new Exception('Usted no tiene encomiendas por recibir');
             }
 
             $parcels = [];
-            foreach($parcelJpa as $parcel){
+            foreach ($parcelJpa as $parcel) {
                 $parcel = gJSON::restore($parcel->toArray(), '__');
                 $detailsParcelJpa = DetailsParcel::select(
                     'details_parcel.id',
@@ -1060,12 +1065,12 @@ class ParcelsController extends Controller
                     'details_parcel.description',
                     'details_parcel.status'
                 )
-                ->join('products', 'details_parcel._product', 'products.id')
-                ->join('models', 'products._model', 'models.id')
-                ->where('_parcel',$parcel['id'])->get(); 
+                    ->join('products', 'details_parcel._product', 'products.id')
+                    ->join('models', 'products._model', 'models.id')
+                    ->where('_parcel', $parcel['id'])->get();
                 $details = [];
-                foreach($detailsParcelJpa as $detail){
-                    $details[]= gJSON::restore($detail->toArray(), '__');
+                foreach ($detailsParcelJpa as $detail) {
+                    $details[] = gJSON::restore($detail->toArray(), '__');
                 }
                 $parcel['details'] = $details;
                 $parcels[] = $parcel;
@@ -1074,9 +1079,169 @@ class ParcelsController extends Controller
             $response->setStatus(200);
             $response->setData($parcels);
             $response->setMessage('Encomiendas listadas correctamente');
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln. '.$th->getLine().$th->getFile());
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function confirmArrival(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas');
+            }
+
+            if (
+                !isset($request->id)||
+                !isset($request->type_operation)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $parcelJpa = Parcel::find($request->id);
+            $parcelJpa->date_entry = gTrace::getDate('mysql');
+            $parcelJpa->parcel_status = "ENTREGADO";
+
+            $entryProductJpa = new EntryProducts();
+            $entryProductJpa->_user = $userid;
+            $entryProductJpa->_branch = $branch_->id;
+            $entryProductJpa->entry_date = gTrace::getDate('mysql');
+            $entryProductJpa->_type_operation = $request->type_operation;
+            $entryProductJpa->status = "1";
+            $entryProductJpa->save();
+            $parcelJpa->_entry_product = $entryProductJpa->id;
+
+            $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
+
+            foreach($detailsParcelJpa as $detailParcel){
+                $EntryDetailJpa = new EntryDetail();
+                $EntryDetailJpa->_product = $detailParcel['_product'];
+                $EntryDetailJpa->mount = $detailParcel['mount'];
+                $EntryDetailJpa->_entry_product = $entryProductJpa->id;
+                $EntryDetailJpa->save();
+
+                $productJpa = Product::find($detailParcel['_product']);
+                if($productJpa->type == "EQUIPO"){
+                    $productJpa->disponibility = 'DISPONIBLE';
+                    $productJpa->condition_product = "POR_ENCOMIENDA";
+                    $productJpa->_branch = $branch_->id;
+                    $productJpa->save();
+                }else{
+                    $productJpa_new = Product::select([
+                        'id',
+                        'mount',
+                        'num_guia',
+                        'num_bill',
+                        '_model',
+                        '_branch',
+                    ])
+                        ->where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+    
+                    if (isset($productJpa_new)) {
+                        $mount_old = $productJpa_new->mount;
+                        $mount_new = $mount_old +  $detailParcel['mount'];
+    
+                        $productJpa_new->_provider = "2037";
+                        $productJpa_new->mount = $mount_new;
+                       
+                        $productJpa_new->creation_date = gTrace::getDate('mysql');
+                        $productJpa_new->_creation_user = $userid;
+                        $productJpa_new->update_date = gTrace::getDate('mysql');
+                        $productJpa_new->_update_user = $userid;
+                        $productJpa_new->status = "1";
+                        $productJpa_new->save();
+    
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+
+                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                        $stock->save();
+
+                    } else {
+                        $productJpa_new = new Product();
+                        $productJpa_new->type = $productJpa->type;
+                        $productJpa_new->_branch = $branch_->id;
+                        $productJpa_new->relative_id = guid::short();
+                        $productJpa_new->_provider = "2037";
+                        $productJpa_new->_model = $productJpa->_model;
+                        $productJpa_new->mount = $detailParcel['mount'];
+                        $productJpa_new->currency = $productJpa->currency;
+                        $productJpa_new->price_buy = $productJpa->price_buy;
+                        $productJpa_new->price_sale = $productJpa->price_sale;
+                      
+                        if (isset($productJpa->warranty)) {
+                            $productJpa_new->warranty = $productJpa->warranty;
+                        }
+                        $productJpa_new->date_entry = $productJpa->date_entry;
+                        $productJpa_new->_entry_product = $entryProductJpa->id;
+                        $productJpa_new->condition_product = $productJpa->condition_product;
+                        $productJpa_new->product_status = $productJpa->product_status;
+                        $productJpa_new->disponibility = $productJpa->disponibility;
+                        if (isset($productJpa->description)) {
+                            $productJpa_new->description = $productJpa->description;
+                        }
+                        $productJpa_new->creation_date = gTrace::getDate('mysql');
+                        $productJpa_new->_creation_user = $userid;
+                        $productJpa_new->update_date = gTrace::getDate('mysql');
+                        $productJpa_new->_update_user = $userid;
+                        $productJpa_new->status = "1";
+                        $productJpa_new->save();
+    
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                        $stock->save();
+                    }
+                }
+
+            }
+            
+            $parcel_newJpa = new Parcel();
+            $parcel_newJpa->date_send = $parcelJpa->date_send;
+            $parcel_newJpa->date_entry = gTrace::getDate('mysql');
+            $parcel_newJpa->_branch_send = $parcelJpa->_branch_send;
+            $parcel_newJpa->_branch_destination = $parcelJpa->_branch_destination;
+            $parcel_newJpa->_business_transport = $parcelJpa->_business_transport;
+            $parcel_newJpa->price_transport = $parcelJpa->price_transport;
+            $parcel_newJpa->_responsible_pickup = $parcelJpa->_responsible_pickup;
+            $parcel_newJpa->parcel_type = "GENERATED";
+            $parcel_newJpa->parcel_status = "ENTREGADO";
+            $parcel_newJpa->_branch = $branch_->id;
+            $parcel_newJpa->description = $parcelJpa->description;
+            $parcel_newJpa->_entry_product = $entryProductJpa->id;
+            $parcel_newJpa->property = "RECEIVED";
+            $parcel_newJpa->creation_date = gTrace::getDate('mysql');
+            $parcel_newJpa->_creation_user = $userid;
+            $parcel_newJpa->update_date = gTrace::getDate('mysql');
+            $parcel_newJpa->_update_user = $userid;
+            $parcel_newJpa->status = "1";
+            $parcel_newJpa->save();
+
+            $parcelJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Encomiendas listadas correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
         } finally {
             return response(
                 $response->toArray(),

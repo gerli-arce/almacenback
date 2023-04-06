@@ -47,15 +47,16 @@ class ProductsController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $entryProduct = new EntryProducts();
             $entryProduct->_user = $userid;
+            $entryProduct->_branch = $branch_->id;
             $entryProduct->entry_date = gTrace::getDate('mysql');
             $entryProduct->_type_operation = $request->_type_operation;
             $entryProduct->status = "1";
             $entryProduct->save();
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
@@ -331,7 +332,9 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-                ->where('disponibility', '!=', 'VENDIDO');
+                ->where('disponibility', '!=', 'VENDIDO')
+                ->where('disponibility', '!=', 'EN ENCOMIENDA')
+                ;
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
@@ -522,6 +525,7 @@ class ProductsController extends Controller
                 }
             })->where('branch__correlative', $branch)
                 ->where('disponibility', '!=', 'VENDIDO')
+                ->where('disponibility', '!=', 'EN ENCOMIENDA')
                 ->where('type', 'EQUIPO');
 
             $iTotalDisplayRecords = $query->count();
