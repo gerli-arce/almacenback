@@ -666,9 +666,7 @@ class ParcelsController extends Controller
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-            if (isset($request->date_entry)) {
-                $parcelJpa->date_entry = $request->date_entry;
-            }
+            
             if (isset($request->_business_designed)) {
                 $parcelJpa->_business_designed = $request->_business_designed;
             }
