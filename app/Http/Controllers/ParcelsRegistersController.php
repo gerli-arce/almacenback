@@ -745,14 +745,14 @@ class ParcelsRegistersController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-
-            $modelsJpa = Models::find($request->id);
-            if (!$modelsJpa) {
+            
+            $parcelJpa = Parcel::find($request->id);
+            if (!$parcelJpa) {
                 throw new Exception('La encomienda que deseas restaurar no existe');
             }
 
-            $modelsJpa->status = "1";
-            $modelsJpa->save();
+            $parcelJpa->status = "1";
+            $parcelJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');

@@ -18,7 +18,6 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewParcelsCreated;
-use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -182,7 +181,7 @@ class ParcelsCreatedController extends Controller
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-           
+
             if (isset($request->_branch_destination)) {
                 $parcelJpa->_branch_destination = $request->_branch_destination;
             }
@@ -198,11 +197,11 @@ class ParcelsCreatedController extends Controller
             if (isset($request->price_transport)) {
                 $parcelJpa->price_transport = $request->price_transport;
             }
-         
+
             if (isset($request->description)) {
                 $parcelJpa->description = $request->description;
             }
-        
+
             if (isset($request->_branch)) {
                 $parcelJpa->_branch = $branch_->id;
             }
@@ -230,7 +229,7 @@ class ParcelsCreatedController extends Controller
             );
         }
     }
-   
+
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -319,7 +318,7 @@ class ParcelsCreatedController extends Controller
         }
     }
 
-    public function getParcelByPerson(Request $request)
+    public function getParcelsByPerson(Request $request)
     {
         $response = new Response();
         try {
@@ -418,6 +417,96 @@ class ParcelsCreatedController extends Controller
         }
     }
 
+    public function getParcelByPerson(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $parcelJpa = Parcel::select([
+                'parcels.id as id',
+                'parcels.date_send as date_send',
+                'parcels.date_entry as date_entry',
+                'parcels._business_transport as _business_transport',
+                'transport.id as business_transport__id',
+                'transport.name as business_transport__name',
+                'parcels._branch_send as _branch_send',
+                'br_send.id as branch_send__id',
+                'br_send.name as branch_send__name',
+                'parcels._branch_destination as _branch_destination',
+                'br_des.id as branch_destination__id',
+                'br_des.name as branch_destination__name',
+                'parcels.price_transport as price_transport',
+                'parcels._responsible_pickup as _responsible_pickup',
+                'parcels.parcel_type as parcel_type',
+                'parcels.parcel_status as parcel_status',
+                'parcels.description as description',
+                'parcels._branch as _branch',
+                'parcels.creation_date as creation_date',
+                'parcels._creation_user as _creation_user',
+                'parcels.update_date as update_date',
+                'parcels._update_user as _update_user',
+                'parcels.status as status',
+            ])
+                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
+                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+                ->join('transport', 'parcels._business_transport', 'transport.id')
+                ->find($request->id);
+
+
+            $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+
+            $detailsParcelJpa = DetailsParcel::select(
+                'details_parcel.id',
+                'details_parcel._parcel',
+                'details_parcel.mount',
+                'products.id as product__id',
+                'products.type as product__type',
+                'models.id as product__model__id',
+                'models.model as product__model__model',
+                'models.relative_id as product__model__relative_id',
+                'details_parcel.description',
+                'details_parcel.status'
+            )
+                ->join('products', 'details_parcel._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('_parcel', $parcel['id'])->get();
+
+            $details = [];
+            foreach ($detailsParcelJpa as $detail) {
+                $details[] = gJSON::restore($detail->toArray(), '__');
+            }
+            $parcel['details'] = $details;
+
+            $response->setStatus(200);
+            $response->setData($parcel);
+            $response->setMessage('Encomienda listadas correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function confirmArrival(Request $request)
     {
         $response = new Response();
@@ -432,7 +521,7 @@ class ParcelsCreatedController extends Controller
             }
 
             if (
-                !isset($request->id)||
+                !isset($request->id) ||
                 !isset($request->type_operation)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
@@ -455,7 +544,7 @@ class ParcelsCreatedController extends Controller
 
             $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
 
-            foreach($detailsParcelJpa as $detailParcel){
+            foreach ($detailsParcelJpa as $detailParcel) {
                 $EntryDetailJpa = new EntryDetail();
                 $EntryDetailJpa->_product = $detailParcel['_product'];
                 $EntryDetailJpa->mount = $detailParcel['mount'];
@@ -463,12 +552,12 @@ class ParcelsCreatedController extends Controller
                 $EntryDetailJpa->save();
 
                 $productJpa = Product::find($detailParcel['_product']);
-                if($productJpa->type == "EQUIPO"){
+                if ($productJpa->type == "EQUIPO") {
                     $productJpa->disponibility = 'DISPONIBLE';
                     $productJpa->condition_product = "POR_ENCOMIENDA";
                     $productJpa->_branch = $branch_->id;
                     $productJpa->save();
-                }else{
+                } else {
                     $productJpa_new = Product::select([
                         'id',
                         'mount',
@@ -480,21 +569,21 @@ class ParcelsCreatedController extends Controller
                         ->where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
-    
+
                     if (isset($productJpa_new)) {
                         $mount_old = $productJpa_new->mount;
-                        $mount_new = $mount_old +  $detailParcel['mount'];
-    
+                        $mount_new = $mount_old + $detailParcel['mount'];
+
                         $productJpa_new->_provider = "2037";
                         $productJpa_new->mount = $mount_new;
-                       
+
                         $productJpa_new->creation_date = gTrace::getDate('mysql');
                         $productJpa_new->_creation_user = $userid;
                         $productJpa_new->update_date = gTrace::getDate('mysql');
                         $productJpa_new->_update_user = $userid;
                         $productJpa_new->status = "1";
                         $productJpa_new->save();
-    
+
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -513,7 +602,7 @@ class ParcelsCreatedController extends Controller
                         $productJpa_new->currency = $productJpa->currency;
                         $productJpa_new->price_buy = $productJpa->price_buy;
                         $productJpa_new->price_sale = $productJpa->price_sale;
-                      
+
                         if (isset($productJpa->warranty)) {
                             $productJpa_new->warranty = $productJpa->warranty;
                         }
@@ -531,7 +620,7 @@ class ParcelsCreatedController extends Controller
                         $productJpa_new->_update_user = $userid;
                         $productJpa_new->status = "1";
                         $productJpa_new->save();
-    
+
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -541,7 +630,7 @@ class ParcelsCreatedController extends Controller
                 }
 
             }
-            
+
             $parcel_newJpa = new Parcel();
             $parcel_newJpa->date_send = $parcelJpa->date_send;
             $parcel_newJpa->date_entry = gTrace::getDate('mysql');
@@ -587,7 +676,7 @@ class ParcelsCreatedController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'parcels', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'delete_restore')) {
                 throw new Exception('No tienes permisos para eliminar encomiendas');
             }
 
@@ -628,7 +717,7 @@ class ParcelsCreatedController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'parcles', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'delete_restore')) {
                 throw new Exception('No tienes permisos para encomiendas.');
             }
 
@@ -638,13 +727,13 @@ class ParcelsCreatedController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelsJpa = Models::find($request->id);
-            if (!$modelsJpa) {
+            $parcelJpa = Parcel::find($request->id);
+            if (!$parcelJpa) {
                 throw new Exception('La encomienda que deseas restaurar no existe');
             }
 
-            $modelsJpa->status = "1";
-            $modelsJpa->save();
+            $parcelJpa->status = "1";
+            $parcelJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');
