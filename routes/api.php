@@ -258,6 +258,8 @@ Route::post('/parcels', [ParcelsController::class, 'store']);
 Route::post('/create/parcels', [ParcelsController::class, 'createParcel']);
 Route::post('/parcels/registred/paginate', [ParcelsController::class, 'paginateParcelsRegisters']);
 Route::post('/parcels/created/paginate', [ParcelsController::class, 'paginateParcelsCreated']);
+Route::post('/parcels/searchentry', [ParcelsController::class, 'getParcelByPerson']);
+Route::post('/parcels/confirm', [ParcelsController::class, 'confirmArrival']);
 Route::patch('/parcels', [ParcelsController::class, 'update']);
 Route::delete('/parcels', [ParcelsController::class, 'delete']);
 Route::get('/parcelimg/{id}/{zize}', [ParcelsController::class, 'image']);
