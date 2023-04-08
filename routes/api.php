@@ -33,7 +33,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransportsController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\ClientsController;
-use App\Http\Controllers\ParcelsController;
+use App\Http\Controllers\ParcelsCreatedController;
+use App\Http\Controllers\ParcelsRegistersController;
 use App\Http\Controllers\connect;
 
 /*
@@ -253,16 +254,25 @@ Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauld
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
 
-// PARCELS
-Route::post('/parcels', [ParcelsController::class, 'store']);
-Route::post('/create/parcels', [ParcelsController::class, 'createParcel']);
-Route::post('/parcels/registred/paginate', [ParcelsController::class, 'paginateParcelsRegisters']);
-Route::post('/parcels/created/paginate', [ParcelsController::class, 'paginateParcelsCreated']);
-Route::post('/parcels/searchentry', [ParcelsController::class, 'getParcelByPerson']);
-Route::post('/parcels/confirm', [ParcelsController::class, 'confirmArrival']);
-Route::patch('/parcels', [ParcelsController::class, 'update']);
-Route::delete('/parcels', [ParcelsController::class, 'delete']);
-Route::get('/parcelimg/{id}/{zize}', [ParcelsController::class, 'image']);
+// PARCELS CREATED
+Route::post('/parcels_created', [ParcelsCreatedController::class, 'store']);
+Route::patch('/parcels_created', [ParcelsCreatedController::class, 'update']);
+Route::post('/parcels_created/paginate', [ParcelsCreatedController::class, 'paginate']);
+Route::post('/parcels_created/searchentry', [ParcelsCreatedController::class, 'getParcelsByPerson']);
+Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getParcelByPerson']);
+Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
+Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
+Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
+
+
+// PARCELS REGISTER
+Route::post('/parcels_register', [ParcelsRegistersController::class, 'store']);
+Route::patch('/parcels_register', [ParcelsRegistersController::class, 'update']);
+Route::post('/parcels_register/paginate', [ParcelsRegistersController::class, 'paginate']);
+Route::delete('/parcels_register', [ParcelsRegistersController::class, 'delete']);
+Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image']);
+Route::post('/parcels_register/restore', [ParcelsRegistersController::class, 'restore']);
+
 
 // KEYS
 Route::post('/keys', [KeysesController::class, 'store']);
