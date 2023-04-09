@@ -334,7 +334,7 @@ class TechnicalsController extends Controller
 
             $recordProductByTechnicalJpa = new RecordProductByTechnical();
             $recordProductByTechnicalJpa->_user = $userid;
-            $recordProductByTechnicalJpa->_technical = $request->id;
+            $recordProductByTechnicalJpa->_technical = $request->technical['id'];
             $recordProductByTechnicalJpa->_product = $request->product['id'];
 
             if ($request->reazon == "ILLFATED") {
