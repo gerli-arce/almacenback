@@ -34,7 +34,7 @@ class ParcelsRegistersController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'parcels', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'create')) {
                 throw new Exception('No tienes permisos para registrar encomiendas');
             }
 
