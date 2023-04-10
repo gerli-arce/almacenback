@@ -177,7 +177,7 @@ class ParcelsRegistersController extends Controller
                         }
                     } else {
                         if (isset($product['mac'])) {
-                            $productValidation = Product::select(['mac', 'serie'])
+                            $productValidation = Product::select(['mac'])
                                 ->whereNotNull('mac')
                                 ->where('mac', $product['mac'])
                                 ->first();
@@ -186,9 +186,9 @@ class ParcelsRegistersController extends Controller
                             }
                         }
                         if (isset($product['serie'])) {
-                            $productValidation = Product::select(['mac', 'serie'])
+                            $productValidation = Product::select(['serie'])
                                 ->whereNotNull('serie')
-                                ->orWhere('serie', $product['serie'])
+                                ->Where('serie', $product['serie'])
                                 ->first();
                             if ($productValidation) {
                                 throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
