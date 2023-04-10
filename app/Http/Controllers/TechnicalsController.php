@@ -405,6 +405,65 @@ class TechnicalsController extends Controller
             );
         }
     }
+
+    public function getRecordProductsByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para actualizar personas');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $recordProducts = RecordProductByTechnical::select([
+                'record_product_by_technical.id as id',
+                'users.id as user__id',
+                'users.username as user__username',
+                'record_product_by_technical._technical',
+                'products.id as product__id',
+                'models.id as product__model__id',
+                'models.model as product__model__model',
+                'models.relative_id as product__model__relative_id',
+                'record_product_by_technical.type_operation as type_operation',
+                'record_product_by_technical.date_operation as date_operation',
+                'record_product_by_technical.mount as mount',
+                'record_product_by_technical.description as description',
+            ])
+            ->join('users','record_product_by_technical._user', 'users.id')
+            ->join('products','record_product_by_technical._product', 'products.id')
+            ->join('models','products._model', 'models.id')
+            ->where('record_product_by_technical._technical', $request->id)->get();
+
+            $records = array();
+            foreach ($recordProducts as $recordJpa) {
+                $record = gJSON::restore($recordJpa->toArray(), '__');
+                $records[] = $record;
+            }
+         
+            $response->setData($records);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function paginate(Request $request)
     {
         $response = new Response();

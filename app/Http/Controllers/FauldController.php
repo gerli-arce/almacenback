@@ -527,10 +527,10 @@ class FauldController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->where('technical__name', $type, $value);
+                    $q->orWhere('technical__name', $type, $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->where('client__name', $type, $value);
+                    $q->orWhere('client__name', $type, $value);
                 }
                 if ($column == 'user_creation__username' || $column == '*') {
                     $q->orWhere('user_creation__username', $type, $value);
