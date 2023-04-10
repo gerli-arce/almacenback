@@ -540,7 +540,8 @@ class FauldController extends Controller
                 }
             })
                 ->where('type_operation__operation', 'AVERIA')
-                ->where('status_sale', 'CULMINADA');
+                ->where('status_sale', 'CULMINADA')
+                ->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
