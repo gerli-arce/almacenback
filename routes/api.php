@@ -35,6 +35,7 @@ use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ParcelsCreatedController;
 use App\Http\Controllers\ParcelsRegistersController;
+use App\Http\Controllers\PlantPendingController;
 use App\Http\Controllers\connect;
 
 /*
@@ -314,6 +315,11 @@ Route::post('/business/restore', [BusinessController::class, 'restore']);
 Route::post('/business/paginate', [BusinessController::class, 'paginate']);
 Route::get('/businessimg/{relative_id}/{zize}', [BusinessController::class, 'image']);
 Route::post('/business/search', [BusinessController::class, 'search']);
+
+// PLANT PENDING
+Route::post('/plant_pending', [PlantPendingController::class, 'store']);
+Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate']);
+
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
