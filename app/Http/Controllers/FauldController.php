@@ -529,6 +529,9 @@ class FauldController extends Controller
                 if ($column == 'technical__name' || $column == '*') {
                     $q->orWhere('technical__name', $type, $value);
                 }
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
                 if ($column == 'client__name' || $column == '*') {
                     $q->orWhere('client__name', $type, $value);
                 }

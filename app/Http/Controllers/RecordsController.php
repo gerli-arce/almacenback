@@ -34,10 +34,10 @@ class RecordsController extends Controller
             }
 
             if (isset($request->search['brand'])) {
-                $query->where('brand__id', $request->search['brand']);
+                $query->where('model__brand__id', $request->search['brand']);
             }
             if (isset($request->search['category'])) {
-                $query->where('category__id', $request->search['category']);
+                $query->where('model__category__id', $request->search['category']);
             }
             if (isset($request->search['model'])) {
                 $query->where('model__id', $request->search['model']);
@@ -49,11 +49,11 @@ class RecordsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                if ($column == 'model__brand__brand' || $column == '*') {
+                    $q->where('model__brand__brand', $type, $value);
                 }
-                if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                if ($column == 'model__category__category' || $column == '*') {
+                    $q->where('model__category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);

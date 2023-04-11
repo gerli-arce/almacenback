@@ -157,10 +157,10 @@ class InstallationController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->where('technical__name', $type, $value);
+                    $q->orWhere('technical__name', $type, $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->where('client__name', $type, $value);
+                    $q->orWhere('client__name', $type, $value);
                 }
                 if ($column == 'user_creation__username' || $column == '*') {
                     $q->orWhere('user_creation__username', $type, $value);
@@ -437,12 +437,22 @@ class InstallationController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-
+                
+                if ($column == 'id') {
+                    $value = intval(ltrim($request->search['value'], '0'));
+                    $q->where('id', $value);
+                }
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->where('technical__name', $type, $value);
+                    $q->orWhere('technical__name', $type, $value);
+                }
+                if ($column == 'technical__lastname' || $column == '*') {
+                    $q->orWhere('technical__lastname', $type, $value);
+                }
+                if ($column == 'client__lastname' || $column == '*') {
+                    $q->orWhere('client__lastname', $type, $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->where('client__name', $type, $value);
+                    $q->orWhere('client__name', $type, $value);
                 }
                 if ($column == 'user_creation__username' || $column == '*') {
                     $q->orWhere('user_creation__username', $type, $value);
