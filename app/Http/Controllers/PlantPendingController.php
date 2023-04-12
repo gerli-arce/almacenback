@@ -227,6 +227,42 @@ class PlantPendingController extends Controller
         }
     }
 
+    public function registerLiquidations(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar proyectos de planta');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+           
+
+            $response->setStatus(200);
+            $response->setData($parcels);
+            $response->setMessage('Encomiendas listadas correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getParcelsByPerson(Request $request)
     {
         $response = new Response();
