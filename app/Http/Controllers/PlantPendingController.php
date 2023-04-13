@@ -247,7 +247,72 @@ class PlantPendingController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-           
+            $salesProduct = new SalesProducts();
+            $salesProduct->_technical = $request->_technical;
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = "PLANTA";
+            $salesProduct->date_sale = $request->date_sale;
+            $salesProduct->status_sale = $request->status_sale;
+            $salesProduct->price_all = $request->price_all;
+            $salesProduct->price_all = $request->price_all;
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->price_installation = $request->price_installation;
+            $salesProduct->type_pay = $request->type_pay;
+            $salesProduct->mount_dues = $request->mount_dues;
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+
+                    if ($product['product']['type'] == "MATERIAL") {
+
+                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                            ->where('_product', $product['product']['id'])->first();
+                        $mountNew = $productByTechnicalJpa->mount - $product['mount'];
+                        $productByTechnicalJpa->mount = $mountNew;
+                        $productByTechnicalJpa->save();
+
+                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                        $recordProductByTechnicalJpa->_user = $userid;
+                        $recordProductByTechnicalJpa->_technical = $request->_technical;
+                        $recordProductByTechnicalJpa->_client = $request->_client;
+                        $recordProductByTechnicalJpa->_product = $productJpa->id;
+                        $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                        $recordProductByTechnicalJpa->mount = $product['mount'];
+                        $recordProductByTechnicalJpa->description = $product['description'];
+                        $recordProductByTechnicalJpa->save();
+
+                    } else {
+                        $productJpa->disponibility = "VENDIENDO";
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+                        $stock->mount = intval($stock->mount) - 1;
+                        $stock->save();
+                        $productJpa->save();
+                    }
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount = $product['mount'];
+                    $detailSale->description = $product['description'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+                }
+            }
 
             $response->setStatus(200);
             $response->setData($parcels);
