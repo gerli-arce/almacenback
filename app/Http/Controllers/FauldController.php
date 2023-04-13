@@ -13,6 +13,7 @@ use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\viewInstallations;
+use App\Models\Stock;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
@@ -11,6 +11,8 @@ use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Plant;
+use App\Models\SalesProducts;
+use App\Models\DetailSale;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
@@ -102,7 +104,7 @@ class PlantPendingController extends Controller
             }
 
             $plantJpa = Plant::find($request->id);
-            
+
             if (isset($request->name)) {
                 $plantValidate = Plant::where('name', $request->name)->first();
                 if ($plantValidate) {
@@ -110,7 +112,6 @@ class PlantPendingController extends Controller
                 }
                 $plantJpa->name = $request->name;
             }
-
 
             if (isset($request->date_start)) {
                 $plantJpa->date_start = $request->date_start;
@@ -130,15 +131,15 @@ class PlantPendingController extends Controller
 
             $plantJpa->update_date = gTrace::getDate('mysql');
             $plantJpa->_update_user = $userid;
-            
+
             if (gValidate::check($role->permissions, $branch, 'plant_pending', 'change_status')) {
                 if (isset($request->status)) {
                     $plantJpa->status = $request->status;
                 }
             }
-            
+
             $plantJpa->save();
-            
+
             $response->setStatus(200);
             $response->setMessage('El proyecto ha sido actualizado correctamente');
         } catch (\Throwable$th) {
@@ -227,7 +228,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function registerLiquidations(Request $request){
+    public function registerLiquidations(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -250,16 +252,13 @@ class PlantPendingController extends Controller
             $salesProduct = new SalesProducts();
             $salesProduct->_technical = $request->_technical;
             $salesProduct->_branch = $branch_->id;
+            $salesProduct->_plant = $request->id;
             $salesProduct->_type_operation = $request->_type_operation;
             $salesProduct->type_intallation = "PLANTA";
             $salesProduct->date_sale = $request->date_sale;
-            $salesProduct->status_sale = $request->status_sale;
-            $salesProduct->price_all = $request->price_all;
-            $salesProduct->price_all = $request->price_all;
+            $salesProduct->status_sale = "PENDIENTE";
             $salesProduct->_issue_user = $userid;
-            $salesProduct->price_installation = $request->price_installation;
-            $salesProduct->type_pay = $request->type_pay;
-            $salesProduct->mount_dues = $request->mount_dues;
+            $salesProduct->type_pay = "GASTOS INTERNOS";
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -276,26 +275,13 @@ class PlantPendingController extends Controller
                     $productJpa = Product::find($product['product']['id']);
 
                     if ($product['product']['type'] == "MATERIAL") {
-
-                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_product', $product['product']['id'])->first();
-                        $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                        $productByTechnicalJpa->mount = $mountNew;
-                        $productByTechnicalJpa->save();
-
-                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                        $recordProductByTechnicalJpa->_user = $userid;
-                        $recordProductByTechnicalJpa->_technical = $request->_technical;
-                        $recordProductByTechnicalJpa->_client = $request->_client;
-                        $recordProductByTechnicalJpa->_product = $productJpa->id;
-                        $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
-                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                        $recordProductByTechnicalJpa->mount = $product['mount'];
-                        $recordProductByTechnicalJpa->description = $product['description'];
-                        $recordProductByTechnicalJpa->save();
-
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+                        $stock->mount = intval($stock->mount) - $product['mount'];
+                        $stock->save();
                     } else {
-                        $productJpa->disponibility = "VENDIENDO";
+                        $productJpa->disponibility = "PLANTA";
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -307,7 +293,6 @@ class PlantPendingController extends Controller
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
                     $detailSale->mount = $product['mount'];
-                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -315,11 +300,107 @@ class PlantPendingController extends Controller
             }
 
             $response->setStatus(200);
-            $response->setData($parcels);
-            $response->setMessage('Encomiendas listadas correctamente');
+            $response->setMessage('Registro agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    
+    public function getSale(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+
+            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            // }
+
+            $saleProductJpa = SalesProducts::select([
+                'sales_products.id as id',
+                'tech.id as technical__id',
+                'tech.name as technical__name',
+                'tech.lastname as technical__lastname',
+                'branches.id as branch__id',
+                'branches.name as branch__name',
+                'branches.correlative as branch__correlative',
+                'sales_products.date_sale as date_sale',
+                'sales_products.status_sale as status_sale',
+                'sales_products.description as description',
+                'sales_products.description as description',
+            ])
+            ->join('people as tech','sales_products._technical', 'tech.id')
+            ->join('branches','sales_products._branch', 'branches.id')
+            ->where('_plant', $id)->first();
+
+            if(!$saleProductJpa){
+                throw new Exception('No ay registros');
+            }
+
+            $saleProduct = gJSON::restore($saleProductJpa->toArray(), '__');
+
+            // $detailSaleJpa = DetailSale::select([
+            //     'detail_sales.id as id',
+            //     'products.id AS product__id',
+            //     'products.type AS product__type',
+            //     'models.id AS product__model__id',
+            //     'models.model AS product__model__model',
+            //     'models.relative_id AS product__model__relative_id',
+            //     'products.relative_id AS product__relative_id',
+            //     'products.mac AS product__mac',
+            //     'products.serie AS product__serie',
+            //     'products.price_sale AS product__price_sale',
+            //     'products.currency AS product__currency',
+            //     'products.num_guia AS product__num_guia',
+            //     'products.condition_product AS product__condition_product',
+            //     'products.disponibility AS product__disponibility',
+            //     'products.product_status AS product__product_status',
+            //     'sales_products.',
+            //     'branches.id AS sale_product__branch__id',
+            //     'branches.name AS sale_product__branch__name',
+            //     'branches.correlative AS sale_product__branch__correlative',
+            //     'detail_sales.mount as mount',
+            //     'detail_sales.description as description',
+            //     'detail_sales._sales_product as _sales_product',
+            //     'detail_sales.status as status',
+            
+            // ])
+            //     ->join('products', 'detail_sales._product', 'products.id')
+            //     ->join('models', 'products._model', 'models.id')
+            //     ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
+            //     ->join('branches', 'sales_products._branch', 'branches.id')
+            //     ->whereNotNull('detail_sales.status')
+            //     ->where('_sales_product', $id)
+            //     ->get();
+
+            // $details = array();
+            // foreach ($detailSaleJpa as $detailJpa) {
+            //     $detail = gJSON::restore($detailJpa->toArray(), '__');
+            //     $details[] = $detail;
+            // }
+
+            // $InstallationJpa = viewInstallations::find($id);
+
+            // $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
+            // $installJpa['products'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($saleProduct);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),

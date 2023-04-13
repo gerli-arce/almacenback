@@ -304,13 +304,13 @@ class ModelsController extends Controller
             }
 
             if (isset($request->model)) {
-                $verifyCatJpa = Models::select(['id', 'model'])
-                    ->where('model', $request->model)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para este modelo");
-                }
+                // $verifyCatJpa = Models::select(['id', 'model'])
+                //     ->where('model', $request->model)
+                //     ->where('id', '!=', $request->id)
+                //     ->first();
+                // if ($verifyCatJpa) {
+                //     throw new Exception("Elija otro nombre para este modelo");
+                // }
                 $modelJpa->model = $request->model;
             }
 
