@@ -287,7 +287,17 @@ class ParcelsCreatedController extends Controller
                     $q->orWhere('description', $type, $value);
                 }
 
-            })->where('branch__correlative', $branch);
+            });
+
+            $query->where(function ($q) use ($branch) {
+                $q->where(function ($q) use ($branch) {
+                    $q->where('branch__correlative', $branch);
+                });
+                $q->orWhere(function ($q) use ($branch) {
+                    $q->where('parcel_status', 'ENTREGADO');
+                    $q->where('branch_destination__correlative', $branch);
+                });
+            });
 
             $iTotalDisplayRecords = $query->count();
             $parcelsJpa = $query
@@ -630,27 +640,6 @@ class ParcelsCreatedController extends Controller
                 }
 
             }
-
-            $parcel_newJpa = new Parcel();
-            $parcel_newJpa->date_send = $parcelJpa->date_send;
-            $parcel_newJpa->date_entry = gTrace::getDate('mysql');
-            $parcel_newJpa->_branch_send = $parcelJpa->_branch_send;
-            $parcel_newJpa->_branch_destination = $parcelJpa->_branch_destination;
-            $parcel_newJpa->_business_transport = $parcelJpa->_business_transport;
-            $parcel_newJpa->price_transport = $parcelJpa->price_transport;
-            $parcel_newJpa->_responsible_pickup = $parcelJpa->_responsible_pickup;
-            $parcel_newJpa->parcel_type = "GENERATED";
-            $parcel_newJpa->parcel_status = "ENTREGADO";
-            $parcel_newJpa->_branch = $branch_->id;
-            $parcel_newJpa->description = $parcelJpa->description;
-            $parcel_newJpa->_entry_product = $entryProductJpa->id;
-            $parcel_newJpa->property = "RECEIVED";
-            $parcel_newJpa->creation_date = gTrace::getDate('mysql');
-            $parcel_newJpa->_creation_user = $userid;
-            $parcel_newJpa->update_date = gTrace::getDate('mysql');
-            $parcel_newJpa->_update_user = $userid;
-            $parcel_newJpa->status = "1";
-            $parcel_newJpa->save();
 
             $parcelJpa->save();
 
