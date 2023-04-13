@@ -319,6 +319,9 @@ Route::post('/business/search', [BusinessController::class, 'search']);
 // PLANT PENDING
 Route::post('/plant_pending', [PlantPendingController::class, 'store']);
 Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate']);
+Route::post('/plant_pending/register/liquidation', [PlantPendingController::class, 'registerLiquidations']);
+Route::get('/plant_pending/{id}', [PlantPendingController::class, 'getSale']);
+
 
 
 // RECORDS
