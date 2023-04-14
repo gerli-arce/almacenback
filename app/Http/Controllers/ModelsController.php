@@ -57,6 +57,9 @@ class ModelsController extends Controller
             $modelJpa->price_buy = $request->price_buy;
             $modelJpa->mr_revenue = $request->mr_revenue;
             $modelJpa->price_sale = $request->price_sale;
+            if(isset($request->price_sale_second)){
+                $modelJpa->price_sale_second = $request->price_sale_second;
+            }
 
             if (
                 isset($request->image_type) &&
@@ -336,6 +339,10 @@ class ModelsController extends Controller
 
             if(isset($request->price_sale)){
                 $modelJpa->price_sale = $request->price_sale;
+            }
+
+            if(isset($request->price_sale_second)){
+                $modelJpa->price_sale_second = $request->price_sale_second;
             }
 
             if(isset($request->mr_revenue)){
