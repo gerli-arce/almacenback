@@ -387,7 +387,7 @@ class ParcelsRegistersController extends Controller
             $stock = Stock::where('_model', $request->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount = intval($stock->mount) + intval($request->mount_product);
+            $stock->mount_new = intval($stock->mount_new) + intval($request->mount_product);
             $stock->save();
 
             $response->setStatus(200);

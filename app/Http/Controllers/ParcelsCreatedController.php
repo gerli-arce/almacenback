@@ -11,7 +11,6 @@ use App\Models\DetailSale;
 use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
-use App\Models\Models;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
@@ -127,12 +126,19 @@ class ParcelsCreatedController extends Controller
                         $productJpa->disponibility = "EN ENCOMIENDA";
                         $productJpa->save();
 
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-
-                        $stock->mount = $stock->mount - 1;
-                        $stock->save();
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_new = $stock->mount_new - 1;
+                            $stock->save();
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_second = $stock->mount_second - 1;
+                            $stock->save();
+                        }
                     }
 
                     $detailSale = new DetailSale();
@@ -477,7 +483,6 @@ class ParcelsCreatedController extends Controller
                 ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
                 ->join('transport', 'parcels._business_transport', 'transport.id')
                 ->find($request->id);
-
 
             $parcel = gJSON::restore($parcelJpa->toArray(), '__');
 

@@ -96,12 +96,21 @@ class InstallationController extends Controller
                         $recordProductByTechnicalJpa->save();
 
                     } else {
-                        $productJpa->disponibility = "VENDIENDO";
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-                        $stock->mount = intval($stock->mount) - 1;
-                        $stock->save();
+
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_new = intval($stock->mount_new) - 1;
+                            $stock->save();
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_second = intval($stock->mount_second) - 1;
+                            $stock->save();
+                        }
+
                         $productJpa->save();
                     }
 
@@ -437,7 +446,7 @@ class InstallationController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                
+
                 if ($column == 'id') {
                     $value = intval(ltrim($request->search['value'], '0'));
                     $q->where('id', $value);
@@ -530,10 +539,20 @@ class InstallationController extends Controller
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "NUEVO";
-                $stock = Stock::where('_model', $productJpa->_model)
-                ->where('_branch',$branch_->id)->first();
-                $stock->mount = intval($stock->mount) + 1;
-                $stock->save();
+
+                if ($productJpa->product_status == "NUEVO") {
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+                    $stock->mount_new = intval($stock->mount_new) + 1;
+                    $stock->save();
+                } else if ($productJpa->product_status == "SEMINUEVO") {
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+                    $stock->mount_second = intval($stock->mount_second) + 1;
+                    $stock->save();
+                }
                 $productJpa->save();
             }
 

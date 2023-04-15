@@ -581,6 +581,8 @@ class ProductsController extends Controller
             }
 
             $productJpa = Product::find($request->id);
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
 
             if (!$productJpa) {
                 throw new Exception("Error: El registro que intenta modificar no existe");
@@ -647,29 +649,70 @@ class ProductsController extends Controller
                 $productJpa->price_sale = $request->price_sale;
             }
             if (isset($request->product_status)) {
-                $productJpa->product_status = $request->product_status;
-                if ($productJpa->product_status != $request->product_status) {
-                    if ($productJpa->product_status != "SEMINUEVO" || $productJpa->product_status != "NUEVO") {
-                        if ($productJpa->product_status != "SEMINUEVO") {
-                            if ($request->product_status == "SEMINUEVO") {
+                if ($productJpa->type == "EQUIPO") {
+                    if ($productJpa->product_status != $request->product_status) {
+
+                        if ($request->product_status == "SEMINUEVO" && $productJpa->product_status != "SEMINUEVO") {
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_second = (intval($stock->mount_second) + 1);
+                                $stock->mount_new = (intval($stock->mount_new) - 1);
+                                $stock->save();
+                            } else {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = intval($stock->mount_second) + 1;
                                 $stock->save();
                             }
                         }
-                        if ($productJpa->product_status != "NUEVO") {
-                            if ($request->product_status == "NUEVO") {
+
+                        if ($request->product_status == "NUEVO" && $productJpa->product_status != "NUEVO") {
+                            if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_second = intval($stock->mount_second) - 1;
+                                $stock->mount_new = intval($stock->mount_new) + 1;
+                                $stock->save();
+                            } else {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_new = intval($stock->mount_new) + 1;
                                 $stock->save();
                             }
                         }
-                    }else{
-                        
+
+                        if ($request->product_status == "MALOGRADO" && $productJpa->product_status != "MALOGRADO") {
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_new = intval($stock->mount_new) - 1;
+                                $stock->save();
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_second = intval($stock->mount_second) - 1;
+                                $stock->save();
+                            }
+                        }
+
+                        if ($request->product_status == "POR REVISAR" && $productJpa->product_status != "POR REVISAR") {
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_new = intval($stock->mount_new) - 1;
+                                $stock->save();
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_second = intval($stock->mount_second) - 1;
+                                $stock->save();
+                            }
+                        }
+
                     }
                 }
+                $productJpa->product_status = $request->product_status;
             }
             if (isset($request->condition_product)) {
                 $productJpa->condition_product = $request->condition_product;
@@ -701,10 +744,14 @@ class ProductsController extends Controller
 
             if (isset($request->mount)) {
                 $productJpa->mount = $request->mount;
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)->first();
-                $stock->mount_new = $request->mount;
-                $stock->save();
+                if (isset($request->product_status)) {
+                    if ($productJpa->type == "MATERIAL") {
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)->first();
+                        $stock->mount_new = $request->mount;
+                        $stock->save();
+                    }
+                }
             }
 
             $productJpa->update_date = gTrace::getDate('mysql');
@@ -763,11 +810,28 @@ class ProductsController extends Controller
             $productJpa->status = null;
             $productJpa->save();
 
-            $stock = Stock::where('_model', $productJpa->_model)
-                ->where('_branch', $branch_->id)
-                ->first();
-            $stock->mount = 0;
-            $stock->save();
+            if ($productJpa->type == 'EQUIPO') {
+                if ($productJpa->product_status == "NUEVO") {
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+                    $stock->mount_new = intval($stock->mount_new) - 1;
+                    $stock->save();
+                }
+                if ($productJpa->product_status == "SEMINUEVO") {
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+                    $stock->mount_second = intval($stock->mount_second) - 1;
+                    $stock->save();
+                }
+            } else {
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                $stock->mount_new = 0;
+                $stock->save();
+            }
 
             $response->setStatus(200);
             $response->setMessage('El producto se a eliminado correctamente');
