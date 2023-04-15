@@ -57,7 +57,6 @@ class ProductsController extends Controller
             $entryProduct->status = "1";
             $entryProduct->save();
 
-
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
@@ -139,8 +138,13 @@ class ProductsController extends Controller
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
-                    $stock->mount = intval($stock->mount) + 1;
-                    $stock->save();
+                    if ($request->product_status == "SEMINUEVO") {
+                        $stock->mount_second = intval($stock->mount_second) + 1;
+                        $stock->save();
+                    } else if ($request->product_status == "NUEVO") {
+                        $stock->mount_new = intval($stock->mount_new) + 1;
+                        $stock->save();
+                    }
                 }
             } else if ($request->type == "MATERIAL") {
                 if (!isset($request->mount)) {
@@ -199,7 +203,7 @@ class ProductsController extends Controller
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
-                    $stock->mount = intval($stock->mount) + intval($request->mount);
+                    $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
                     $stock->save();
                 } else {
                     $productJpa = new Product();
@@ -242,7 +246,7 @@ class ProductsController extends Controller
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
-                    $stock->mount = intval($stock->mount) + intval($request->mount);
+                    $stock->mount_mount = intval($stock->mount_mount) + intval($request->mount);
                     $stock->save();
                 }
             }
@@ -334,7 +338,7 @@ class ProductsController extends Controller
             })->where('branch__correlative', $branch)
                 ->where('disponibility', '!=', 'VENDIDO')
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
-                ;
+            ;
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
@@ -644,6 +648,28 @@ class ProductsController extends Controller
             }
             if (isset($request->product_status)) {
                 $productJpa->product_status = $request->product_status;
+                if ($productJpa->product_status != $request->product_status) {
+                    if ($productJpa->product_status != "SEMINUEVO" || $productJpa->product_status != "NUEVO") {
+                        if ($productJpa->product_status != "SEMINUEVO") {
+                            if ($request->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_second = intval($stock->mount_second) + 1;
+                                $stock->save();
+                            }
+                        }
+                        if ($productJpa->product_status != "NUEVO") {
+                            if ($request->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)->first();
+                                $stock->mount_new = intval($stock->mount_new) + 1;
+                                $stock->save();
+                            }
+                        }
+                    }else{
+                        
+                    }
+                }
             }
             if (isset($request->condition_product)) {
                 $productJpa->condition_product = $request->condition_product;
@@ -677,7 +703,7 @@ class ProductsController extends Controller
                 $productJpa->mount = $request->mount;
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)->first();
-                $stock->mount = $request->mount;
+                $stock->mount_new = $request->mount;
                 $stock->save();
             }
 
