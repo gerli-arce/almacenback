@@ -95,7 +95,8 @@ class ModelsController extends Controller
             foreach($branchesJpa as $branch){
                 $stockJpa = new Stock();
                 $stockJpa->_model = $modelJpa->id;
-                $stockJpa->mount = '0';
+                $stockJpa->mount_new = '0';
+                $stockJpa->mount_second = '0';
                 $stockJpa->stock_min = '5';
                 $stockJpa->_branch = $branch['id'];
                 $stockJpa->status = '1';

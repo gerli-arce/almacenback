@@ -212,7 +212,7 @@ class TechnicalsController extends Controller
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount = $mount;
+                $stock->mount_new = $mount;
                 $stock->save();
                 $productJpa->save();
 
@@ -281,7 +281,7 @@ class TechnicalsController extends Controller
             $stock = Stock::where('_model', $productJpa->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount = $mount;
+            $stock->mount_new = $mount;
             $stock->save();
 
             $productJpa->save();
@@ -349,7 +349,7 @@ class TechnicalsController extends Controller
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount = $mount;
+                $stock->mount_new = $mount;
                 $stock->save();
                 $productJpa->save();
             }
@@ -525,10 +525,10 @@ class TechnicalsController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'doc_type' || $column == '*') {
-                    $q->where('doc_type', $type, $value);
+                    $q->orWhere('doc_type', $type, $value);
                 }
                 if ($column == 'doc_number' || $column == '*') {
-                    $q->where('doc_number', $type, $value);
+                    $q->orWhere('doc_number', $type, $value);
                 }
                 if ($column == 'name' || $column == '*') {
                     $q->orWhere('name', $type, $value);

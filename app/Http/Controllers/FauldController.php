@@ -99,11 +99,19 @@ class FauldController extends Controller
 
                     } else {
                         $productJpa->disponibility = "VENDIENDO";
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-                        $stock->mount = intval($stock->mount) - 1;
-                        $stock->save();
+                        if($productJpa->product_status == "NUEVO"){
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_new = intval($stock->mount_new) - 1;
+                            $stock->save();
+                        }else if($productJpa->product_status == "SEMINUEVO"){
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_second = intval($stock->mount_second) - 1;
+                            $stock->save();
+                        }
                         $productJpa->save();
                     }
 

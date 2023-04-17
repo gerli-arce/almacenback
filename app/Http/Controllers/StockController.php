@@ -33,7 +33,7 @@ class StockController extends Controller
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {
-                $query->where('mount','>', '0');
+                $query->where('mount_new','>', '0');
             }
 
             $query->where(function ($q) use ($request) {
@@ -46,7 +46,7 @@ class StockController extends Controller
                     $q->where('brand__brand', $type, $value);
                 }
                 if ($column == 'category__category' || $column == '*') {
-                    $q->where('category__category', $type, $value);
+                    $q->orWhere('category__category', $type, $value);
                 }
                 if ($column == 'model__model' || $column == '*') {
                     $q->orWhere('model__model', $type, $value);
@@ -108,11 +108,16 @@ class StockController extends Controller
                 $stockJpa->stock_min = $request->stock_min;
             }
 
-            if (isset($request->mount)) {
-                $stockJpa->mount = $request->mount;
+            if (isset($request->mount_new)) {
+                $stockJpa->mount_new = $request->mount_new;
+            }
+
+            if (isset($request->mount_second)) {
+                $stockJpa->mount_second = $request->mount_second;
             }
 
             $stockJpa->save();
+
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
         } catch (\Throwable$th) {
