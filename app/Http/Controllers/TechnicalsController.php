@@ -281,7 +281,7 @@ class TechnicalsController extends Controller
             $stock = Stock::where('_model', $productJpa->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount_now = $mount;
+            $stock->mount_new = $mount;
             $stock->save();
 
             $productJpa->save();
@@ -349,7 +349,7 @@ class TechnicalsController extends Controller
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount_now = $mount;
+                $stock->mount_new = $mount;
                 $stock->save();
                 $productJpa->save();
             }

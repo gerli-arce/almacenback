@@ -112,8 +112,7 @@ class ParcelsCreatedController extends Controller
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
-
-                        $stock->mount = $mount;
+                        $stock->mount_new = $mount;
                         $stock->save();
 
                     } else {
@@ -603,7 +602,7 @@ class ParcelsCreatedController extends Controller
                             ->where('_branch', $branch_->id)
                             ->first();
 
-                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                        $stock->mount_new = intval($stock->mount_new) + intval($detailParcel['mount']);
                         $stock->save();
 
                     } else {
@@ -639,7 +638,7 @@ class ParcelsCreatedController extends Controller
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
-                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                        $stock->mount_new = intval($stock->mount_new) + intval($detailParcel['mount']);
                         $stock->save();
                     }
                 }
