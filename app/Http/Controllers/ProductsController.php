@@ -246,7 +246,7 @@ class ProductsController extends Controller
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
-                    $stock->mount_mount = intval($stock->mount_mount) + intval($request->mount);
+                    $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
                     $stock->save();
                 }
             }
