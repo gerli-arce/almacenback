@@ -678,10 +678,70 @@ class ParcelsCreatedController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
+            
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $parcelJpa = Parcel::find($request->id);
             if (!$parcelJpa) {
                 throw new Exception('La encomienda que deseas eliminar no existe');
+            }
+
+            $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
+
+            foreach ($detailsParcelJpa as $detailParcel) {
+
+                $productJpa = Product::find($detailParcel['_product']);
+                if ($productJpa->type == "EQUIPO") {
+                    $productJpa->disponibility = 'DISPONIBLE';
+                    $productJpa->condition_product = "POR_ENCOMIENDA";
+                    $productJpa->_branch = $branch_->id;
+                    $productJpa->save();
+
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new + 1;
+                        $stock->save();
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second + 1;
+                        $stock->save();
+                    }
+
+                } else {
+                    $productJpa_new = Product::select([
+                        'id',
+                        'mount',
+                        'num_guia',
+                        'num_bill',
+                        '_model',
+                        '_branch',
+                    ])
+                        ->where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    if (isset($productJpa_new)) {
+                        $mount_old = $productJpa_new->mount;
+                        $mount_new = $mount_old + $detailParcel['mount'];
+
+                        $productJpa_new->mount = $mount_new;
+
+                        $productJpa_new->update_date = gTrace::getDate('mysql');
+                        $productJpa_new->_update_user = $userid;
+                        $productJpa_new->status = "1";
+                        $productJpa_new->save();
+
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+
+                        $stock->mount_new = intval($stock->mount_new) + intval($detailParcel['mount']);
+                        $stock->save();
+                    }
+                }
+
             }
 
             $parcelJpa->status = null;
