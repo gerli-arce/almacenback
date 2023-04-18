@@ -63,6 +63,11 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
 
+// PDF
+Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
+Route::post('/pdf/report/stock/products', [PDFController::class, 'generateReportByStockByProducts']);
+
+
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
