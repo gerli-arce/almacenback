@@ -16,33 +16,6 @@ use Illuminate\Http\Request;
 class PDFController extends Controller
 {
 
-    // public function QRinstallation(Request $request)
-    // {
-    //     $response = new Response();
-    //     $content = null;
-    //     $type = 'image/svg+xml';
-    //     try {
-    //         $renderer = new ImageRenderer(
-    //             new SvgImageBackEnd()
-    //         );
-    //         $writer = new Writer($renderer);
-    //         $qrCode = $writer->writeString($request->url);
-
-    //         $content = $qrCode;
-    //         $response->setStatus(200);
-    //         $response->setMessage('Operacion correcta');
-    //         $response->setData([base64_decode($qrCode)]);
-    //     } catch (\Throwable$th) {
-    //         $response->setStatus(400);
-    //         $response->setMessage($th->getMessage().' ln:'.$th->getLine());
-    //     } finally {
-    //         return response(
-    //             $response->toArray(),
-    //             $response->getStatus()
-    //         );
-    //     }
-    // }
-
     public function generateReportByStockByProducts(Request $request)
     {
         try {
@@ -83,29 +56,27 @@ class PDFController extends Controller
                     $currency = "S/.";
                 }
                 $curencies = "
-                <p class='m-0 p-0'>Compra:
+                <p style='margin-top:0px;magin-bottom:0px;'>Compra:
                 <strong>{$currency}{$models['model']['price_buy']}
                 </strong></p>
-                <p class='m-0 p-0'>Venta nuevo: <strong>{$currency}{$models['model']['price_sale']}
+                <p style='margin-top:0px;magin-bottom:0px;'>Nuevo: <strong>{$currency}{$models['model']['price_sale']}
                 </strong></p>
-                   <p class='m-0 p-0'>Venta seminuevo: <strong>{$currency}{$models['model']['price_sale_second']}
-                }</strong></p>
+                   <p style='margin-top:0px;magin-bottom:0px;'>Seminuevo: <strong>{$currency}{$models['model']['price_sale_second']}
+                </strong></p>
                 ";
 
-                $stock = "<center>
-                <p class='m-0 p-0'>Nuevos</p>
-                <p class='m-0 p-0' style='font-size:20px;font-weight:800'>{$models['mount_new']}</p>
-                <p class='m-0 p-0'>Seminuevos</p>
-                <p class='m-0 p-0' style='font-size:20px;font-weight:800'>{$models['mount_second']}</p>
-                </center>";
+                $stock = "
+                <p style='margin-top:0px;magin-bottom:0px;'>Nuevos: <strong>{$models['mount_new']}</strong></p>
+                <p style='margin-top:0px;magin-bottom:0px;'>Seminuevos <strong>{$models['mount_second']}</strong></p>
+               ";
 
                 $sumary .= "
                 <tr>
                     <td class='text-center'>{$models['id']}</td>
-                    <td><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
+                    <td><p><strong style='font-size:14px;'>{$models['model']['model']}</strong></p><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
                     <td>{$curencies}</td>
                     <td class='text-center'>{$stock}</td>
-                    <td class='text-center'>{$models['model']['description']}</td>
+                    <td class=''>{$models['model']['description']}</td>
                 </tr>
             ";
             }
