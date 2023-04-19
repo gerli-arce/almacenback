@@ -270,6 +270,7 @@ Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getPar
 Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
+Route::post('/parcels_created/save_products', [ParcelsCreatedController::class, 'updateProductsByParcel']);
 
 
 // PARCELS REGISTER

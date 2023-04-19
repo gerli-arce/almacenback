@@ -235,6 +235,110 @@ class ParcelsCreatedController extends Controller
         }
     }
 
+    public function updateProductsByParcel(Request $request)
+    {
+        $response = new Response();
+        try {
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'update')) {
+                throw new Exception('No tienes permisos para actualizar encomiendas');
+            }
+
+            $parcelJpa = Parcel::select(['id'])->find($request->id);
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    if (isset($product['id'])) {
+                        $productJpa = Product::find($product['product']['id']);
+                        $detailParcel = DetailsParcel::find($product['id']);
+                        if ($product['product']['type'] == "MATERIAL") {
+
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+
+                            if (intval($detailParcel->mount) != intval($product['mount'])) {
+                                if (intval($detailParcel->mount) > intval($product['mount'])) {
+                                    $mount_dif = intval($detailParcel->mount) - intval($product['mount']);
+                                    $productJpa->mount = intval($productJpa->mount) + $mount_dif;
+                                    $stock->mount_new = intval($productJpa->mount) + $mount_dif;
+                                } else if (intval($detailParcel->mount) < intval($product['mount'])) {
+                                    $mount_dif = intval($product['mount']) - intval($detailParcel->mount);
+                                    $productJpa->mount = intval($productJpa->mount) - $mount_dif;
+                                    $stock->mount_new = intval($productJpa->mount) - $mount_dif;
+                                }
+                            }
+
+                            $stock->save();
+                            $detailParcel->mount = $product['mount'];
+                        }
+
+                        $detailParcel->description = $product['description'];
+                        $detailParcel->save();
+
+                        $productJpa->save();
+                    } else {
+                        $productJpa = Product::find($product['product']['id']);
+
+                        if ($product['product']['type'] == "MATERIAL") {
+                            $productJpa->mount = intval($productJpa->mount) - $product['mount'];
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_new = intval($productJpa->mount) - $product['mount'];
+                        } else {
+                            $productJpa->disponibility = "EN ENCOMIENDA";
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)
+                                    ->first();
+                                $stock->mount_new = $stock->mount_new - 1;
+                                $stock->save();
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)
+                                    ->first();
+                                $stock->mount_second = $stock->mount_second - 1;
+                                $stock->save();
+                            }
+                        }
+                        
+                        $detailsParcelJpa = new DetailsParcel();
+                        $detailsParcelJpa->_product = $productJpa->id;
+                        $detailsParcelJpa->_parcel = $parcelJpa->id;
+                        $detailsParcelJpa->mount = $product['mount'];
+                        $detailsParcelJpa->status = "ENVIANDO";
+                        $detailsParcelJpa->save();
+
+                        $productJpa->save();
+                    }
+                }
+            }
+            $parcelJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Los productos de la encomienda ha sido actualizado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -678,7 +782,7 @@ class ParcelsCreatedController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-            
+
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $parcelJpa = Parcel::find($request->id);
