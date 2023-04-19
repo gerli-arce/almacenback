@@ -271,6 +271,7 @@ Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confi
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
 Route::post('/parcels_created/save_products', [ParcelsCreatedController::class, 'updateProductsByParcel']);
+Route::post('/parcels_created/calseluse', [ParcelsCreatedController::class, 'cancelUseProduct']);
 
 
 // PARCELS REGISTER

@@ -538,7 +538,7 @@ class InstallationController extends Controller
                 $productByTechnicalJpa->mount = $mountNew;
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
-                $productJpa->disponibility = "NUEVO";
+                $productJpa->disponibility = "DISPONIBLE";
 
                 if ($productJpa->product_status == "NUEVO") {
                     $stock = Stock::where('_model', $productJpa->_model)
