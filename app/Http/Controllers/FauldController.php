@@ -12,8 +12,8 @@ use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
-use App\Models\viewInstallations;
 use App\Models\Stock;
+use App\Models\viewInstallations;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,19 +99,15 @@ class FauldController extends Controller
 
                     } else {
                         $productJpa->disponibility = "VENDIENDO";
-                        if($productJpa->product_status == "NUEVO"){
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+                        if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = intval($stock->mount_new) - 1;
-                            $stock->save();
-                        }else if($productJpa->product_status == "SEMINUEVO"){
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
-                            $stock->save();
                         }
+                        $stock->save();
                         $productJpa->save();
                     }
 
@@ -310,6 +306,8 @@ class FauldController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $salesProduct = SalesProducts::find($request->id);
 
             if (isset($request->_client)) {
@@ -339,7 +337,7 @@ class FauldController extends Controller
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
-            
+
             $salesProduct->description = $request->description;
 
             $salesProduct->_update_user = $userid;
@@ -353,7 +351,7 @@ class FauldController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $detailSale->_product)->first();
+                                ->where('_product', $productJpa->id)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
@@ -362,6 +360,9 @@ class FauldController extends Controller
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
                                     $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
                                 }
+                            }
+                            if (!$productByTechnicalJpa) {
+                                throw new Exception('Error: product: '.$productJpa->id.' technical'.$request->_technical);
                             }
                             $detailSale->mount = $product['mount'];
                             $productByTechnicalJpa->save();
@@ -398,6 +399,15 @@ class FauldController extends Controller
 
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock->mount_new = $stock->mount_new - 1;
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock->mount_second = $stock->mount_second - 1;
+                            }
+                            $stock->save();
                         }
                         $productJpa->save();
                         $detailSale = new DetailSale();
@@ -610,7 +620,7 @@ class FauldController extends Controller
             foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status', 'status_product', 'mount', 'type')->find($detail['_product']);
+                $productJpa = Product::find($detail['_product']);
                 $productJpa->status_product = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)

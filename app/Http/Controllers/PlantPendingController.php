@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Plant;
 use App\Models\Product;
+use App\Models\ProductByPlant;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
@@ -344,6 +345,105 @@ class PlantPendingController extends Controller
                 ->join('people as tech', 'sales_products._technical', 'tech.id')
                 ->join('branches', 'sales_products._branch', 'branches.id')
                 ->whereNotNull('sales_products.status')
+                ->where('sales_products.status_sale', '!=', 'CULMINADA')
+                ->where('_plant', $id)->get();
+
+            if (!$saleProductJpa) {
+                throw new Exception('No ay registros');
+            }
+
+            $salesProducts = array();
+            foreach ($saleProductJpa as $saleProduct) {
+                $sale = gJSON::restore($saleProduct->toArray(), '__');
+
+                $detailSaleJpa = DetailSale::select([
+                    'detail_sales.id as id',
+                    'products.id AS product__id',
+                    'products.type AS product__type',
+                    'models.id AS product__model__id',
+                    'models.model AS product__model__model',
+                    'models.relative_id AS product__model__relative_id',
+                    'products.relative_id AS product__relative_id',
+                    'products.mac AS product__mac',
+                    'products.serie AS product__serie',
+                    'products.price_sale AS product__price_sale',
+                    'products.currency AS product__currency',
+                    'products.num_guia AS product__num_guia',
+                    'products.condition_product AS product__condition_product',
+                    'products.disponibility AS product__disponibility',
+                    'products.product_status AS product__product_status',
+                    'branches.id AS sale_product__branch__id',
+                    'branches.name AS sale_product__branch__name',
+                    'branches.correlative AS sale_product__branch__correlative',
+                    'detail_sales.mount as mount',
+                    'detail_sales.description as description',
+                    'detail_sales._sales_product as _sales_product',
+                    'detail_sales.status as status',
+                ])
+                    ->join('products', 'detail_sales._product', 'products.id')
+                    ->join('models', 'products._model', 'models.id')
+                    ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
+                    ->join('branches', 'sales_products._branch', 'branches.id')
+                    ->whereNotNull('detail_sales.status')
+                    ->where('_sales_product', $sale['id'])
+                    ->get();
+
+                $details = array();
+                foreach ($detailSaleJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+
+                $sale['details'] = $details;
+
+                $salesProducts[] = $sale;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($salesProducts);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getRecords(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+
+            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            // }
+
+            $saleProductJpa = SalesProducts::select([
+                'sales_products.id as id',
+                'tech.id as technical__id',
+                'tech.name as technical__name',
+                'tech.lastname as technical__lastname',
+                'branches.id as branch__id',
+                'branches.name as branch__name',
+                'branches.correlative as branch__correlative',
+                'sales_products.date_sale as date_sale',
+                'sales_products.status_sale as status_sale',
+                'sales_products.description as description',
+                'sales_products.status as status',
+            ])
+                ->join('people as tech', 'sales_products._technical', 'tech.id')
+                ->join('branches', 'sales_products._branch', 'branches.id')
+                ->whereNotNull('sales_products.status')
+                ->where('sales_products.status_sale', 'CULMINADA')
                 ->where('_plant', $id)->get();
 
             if (!$saleProductJpa) {
@@ -513,6 +613,43 @@ class PlantPendingController extends Controller
                         $detailSale->_sales_product = $request->id;
                         $detailSale->status = '1';
                         $detailSale->save();
+                    }
+                }
+            }
+
+            $salesProduct->save();
+
+            if (isset($request->status_sale)) {
+                if ($request->status_sale == 'CULMINADA') {
+                    $saleProductJpa = SalesProducts::find($request->id);
+                    $saleProductJpa->status_sale = 'CULMINADA';
+                    $saleProductJpa->save();
+                    $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+                        ->get();
+                    foreach ($detailsSalesJpa as $detail) {
+                        $productJpa = Product::find($detail['_product']);
+                        if ($productJpa->type == "MATERIAL") {
+                            $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
+                                ->where('_plant', $saleProductJpa->_plant)->first();
+                            if($productByPlantJpa){
+                                $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
+                                $productByPlantJpa->save();
+                            }else{
+                                $productByPlantJpa_new = new ProductByPlant();
+                                $productByPlantJpa_new->_product = $productJpa->id;
+                                $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                                $productByPlantJpa_new->mount = $detail['mount'];
+                                $productByPlantJpa_new->status = '1';
+                                $productByPlantJpa_new->save();
+                            }
+                        } else {
+                            $productByPlantJpa_new = new ProductByPlant();
+                            $productByPlantJpa_new->_product = $productJpa->id;
+                            $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                            $productByPlantJpa_new->mount = $detail['mount'];
+                            $productByPlantJpa_new->status = '1';
+                            $productByPlantJpa_new->save();
+                        }
                     }
                 }
             }

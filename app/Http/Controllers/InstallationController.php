@@ -393,6 +393,15 @@ class InstallationController extends Controller
 
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock->mount_new = $stock->mount_new - 1;
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock->mount_second = $stock->mount_second - 1;
+                            }
+                            $stock->save();
                         }
                         $productJpa->save();
                         $detailSale = new DetailSale();
@@ -539,20 +548,15 @@ class InstallationController extends Controller
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
-
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
                 if ($productJpa->product_status == "NUEVO") {
-                    $stock = Stock::where('_model', $productJpa->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
                     $stock->mount_new = intval($stock->mount_new) + 1;
-                    $stock->save();
                 } else if ($productJpa->product_status == "SEMINUEVO") {
-                    $stock = Stock::where('_model', $productJpa->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
                     $stock->mount_second = intval($stock->mount_second) + 1;
-                    $stock->save();
                 }
+                $stock->save();
                 $productJpa->save();
             }
 
@@ -573,7 +577,8 @@ class InstallationController extends Controller
         }
     }
 
-    public function returnToPendient(Request $request){
+    public function returnToPendient(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -595,12 +600,12 @@ class InstallationController extends Controller
 
             $saleProductJpa->status_sale = "PENDIENTE";
             $saleProductJpa->save();
-          
+
             $response->setStatus(200);
             $response->setMessage('La instalación se ha pasado a pendientes.');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -608,7 +613,6 @@ class InstallationController extends Controller
             );
         }
     }
-
 
     public function delete(Request $request)
     {
