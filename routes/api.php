@@ -334,6 +334,7 @@ Route::get('/plant_pending/records/{id}', [PlantPendingController::class, 'getRe
 Route::patch('/plant_pending/liquidation/update/products', [PlantPendingController::class, 'updateProductsByLiqidation']);
 Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingController::class, 'cancelUseProduct']);
 Route::delete('/plant_pending/liquidation/delete', [PlantPendingController::class, 'delete_liquidation']);
+Route::post('/plant_pending/stock', [PlantPendingController::class, 'getStockPlant']);
 
 
 

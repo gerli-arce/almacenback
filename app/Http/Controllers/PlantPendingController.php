@@ -11,6 +11,7 @@ use App\Models\Plant;
 use App\Models\Product;
 use App\Models\ProductByPlant;
 use App\Models\Response;
+use App\Models\ViewProductsByPlant;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewPlant;
@@ -320,14 +321,14 @@ class PlantPendingController extends Controller
         $response = new Response();
         try {
 
-            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            // if ($status != 200) {
-            //     throw new Exception($message);
-            // }
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
 
-            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
-            // }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
 
             $saleProductJpa = SalesProducts::select([
                 'sales_products.id as id',
@@ -418,14 +419,14 @@ class PlantPendingController extends Controller
         $response = new Response();
         try {
 
-            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            // if ($status != 200) {
-            //     throw new Exception($message);
-            // }
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
 
-            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
-            // }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
 
             $saleProductJpa = SalesProducts::select([
                 'sales_products.id as id',
@@ -575,7 +576,11 @@ class PlantPendingController extends Controller
                             $stock->save();
                             $detailSale->mount = $product['mount'];
                         }
-                        $detailSale->description = $product['description'];
+
+                        if(!$detailSale){
+                            throw new Exception("detail: ".$product['id']);
+                        }
+
                         $detailSale->save();
                         $productJpa->save();
 
@@ -660,6 +665,42 @@ class PlantPendingController extends Controller
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStockPlant(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
+
+            $productByPlantJpa = ViewProductsByPlant::where('plant__id', $request->id)->get();
+
+            $stock_plant = [];
+
+            foreach($productByPlantJpa as $products){
+                $product =  gJSON::restore($products->toArray(), '__');
+                $stock_plant[]= $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($stock_plant);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
