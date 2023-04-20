@@ -573,6 +573,43 @@ class InstallationController extends Controller
         }
     }
 
+    public function returnToPendient(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'update')) {
+                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $saleProductJpa->status_sale = "PENDIENTE";
+            $saleProductJpa->save();
+          
+            $response->setStatus(200);
+            $response->setMessage('La instalación se ha pasado a pendientes.');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().'ln:'.$th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
     public function delete(Request $request)
     {
         $response = new Response();

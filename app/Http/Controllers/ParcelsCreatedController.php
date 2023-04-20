@@ -125,19 +125,15 @@ class ParcelsCreatedController extends Controller
                         $productJpa->disponibility = "EN ENCOMIENDA";
                         $productJpa->save();
 
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
                         if ($productJpa->product_status == "NUEVO") {
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
                             $stock->mount_new = $stock->mount_new - 1;
-                            $stock->save();
                         } else if ($productJpa->product_status == "SEMINUEVO") {
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
                             $stock->mount_second = $stock->mount_second - 1;
-                            $stock->save();
                         }
+                        $stock->save();
                     }
 
                     $detailSale = new DetailSale();
@@ -295,7 +291,8 @@ class ParcelsCreatedController extends Controller
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
-                            $stock->mount_new = intval($productJpa->mount) - $product['mount'];
+                            $stock->mount_new = $productJpa->mount;
+                            $stock->save();
                         } else {
                             $productJpa->disponibility = "EN ENCOMIENDA";
                             if ($productJpa->product_status == "NUEVO") {
@@ -324,10 +321,9 @@ class ParcelsCreatedController extends Controller
                     }
                 }
             }
-            $parcelJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Los productos de la encomienda ha sido actualizado correctamente');
+            $response->setMessage('Los productos de la liquidación se ha actualizado correctamente.');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

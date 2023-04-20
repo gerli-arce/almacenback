@@ -250,6 +250,7 @@ Route::post('/install/pending/paginate', [InstallationController::class, 'pagina
 Route::get('/install/{id}', [InstallationController::class, 'getSale']);
 Route::get('/installation/{id}', [InstallationController::class, 'getSaleInstallation']);
 Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
+Route::post('/install/completed/pending', [InstallationController::class, 'returnToPendient']);
 Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
 
 // FAULDS
@@ -326,8 +327,11 @@ Route::post('/business/search', [BusinessController::class, 'search']);
 // PLANT PENDING
 Route::post('/plant_pending', [PlantPendingController::class, 'store']);
 Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate']);
-Route::post('/plant_pending/register/liquidation', [PlantPendingController::class, 'registerLiquidations']);
+Route::post('/plant_pending/liquidation', [PlantPendingController::class, 'registerLiquidations']);
+Route::patch('/plant_pending/liquidation', [PlantPendingController::class, 'updateProductsByLiqidation']);
 Route::get('/plant_pending/{id}', [PlantPendingController::class, 'getSale']);
+Route::patch('/plant_pending/liquidation/update/products', [PlantPendingController::class, 'updateProductsByLiqidation']);
+Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingController::class, 'cancelUseProduct']);
 
 
 

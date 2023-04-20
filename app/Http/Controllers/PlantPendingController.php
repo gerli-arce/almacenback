@@ -4,17 +4,13 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
-use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailsParcel;
-use App\Models\EntryDetail;
-use App\Models\EntryProducts;
-use App\Models\Plant;
-use App\Models\SalesProducts;
 use App\Models\DetailSale;
+use App\Models\Plant;
 use App\Models\Product;
 use App\Models\Response;
+use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewPlant;
 use Exception;
@@ -242,7 +238,7 @@ class PlantPendingController extends Controller
             }
 
             if (
-                !isset($request->id)
+                !isset($request->_plant)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -250,15 +246,20 @@ class PlantPendingController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = new SalesProducts();
-            $salesProduct->_technical = $request->_technical;
+            if (isset($request->_technical)) {
+                $salesProduct->_technical = $request->_technical;
+            }
             $salesProduct->_branch = $branch_->id;
-            $salesProduct->_plant = $request->id;
+            $salesProduct->_plant = $request->_plant;
             $salesProduct->_type_operation = $request->_type_operation;
             $salesProduct->type_intallation = "PLANTA";
-            $salesProduct->date_sale = $request->date_sale;
+            if (isset($request->date_sale)) {
+                $salesProduct->date_sale = $request->date_sale;
+            }
             $salesProduct->status_sale = "PENDIENTE";
             $salesProduct->_issue_user = $userid;
             $salesProduct->type_pay = "GASTOS INTERNOS";
+
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -273,22 +274,23 @@ class PlantPendingController extends Controller
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['id']);
-
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-                        $stock->mount = intval($stock->mount) - $product['mount'];
-                        $stock->save();
+                        $productJpa->mount = intval($productJpa->mount) - $product['mount'];
+                        $stock->mount_new = $productJpa->mount;
                     } else {
                         $productJpa->disponibility = "PLANTA";
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-                        $stock->mount = intval($stock->mount) - 1;
-                        $stock->save();
-                        $productJpa->save();
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock->mount_new = $stock->mount_new - 1;
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock->mount_second = $stock->mount_second - 1;
+                        }
                     }
+
+                    $stock->save();
+                    $productJpa->save();
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
@@ -312,7 +314,6 @@ class PlantPendingController extends Controller
         }
     }
 
-    
     public function getSale(Request $request, $id)
     {
         $response = new Response();
@@ -340,11 +341,11 @@ class PlantPendingController extends Controller
                 'sales_products.description as description',
                 'sales_products.description as description',
             ])
-            ->join('people as tech','sales_products._technical', 'tech.id')
-            ->join('branches','sales_products._branch', 'branches.id')
-            ->where('_plant', $id)->get();
+                ->join('people as tech', 'sales_products._technical', 'tech.id')
+                ->join('branches', 'sales_products._branch', 'branches.id')
+                ->where('_plant', $id)->get();
 
-            if(!$saleProductJpa){
+            if (!$saleProductJpa) {
                 throw new Exception('No ay registros');
             }
 
@@ -383,18 +384,17 @@ class PlantPendingController extends Controller
                     ->whereNotNull('detail_sales.status')
                     ->where('_sales_product', $sale['id'])
                     ->get();
-    
+
                 $details = array();
                 foreach ($detailSaleJpa as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
-    
+
                 $sale['details'] = $details;
 
                 $salesProducts[] = $sale;
             }
-
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -410,7 +410,7 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function getParcelsByPerson(Request $request)
+    public function updateProductsByLiqidation(Request $request)
     {
         $response = new Response();
         try {
@@ -419,8 +419,9 @@ class PlantPendingController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
-                throw new Exception('No tienes permisos para listar encomiendas');
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar liquidaciones');
             }
 
             if (
@@ -431,325 +432,237 @@ class PlantPendingController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $parcelJpa = Parcel::select([
-                'parcels.id as id',
-                'parcels.date_send as date_send',
-                'parcels.date_entry as date_entry',
-                'parcels._business_transport as _business_transport',
-                'transport.id as business_transport__id',
-                'transport.name as business_transport__name',
-                'parcels._branch_send as _branch_send',
-                'br_send.id as branch_send__id',
-                'br_send.name as branch_send__name',
-                'parcels._branch_destination as _branch_destination',
-                'br_des.id as branch_destination__id',
-                'br_des.name as branch_destination__name',
-                'parcels.price_transport as price_transport',
-                'parcels._responsible_pickup as _responsible_pickup',
-                'parcels.parcel_type as parcel_type',
-                'parcels.parcel_status as parcel_status',
-                'parcels.description as description',
-                'parcels._branch as _branch',
-                'parcels.creation_date as creation_date',
-                'parcels._creation_user as _creation_user',
-                'parcels.update_date as update_date',
-                'parcels._update_user as _update_user',
-                'parcels.status as status',
-            ])
-                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
-                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
-                ->join('transport', 'parcels._business_transport', 'transport.id')
-                ->where('_responsible_pickup', $request->id)
-                ->where('_branch_destination', $branch_->id)
-                ->where('parcels.parcel_status', '!=', 'ENTREGADO')
-                ->orderBy('parcels.id', 'desc')
+            $salesProduct = SalesProducts::find($request->id);
+
+            if (isset($request->_technical)) {
+                $salesProduct->_technical = $request->_technical;
+            }
+            if (isset($request->date_sale)) {
+                $salesProduct->date_sale = $request->date_sale;
+            }
+            if (isset($request->status_sale)) {
+                $salesProduct->status_sale = $request->status_sale;
+            }
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    if (isset($product['id'])) {
+                        $productJpa = Product::find($product['product']['id']);
+                        $detailSale = DetailSale::find($product['id']);
+
+                        if ($product['product']['type'] == "MATERIAL") {
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            if (intval($detailSale->mount) != intval($product['mount'])) {
+                                if (intval($detailSale->mount) > intval($product['mount'])) {
+                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
+                                    $productJpa->mount = intval($productJpa->mount) + $mount_dif;
+                                    $stock->mount_new = intval($productJpa->mount);
+                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
+                                    $productJpa->mount = intval($productJpa->mount) - $mount_dif;
+                                    $stock->mount_new = intval($productJpa->mount);
+                                }
+                            }
+
+                            $stock->save();
+                            $detailSale->mount = $product['mount'];
+                        }
+                        $detailSale->description = $product['description'];
+                        $detailSale->save();
+                        $productJpa->save();
+
+                    } else {
+                        $productJpa = Product::find($product['product']['id']);
+
+                        if ($product['product']['type'] == "MATERIAL") {
+                            $productJpa->mount = intval($productJpa->mount) - $product['mount'];
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
+                            $stock->mount_new = $productJpa->mount;
+                            $stock->save();
+                        } else {
+                            $productJpa->disponibility = "PLANTA";
+                            if ($productJpa->product_status == "NUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)
+                                    ->first();
+                                $stock->mount_new = $stock->mount_new - 1;
+                                $stock->save();
+                            } else if ($productJpa->product_status == "SEMINUEVO") {
+                                $stock = Stock::where('_model', $productJpa->_model)
+                                    ->where('_branch', $branch_->id)
+                                    ->first();
+                                $stock->mount_second = $stock->mount_second - 1;
+                                $stock->save();
+                            }
+                        }
+                        $productJpa->save();
+
+                        $detailSale = new DetailSale();
+                        $detailSale->_product = $productJpa->id;
+                        $detailSale->mount = $product['mount'];
+                        $detailSale->_sales_product = $request->id;
+                        $detailSale->status = '1';
+                        $detailSale->save();
+                    }
+                }
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('La encomienda a sido eliminada correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete_liquidation(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para eliminar');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
                 ->get();
 
-            if (!$parcelJpa) {
-                throw new Exception('Usted no tiene encomiendas por recibir');
-            }
+            foreach ($detailsSalesJpa as $detail) {
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
+                // $productJpa->disponibility = "DISPONIBLE";
+                if ($productJpa->type == "MATERIAL") {
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
+                        ->where('_product', $detail['_product'])->first();
+                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
+                    $productByTechnicalJpa->mount = $mountNew;
+                    $productByTechnicalJpa->save();
 
-            $parcels = [];
-            foreach ($parcelJpa as $parcel) {
-                $parcel = gJSON::restore($parcel->toArray(), '__');
-                $detailsParcelJpa = DetailsParcel::select(
-                    'details_parcel.id',
-                    'details_parcel._parcel',
-                    'details_parcel.mount',
-                    'products.id as product__id',
-                    'products.type as product__type',
-                    'models.id as product__model__id',
-                    'models.model as product__model__model',
-                    'models.relative_id as product__model__relative_id',
-                    'details_parcel.description',
-                    'details_parcel.status'
-                )
-                    ->join('products', 'details_parcel._product', 'products.id')
-                    ->join('models', 'products._model', 'models.id')
-                    ->where('_parcel', $parcel['id'])->get();
-                $details = [];
-                foreach ($detailsParcelJpa as $detail) {
-                    $details[] = gJSON::restore($detail->toArray(), '__');
-                }
-                $parcel['details'] = $details;
-                $parcels[] = $parcel;
-            }
+                    
 
-            $response->setStatus(200);
-            $response->setData($parcels);
-            $response->setMessage('Encomiendas listadas correctamente');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
-    public function getParcelByPerson(Request $request)
-    {
-        $response = new Response();
-        try {
-
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
-                throw new Exception('No tienes permisos para listar encomiendas');
-            }
-
-            if (
-                !isset($request->id)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
-
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
-            $parcelJpa = Parcel::select([
-                'parcels.id as id',
-                'parcels.date_send as date_send',
-                'parcels.date_entry as date_entry',
-                'parcels._business_transport as _business_transport',
-                'transport.id as business_transport__id',
-                'transport.name as business_transport__name',
-                'parcels._branch_send as _branch_send',
-                'br_send.id as branch_send__id',
-                'br_send.name as branch_send__name',
-                'parcels._branch_destination as _branch_destination',
-                'br_des.id as branch_destination__id',
-                'br_des.name as branch_destination__name',
-                'parcels.price_transport as price_transport',
-                'parcels._responsible_pickup as _responsible_pickup',
-                'parcels.parcel_type as parcel_type',
-                'parcels.parcel_status as parcel_status',
-                'parcels.description as description',
-                'parcels._branch as _branch',
-                'parcels.creation_date as creation_date',
-                'parcels._creation_user as _creation_user',
-                'parcels.update_date as update_date',
-                'parcels._update_user as _update_user',
-                'parcels.status as status',
-            ])
-                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
-                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
-                ->join('transport', 'parcels._business_transport', 'transport.id')
-                ->find($request->id);
-
-            $parcel = gJSON::restore($parcelJpa->toArray(), '__');
-
-            $detailsParcelJpa = DetailsParcel::select(
-                'details_parcel.id',
-                'details_parcel._parcel',
-                'details_parcel.mount',
-                'products.id as product__id',
-                'products.type as product__type',
-                'models.id as product__model__id',
-                'models.model as product__model__model',
-                'models.relative_id as product__model__relative_id',
-                'details_parcel.description',
-                'details_parcel.status'
-            )
-                ->join('products', 'details_parcel._product', 'products.id')
-                ->join('models', 'products._model', 'models.id')
-                ->where('_parcel', $parcel['id'])->get();
-
-            $details = [];
-            foreach ($detailsParcelJpa as $detail) {
-                $details[] = gJSON::restore($detail->toArray(), '__');
-            }
-            $parcel['details'] = $details;
-
-            $response->setStatus(200);
-            $response->setData($parcel);
-            $response->setMessage('Encomienda listadas correctamente');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
-    public function confirmArrival(Request $request)
-    {
-        $response = new Response();
-        try {
-
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
-                throw new Exception('No tienes permisos para listar encomiendas');
-            }
-
-            if (
-                !isset($request->id) ||
-                !isset($request->type_operation)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
-
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
-            $parcelJpa = Parcel::find($request->id);
-            $parcelJpa->date_entry = gTrace::getDate('mysql');
-            $parcelJpa->parcel_status = "ENTREGADO";
-
-            $entryProductJpa = new EntryProducts();
-            $entryProductJpa->_user = $userid;
-            $entryProductJpa->_branch = $branch_->id;
-            $entryProductJpa->entry_date = gTrace::getDate('mysql');
-            $entryProductJpa->_type_operation = $request->type_operation;
-            $entryProductJpa->status = "1";
-            $entryProductJpa->save();
-            $parcelJpa->_entry_product = $entryProductJpa->id;
-
-            $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
-
-            foreach ($detailsParcelJpa as $detailParcel) {
-                $EntryDetailJpa = new EntryDetail();
-                $EntryDetailJpa->_product = $detailParcel['_product'];
-                $EntryDetailJpa->mount = $detailParcel['mount'];
-                $EntryDetailJpa->_entry_product = $entryProductJpa->id;
-                $EntryDetailJpa->save();
-
-                $productJpa = Product::find($detailParcel['_product']);
-                if ($productJpa->type == "EQUIPO") {
+                }else{
                     $productJpa->disponibility = 'DISPONIBLE';
                     $productJpa->condition_product = "POR_ENCOMIENDA";
                     $productJpa->_branch = $branch_->id;
                     $productJpa->save();
-                } else {
-                    $productJpa_new = Product::select([
-                        'id',
-                        'mount',
-                        'num_guia',
-                        'num_bill',
-                        '_model',
-                        '_branch',
-                    ])
-                        ->where('_model', $productJpa->_model)
+
+                    $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
 
-                    if (isset($productJpa_new)) {
-                        $mount_old = $productJpa_new->mount;
-                        $mount_new = $mount_old + $detailParcel['mount'];
-
-                        $productJpa_new->_provider = "2037";
-                        $productJpa_new->mount = $mount_new;
-
-                        $productJpa_new->creation_date = gTrace::getDate('mysql');
-                        $productJpa_new->_creation_user = $userid;
-                        $productJpa_new->update_date = gTrace::getDate('mysql');
-                        $productJpa_new->_update_user = $userid;
-                        $productJpa_new->status = "1";
-                        $productJpa_new->save();
-
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-
-                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new + 1;
                         $stock->save();
-
-                    } else {
-                        $productJpa_new = new Product();
-                        $productJpa_new->type = $productJpa->type;
-                        $productJpa_new->_branch = $branch_->id;
-                        $productJpa_new->relative_id = guid::short();
-                        $productJpa_new->_provider = "2037";
-                        $productJpa_new->_model = $productJpa->_model;
-                        $productJpa_new->mount = $detailParcel['mount'];
-                        $productJpa_new->currency = $productJpa->currency;
-                        $productJpa_new->price_buy = $productJpa->price_buy;
-                        $productJpa_new->price_sale = $productJpa->price_sale;
-
-                        if (isset($productJpa->warranty)) {
-                            $productJpa_new->warranty = $productJpa->warranty;
-                        }
-                        $productJpa_new->date_entry = $productJpa->date_entry;
-                        $productJpa_new->_entry_product = $entryProductJpa->id;
-                        $productJpa_new->condition_product = $productJpa->condition_product;
-                        $productJpa_new->product_status = $productJpa->product_status;
-                        $productJpa_new->disponibility = $productJpa->disponibility;
-                        if (isset($productJpa->description)) {
-                            $productJpa_new->description = $productJpa->description;
-                        }
-                        $productJpa_new->creation_date = gTrace::getDate('mysql');
-                        $productJpa_new->_creation_user = $userid;
-                        $productJpa_new->update_date = gTrace::getDate('mysql');
-                        $productJpa_new->_update_user = $userid;
-                        $productJpa_new->status = "1";
-                        $productJpa_new->save();
-
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-                        $stock->mount = intval($stock->mount) + intval($detailParcel['mount']);
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second + 1;
                         $stock->save();
                     }
                 }
-
+                $productJpa->save();
+                $detailSale->save();
             }
 
-            $parcel_newJpa = new Parcel();
-            $parcel_newJpa->date_send = $parcelJpa->date_send;
-            $parcel_newJpa->date_entry = gTrace::getDate('mysql');
-            $parcel_newJpa->_branch_send = $parcelJpa->_branch_send;
-            $parcel_newJpa->_branch_destination = $parcelJpa->_branch_destination;
-            $parcel_newJpa->_business_transport = $parcelJpa->_business_transport;
-            $parcel_newJpa->price_transport = $parcelJpa->price_transport;
-            $parcel_newJpa->_responsible_pickup = $parcelJpa->_responsible_pickup;
-            $parcel_newJpa->parcel_type = "GENERATED";
-            $parcel_newJpa->parcel_status = "ENTREGADO";
-            $parcel_newJpa->_branch = $branch_->id;
-            $parcel_newJpa->description = $parcelJpa->description;
-            $parcel_newJpa->_entry_product = $entryProductJpa->id;
-            $parcel_newJpa->property = "RECEIVED";
-            $parcel_newJpa->creation_date = gTrace::getDate('mysql');
-            $parcel_newJpa->_creation_user = $userid;
-            $parcel_newJpa->update_date = gTrace::getDate('mysql');
-            $parcel_newJpa->_update_user = $userid;
-            $parcel_newJpa->status = "1";
-            $parcel_newJpa->save();
-
-            $parcelJpa->save();
-
+            $saleProductJpa->update_date = gTrace::getDate('mysql');
+            $saleProductJpa->status = null;
+            $saleProductJpa->save();
             $response->setStatus(200);
-            $response->setMessage('Encomiendas listadas correctamente');
+            $response->setMessage('La instalación se elimino correctamente.');
         } catch (\Throwable$th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function cancelUseProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (!isset($request->id)) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = SalesProducts::find($request->_sales_product);
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+
+            $detailSale = DetailSale::find($request->id);
+            $detailSale->status = null;
+
+            $productJpa = Product::find($request->product['id']);
+            if ($productJpa->type == "MATERIAL") {
+                $productJpa->mount = intval($productJpa->mount) + $request->mount;
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                $stock->mount_new = $productJpa->mount;
+                $stock->save();
+            } else if ($productJpa->type == "EQUIPO") {
+                $productJpa->disponibility = "DISPONIBLE";
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                if ($productJpa->product_status == "NUEVO") {
+                    $stock->mount_new = intval($stock->mount_new) + 1;
+                } else if ($productJpa->product_status == "SEMINUEVO") {
+                    $stock->mount_second = intval($stock->mount_second) + 1;
+                }
+                $stock->save();
+            }
+
+            $detailSale->save();
+            $salesProduct->save();
+            $productJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Liquidación atualizada correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),

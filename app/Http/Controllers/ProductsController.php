@@ -338,6 +338,7 @@ class ProductsController extends Controller
             })->where('branch__correlative', $branch)
                 ->where('disponibility', '!=', 'VENDIDO')
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
+                ->where('disponibility', '!=', 'PLANTA')
             ;
             $iTotalDisplayRecords = $query->count();
 
