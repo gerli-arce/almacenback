@@ -308,6 +308,8 @@ class InstallationController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             $salesProduct = SalesProducts::find($request->id);
 
             if (isset($request->_client)) {
