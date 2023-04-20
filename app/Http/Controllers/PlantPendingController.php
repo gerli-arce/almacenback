@@ -104,7 +104,8 @@ class PlantPendingController extends Controller
             $plantJpa = Plant::find($request->id);
 
             if (isset($request->name)) {
-                $plantValidate = Plant::where('name', $request->name)->first();
+                $plantValidate = Plant::where('name', $request->name)
+                ->where('id','!=',$request->id)->first();
                 if ($plantValidate) {
                     throw new Exception('Ya existe un proyecto con este nombre');
                 }

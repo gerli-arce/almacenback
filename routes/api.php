@@ -326,6 +326,7 @@ Route::post('/business/search', [BusinessController::class, 'search']);
 
 // PLANT PENDING
 Route::post('/plant_pending', [PlantPendingController::class, 'store']);
+Route::patch('/plant_pending', [PlantPendingController::class, 'update']);
 Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate']);
 Route::post('/plant_pending/liquidation', [PlantPendingController::class, 'registerLiquidations']);
 Route::patch('/plant_pending/liquidation', [PlantPendingController::class, 'updateProductsByLiqidation']);
