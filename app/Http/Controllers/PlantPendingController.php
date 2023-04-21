@@ -166,7 +166,8 @@ class PlantPendingController extends Controller
             }
 
             $query = ViewPlant::select(['*'])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->orderBy('id', 'desc');
 
             if (!$request->all) {
                 $query->whereNotNull('status');

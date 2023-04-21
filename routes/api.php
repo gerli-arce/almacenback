@@ -296,14 +296,6 @@ Route::get('/keys/record/{idkey}', [KeysesController::class, 'RecordKey']);
 Route::get('/keys/lend/{idkey}', [KeysesController::class, 'searchLendByKey']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
 
-// TOWER
-Route::post('/towers', [TowerController::class, 'store']);
-Route::patch('/towers', [TowerController::class, 'update']);
-Route::delete('/towers', [TowerController::class, 'destroy']);
-Route::post('/towers/restore', [TowerController::class, 'restore']);
-Route::post('/towers/paginate', [TowerController::class, 'paginate']);
-Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
-
 
 // TRANSPORTS
 Route::post('/transports', [TransportsController::class, 'store']);
@@ -337,6 +329,20 @@ Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingContro
 Route::delete('/plant_pending/liquidation/delete', [PlantPendingController::class, 'delete_liquidation']);
 Route::post('/plant_pending/stock', [PlantPendingController::class, 'getStockPlant']);
 
+
+// TOWER
+Route::post('/towers', [TowerController::class, 'store']);
+Route::patch('/towers', [TowerController::class, 'update']);
+Route::delete('/towers', [TowerController::class, 'destroy']);
+Route::post('/towers/restore', [TowerController::class, 'restore']);
+Route::post('/towers/paginate', [TowerController::class, 'paginate']);
+Route::post('/towers/liquidation/create', [TowerController::class, 'registerLiquidations']);
+Route::patch('/towers/liquidation/create', [TowerController::class, 'updateProductsByLiqidation']);
+Route::get('/towers/{id}', [TowerController::class, 'getSale']);
+Route::get('/towers/records/{id}', [TowerController::class, 'getRecords']);
+Route::post('/towers/stock', [TowerController::class, 'getStockTower']);
+Route::delete('/towers/liquidation/delete', [TowerController::class, 'delete_liquidation']);
+Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
 
 // RECORDS
