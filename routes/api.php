@@ -336,6 +336,7 @@ Route::patch('/towers', [TowerController::class, 'update']);
 Route::delete('/towers', [TowerController::class, 'destroy']);
 Route::post('/towers/restore', [TowerController::class, 'restore']);
 Route::post('/towers/paginate', [TowerController::class, 'paginate']);
+Route::post('/towers/paginate/stock', [TowerController::class, 'paginateStockTower']);
 Route::post('/towers/liquidation/create', [TowerController::class, 'registerLiquidations']);
 Route::patch('/towers/liquidation/create', [TowerController::class, 'updateProductsByLiqidation']);
 Route::get('/towers/{id}', [TowerController::class, 'getSale']);

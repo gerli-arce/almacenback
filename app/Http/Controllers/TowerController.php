@@ -9,12 +9,13 @@ use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Product;
+use App\Models\ProductByTower;
 use App\Models\Response;
 use App\Models\SalesProducts;
-use App\Models\ProductByTower;
-use App\Models\ViewProductsByTower;
 use App\Models\Stock;
 use App\Models\Tower;
+use App\Models\ViewProductsByTower;
+use App\Models\ViewStockTower;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -650,8 +651,8 @@ class TowerController extends Controller
                             $detailSale->mount = $product['mount'];
                         }
 
-                        if(!$detailSale){
-                            throw new Exception("detail: ".$product['id']);
+                        if (!$detailSale) {
+                            throw new Exception("detail: " . $product['id']);
                         }
 
                         $detailSale->save();
@@ -709,10 +710,10 @@ class TowerController extends Controller
                         if ($productJpa->type == "MATERIAL") {
                             $productByTowerJpa = ProductByTower::where('_product', $productJpa->id)
                                 ->where('_tower', $saleProductJpa->_tower)->first();
-                            if($productByTowerJpa){
+                            if ($productByTowerJpa) {
                                 $productByTowerJpa->mount = $productByTowerJpa->mount + $detail['mount'];
                                 $productByTowerJpa->save();
-                            }else{
+                            } else {
                                 $productByTowerJpa_new = new ProductByTower();
                                 $productByTowerJpa_new->_product = $productJpa->id;
                                 $productByTowerJpa_new->_tower = $saleProductJpa->_tower;
@@ -746,8 +747,8 @@ class TowerController extends Controller
         }
     }
 
-    
-    public function getStockTower(Request $request){
+    public function getStockTower(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -764,9 +765,9 @@ class TowerController extends Controller
 
             $stock_tower = [];
 
-            foreach($productByTowerJpa as $products){
-                $product =  gJSON::restore($products->toArray(), '__');
-                $stock_tower[]= $product;
+            foreach ($productByTowerJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_tower[] = $product;
             }
 
             $response->setStatus(200);
@@ -855,7 +856,70 @@ class TowerController extends Controller
         }
     }
 
+    public function paginateStockTower(Request $request)
+    {
+        $response = new Response();
+        try {
 
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+                throw new Exception('No tienes permisos para listar modelos');
+            }
+
+            $query = ViewStockTower::select(['*'])->orderBy($request->order['column'], $request->order['dir']);
+
+         
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+                if ($column == 'product__mac' || $column == '*') {
+                    $q->orWhere('product__mac', $type, $value);
+                }
+                if ($column == 'product__serie' || $column == '*') {
+                    $q->orWhere('product__serie', $type, $value);
+                }
+                if ($column == 'mount' || $column == '*') {
+                    $q->orWhere('mount', $type, $value);
+                }
+            })->where('tower__id', $request->search['tower']);
+
+            $iTotalDisplayRecords = $query->count();
+            $towerJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $stock = array();
+            foreach ($towerJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $stock[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(Tower::count());
+            $response->setData($stock);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
     public function destroy(Request $request)
     {
