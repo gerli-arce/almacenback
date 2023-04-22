@@ -349,7 +349,9 @@ class PlantPendingController extends Controller
                 ->join('branches', 'sales_products._branch', 'branches.id')
                 ->whereNotNull('sales_products.status')
                 ->where('sales_products.status_sale', '!=', 'CULMINADA')
-                ->where('_plant', $id)->get();
+                ->where('_plant', $id)
+                ->orderBy('id', 'desc')
+                ->get();
 
             if (!$saleProductJpa) {
                 throw new Exception('No ay registros');
@@ -447,6 +449,7 @@ class PlantPendingController extends Controller
                 ->join('branches', 'sales_products._branch', 'branches.id')
                 ->whereNotNull('sales_products.status')
                 ->where('sales_products.status_sale', 'CULMINADA')
+                ->orderBy('id', 'desc')
                 ->where('_plant', $id)->get();
 
             if (!$saleProductJpa) {
