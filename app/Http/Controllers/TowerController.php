@@ -965,7 +965,7 @@ class TowerController extends Controller
             if (isset($request->date_sale)) {
                 $salesProduct->date_sale = $request->date_sale;
             }
-            $salesProduct->status_sale = "PENDIENTE";
+            $salesProduct->status_sale = "CULMINADA";
             $salesProduct->_issue_user = $userid;
             $salesProduct->type_pay = "GASTOS INTERNOS";
 
