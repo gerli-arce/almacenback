@@ -1044,7 +1044,7 @@ class TowerController extends Controller
             $towerJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La torre a sido eliminada correctamente');
+            $response->setMessage('Operación correcta');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);

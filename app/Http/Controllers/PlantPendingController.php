@@ -9,9 +9,12 @@ use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Plant;
 use App\Models\Product;
+use App\Models\ViewStockPlant;
 use App\Models\ProductByPlant;
 use App\Models\Response;
 use App\Models\ViewProductsByPlant;
+use App\Models\EntryDetail;
+use App\Models\EntryProducts;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewPlant;
@@ -351,6 +354,7 @@ class PlantPendingController extends Controller
                 ->where('sales_products.status_sale', '!=', 'CULMINADA')
                 ->where('_plant', $id)
                 ->orderBy('id', 'desc')
+                ->where('sales_products.status', '!=', '0')
                 ->get();
 
             if (!$saleProductJpa) {
@@ -450,7 +454,8 @@ class PlantPendingController extends Controller
                 ->whereNotNull('sales_products.status')
                 ->where('sales_products.status_sale', 'CULMINADA')
                 ->orderBy('id', 'desc')
-                ->where('_plant', $id)->get();
+                ->where('_plant', $id)
+                ->where('sales_products.status', '!=', '0')->get();
 
             if (!$saleProductJpa) {
                 throw new Exception('No ay registros');
@@ -691,7 +696,7 @@ class PlantPendingController extends Controller
                 throw new Exception('No tienes permisos para listar');
             }
 
-            $productByPlantJpa = ViewProductsByPlant::where('plant__id', $request->id)->get();
+            $productByPlantJpa = ViewProductsByPlant::where('plant__id', $request->id)->whereNotNull('status')->get();
 
             $stock_plant = [];
 
@@ -786,6 +791,200 @@ class PlantPendingController extends Controller
         }
     }
 
+    public function paginateStockPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+                throw new Exception('No tienes permisos para listar modelos');
+            }
+
+            $query = ViewStockPlant::select(['*'])->orderBy($request->order['column'], $request->order['dir'])
+                ->whereNotNull('status');
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+                if ($column == 'product__mac' || $column == '*') {
+                    $q->orWhere('product__mac', $type, $value);
+                }
+                if ($column == 'product__serie' || $column == '*') {
+                    $q->orWhere('product__serie', $type, $value);
+                }
+                if ($column == 'mount' || $column == '*') {
+                    $q->orWhere('mount', $type, $value);
+                }
+            })->where('plant__id', $request->search['plant']);
+
+            $iTotalDisplayRecords = $query->count();
+            $plantJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $stock = array();
+            foreach ($plantJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $stock[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewStockPlant::count());
+            $response->setData($stock);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function returnProductsByPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->_plant)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $towerJpa = Plant::find($request->_plant);
+            if (!$towerJpa) {
+                throw new Exception('La torre que deseas eliminar no existe');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            if (isset($request->_technical)) {
+                $salesProduct->_technical = $request->_technical;
+            }
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_plant = $request->_plant;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = "TOWER";
+            if (isset($request->date_sale)) {
+                $salesProduct->date_sale = $request->date_sale;
+            }
+            $salesProduct->status_sale = "CULMINADA";
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->type_pay = "GASTOS INTERNOS";
+
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "0";
+            $salesProduct->save();
+
+            $entryProductsJpa = new EntryProducts();
+            $entryProductsJpa->_user = $userid;
+            $entryProductsJpa->_technical = $request->_technical;
+            $entryProductsJpa->_branch = $branch_->id;
+            $entryProductsJpa->_type_operation = $request->_type_operation;
+            $entryProductsJpa->_tower = $request->_tower;
+            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE TORRE";
+            $entryProductsJpa->entry_date = gTrace::getDate('mysql');
+            $entryProductsJpa->condition_product = "USADO EN TORRE";
+            $entryProductsJpa->product_status = "USADO";
+            $entryProductsJpa->_creation_user = $userid;
+            $entryProductsJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductsJpa->_update_user = $userid;
+            $entryProductsJpa->update_date = gTrace::getDate('mysql');
+            $entryProductsJpa->status = "1";
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    $productByPlantJpa = ProductByPlant::find($product['id']);
+
+                    if ($product['product']['type'] == "MATERIAL") {
+                        $productJpa->mount = intval($productJpa->mount) + $product['mount'];
+                        $stock->mount_new = $productJpa->mount;
+                        $productByPlantJpa->mount = $productByPlantJpa->mount - $product['mount'];
+                    } else {
+                        $productJpa->disponibility = "DISPONIBLE";
+                        $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $towerJpa->name;
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock->mount_new = $stock->mount_new + 1;
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock->mount_second = $stock->mount_second + 1;
+                        }
+                        $productByPlantJpa->status = null;
+                    }
+
+                    $productByPlantJpa->save();
+                    $stock->save();
+                    $productJpa->save();
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount = $product['mount'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount = $product['mount'];
+                    $entryDetail->_entry_product = $entryProductsJpa->id;
+                    $entryDetail->status = "1";
+                }
+            }
+
+            $towerJpa->update_date = gTrace::getDate('mysql');
+            $towerJpa->_update_user = $userid;
+            $towerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function cancelUseProduct(Request $request)
     {
         $response = new Response();
@@ -843,6 +1042,105 @@ class PlantPendingController extends Controller
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function recordSales(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
+
+            $saleProductJpa = SalesProducts::select([
+                'sales_products.id as id',
+                'tech.id as technical__id',
+                'tech.name as technical__name',
+                'tech.lastname as technical__lastname',
+                'branches.id as branch__id',
+                'branches.name as branch__name',
+                'branches.correlative as branch__correlative',
+                'sales_products.date_sale as date_sale',
+                'sales_products.status_sale as status_sale',
+                'sales_products.description as description',
+                'sales_products.status as status',
+            ])
+                ->join('people as tech', 'sales_products._technical', 'tech.id')
+                ->join('branches', 'sales_products._branch', 'branches.id')
+                ->whereNotNull('sales_products.status')
+                ->where('_plant', $id)
+                ->orderBy('id', 'desc')
+                ->where('sales_products.status', '0')->get();
+
+            if (!$saleProductJpa) {
+                throw new Exception('No ay registros');
+            }
+
+            $salesProducts = array();
+            foreach ($saleProductJpa as $saleProduct) {
+                $sale = gJSON::restore($saleProduct->toArray(), '__');
+
+                $detailSaleJpa = DetailSale::select([
+                    'detail_sales.id as id',
+                    'products.id AS product__id',
+                    'products.type AS product__type',
+                    'models.id AS product__model__id',
+                    'models.model AS product__model__model',
+                    'models.relative_id AS product__model__relative_id',
+                    'products.relative_id AS product__relative_id',
+                    'products.mac AS product__mac',
+                    'products.serie AS product__serie',
+                    'products.price_sale AS product__price_sale',
+                    'products.currency AS product__currency',
+                    'products.num_guia AS product__num_guia',
+                    'products.condition_product AS product__condition_product',
+                    'products.disponibility AS product__disponibility',
+                    'products.product_status AS product__product_status',
+                    'branches.id AS sale_product__branch__id',
+                    'branches.name AS sale_product__branch__name',
+                    'branches.correlative AS sale_product__branch__correlative',
+                    'detail_sales.mount as mount',
+                    'detail_sales.description as description',
+                    'detail_sales._sales_product as _sales_product',
+                    'detail_sales.status as status',
+                ])
+                    ->join('products', 'detail_sales._product', 'products.id')
+                    ->join('models', 'products._model', 'models.id')
+                    ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
+                    ->join('branches', 'sales_products._branch', 'branches.id')
+                    ->whereNotNull('detail_sales.status')
+                    ->where('_sales_product', $sale['id'])
+                    ->get();
+
+                $details = array();
+                foreach ($detailSaleJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+
+                $sale['details'] = $details;
+
+                $salesProducts[] = $sale;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($salesProducts);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
