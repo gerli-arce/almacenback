@@ -630,19 +630,15 @@ class PlantPendingController extends Controller
                             $recordProductByTechnicalJpa->save();
                         } else {
                             $productJpa->disponibility = "PLANTA";
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
                             if ($productJpa->product_status == "NUEVO") {
-                                $stock = Stock::where('_model', $productJpa->_model)
-                                    ->where('_branch', $branch_->id)
-                                    ->first();
                                 $stock->mount_new = $stock->mount_new - 1;
-                                $stock->save();
                             } else if ($productJpa->product_status == "SEMINUEVO") {
-                                $stock = Stock::where('_model', $productJpa->_model)
-                                    ->where('_branch', $branch_->id)
-                                    ->first();
                                 $stock->mount_second = $stock->mount_second - 1;
-                                $stock->save();
                             }
+                            $stock->save();
                         }
                         $productJpa->save();
 
@@ -1042,12 +1038,11 @@ class PlantPendingController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $productJpa->mount = intval($productJpa->mount) + $request->mount;
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
-                $stock->mount_new = $productJpa->mount;
-                $stock->save();
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                    ->where('_product', $detailSale->_product)->first();
+                $mountNew = $productByTechnicalJpa->mount + $request->mount;
+                $productByTechnicalJpa->mount = $mountNew;
+                $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
                 $stock = Stock::where('_model', $productJpa->_model)
