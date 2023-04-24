@@ -279,6 +279,7 @@ Route::post('/parcels_created/calseluse', [ParcelsCreatedController::class, 'can
 // PARCELS REGISTER
 Route::post('/parcels_register', [ParcelsRegistersController::class, 'store']);
 Route::patch('/parcels_register', [ParcelsRegistersController::class, 'update']);
+Route::get('/parcels_register/{id}', [ParcelsRegistersController::class, 'getProductsByParcel']);
 Route::post('/parcels_register/paginate', [ParcelsRegistersController::class, 'paginate']);
 Route::delete('/parcels_register', [ParcelsRegistersController::class, 'delete']);
 Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image']);

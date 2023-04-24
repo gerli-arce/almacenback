@@ -7,17 +7,13 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Models;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
-use App\Models\SalesProducts;
 use App\Models\Stock;
-use App\Models\ViewParcelsCreated;
 use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
@@ -439,6 +435,9 @@ class ParcelsRegistersController extends Controller
                 if ($column == 'date_entry' || $column == '*') {
                     $q->orWhere('date_entry', $type, $value);
                 }
+                if ($column == 'model__model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
+                }
                 if ($column == 'business_designed__name' || $column == '*') {
                     $q->orWhere('business_designed__name', $type, $value);
                 }
@@ -578,7 +577,7 @@ class ParcelsRegistersController extends Controller
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-            
+
             if (isset($request->_business_designed)) {
                 $parcelJpa->_business_designed = $request->_business_designed;
             }
@@ -686,6 +685,73 @@ class ParcelsRegistersController extends Controller
         }
     }
 
+    public function getProductsByParcel(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para ver detalles de encomiendas');
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $parcelJpa = Parcel::find($id);
+
+            $entryDetailJpa = EntryDetail::select([
+                'entry_detail.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'entry_detail.mount as mount',
+                'entry_detail.description as description',
+                'entry_detail._entry_product as _entry_product',
+                'entry_detail.status as status',
+            ])
+                ->join('products', 'entry_detail._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('entry_detail._entry_product', $parcelJpa->_entry_product)->get();
+
+            $details = array();
+            foreach ($entryDetailJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $response->setStatus(200);
+            $response->setData($details);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function delete(Request $request)
     {
         $response = new Response();
@@ -745,7 +811,7 @@ class ParcelsRegistersController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-            
+
             $parcelJpa = Parcel::find($request->id);
             if (!$parcelJpa) {
                 throw new Exception('La encomienda que deseas restaurar no existe');
