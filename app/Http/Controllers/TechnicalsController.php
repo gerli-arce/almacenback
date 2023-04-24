@@ -442,6 +442,7 @@ class TechnicalsController extends Controller
             ->join('users','record_product_by_technical._user', 'users.id')
             ->join('products','record_product_by_technical._product', 'products.id')
             ->join('models','products._model', 'models.id')
+            ->orderBy('id', 'desc')
             ->where('record_product_by_technical._technical', $request->id)->get();
 
             $records = array();

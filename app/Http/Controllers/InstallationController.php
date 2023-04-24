@@ -97,20 +97,16 @@ class InstallationController extends Controller
 
                     } else {
 
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
                         if ($productJpa->product_status == "NUEVO") {
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
                             $stock->mount_new = intval($stock->mount_new) - 1;
-                            $stock->save();
                         } else if ($productJpa->product_status == "SEMINUEVO") {
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
                             $stock->mount_second = intval($stock->mount_second) - 1;
-                            $stock->save();
                         }
-
+                        
+                        $stock->save();
                         $productJpa->save();
                     }
 

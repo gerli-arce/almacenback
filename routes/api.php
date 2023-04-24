@@ -66,6 +66,7 @@ Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR'])
 // PDF
 Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
 Route::post('/pdf/report/stock/products', [PDFController::class, 'generateReportByStockByProducts']);
+Route::post('/pdf/report/stock/products/selected', [PDFController::class, 'generateReportByStockByProducts']);
 
 
 // HOME

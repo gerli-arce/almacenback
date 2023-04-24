@@ -7,17 +7,19 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
-use App\Models\Plant;
-use App\Models\Product;
-use App\Models\ViewStockPlant;
-use App\Models\ProductByPlant;
-use App\Models\Response;
-use App\Models\ViewProductsByPlant;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
+use App\Models\Plant;
+use App\Models\Product;
+use App\Models\ProductByPlant;
+use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
+use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewPlant;
+use App\Models\ViewProductsByPlant;
+use App\Models\ViewStockPlant;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +110,7 @@ class PlantPendingController extends Controller
 
             if (isset($request->name)) {
                 $plantValidate = Plant::where('name', $request->name)
-                ->where('id','!=',$request->id)->first();
+                    ->where('id', '!=', $request->id)->first();
                 if ($plantValidate) {
                     throw new Exception('Ya existe un proyecto con este nombre');
                 }
@@ -245,7 +247,8 @@ class PlantPendingController extends Controller
             }
 
             if (
-                !isset($request->_plant)
+                !isset($request->_plant) ||
+                !isset($request->_technical)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -285,8 +288,21 @@ class PlantPendingController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productJpa->mount = intval($productJpa->mount) - $product['mount'];
-                        $stock->mount_new = $productJpa->mount;
+                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                            ->where('_product', $product['product']['id'])->first();
+
+                        $productByTechnicalJpa->mount = $productByTechnicalJpa->mount - $product['mount'];
+                        $productByTechnicalJpa->save();
+
+                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                        $recordProductByTechnicalJpa->_user = $userid;
+                        $recordProductByTechnicalJpa->_technical = $request->_technical;
+                        $recordProductByTechnicalJpa->_product = $productJpa->id;
+                        $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                        $recordProductByTechnicalJpa->mount = $product['mount'];
+                        $recordProductByTechnicalJpa->description = $product['description'];
+                        $recordProductByTechnicalJpa->save();
                     } else {
                         $productJpa->disponibility = "PLANTA";
                         if ($productJpa->product_status == "NUEVO") {
@@ -568,27 +584,26 @@ class PlantPendingController extends Controller
                         $detailSale = DetailSale::find($product['id']);
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
+
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                                ->where('_product', $detailSale->_product)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productJpa->mount = intval($productJpa->mount) + $mount_dif;
-                                    $stock->mount_new = intval($productJpa->mount);
+                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productJpa->mount = intval($productJpa->mount) - $mount_dif;
-                                    $stock->mount_new = intval($productJpa->mount);
+                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
                                 }
                             }
 
-                            $stock->save();
                             $detailSale->mount = $product['mount'];
+                            $productByTechnicalJpa->save();
+
                         }
 
-                        if(!$detailSale){
-                            throw new Exception("detail: ".$product['id']);
+                        if (!$detailSale) {
+                            throw new Exception("detail: " . $product['id']);
                         }
 
                         $detailSale->save();
@@ -598,12 +613,21 @@ class PlantPendingController extends Controller
                         $productJpa = Product::find($product['product']['id']);
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $productJpa->mount = intval($productJpa->mount) - $product['mount'];
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
-                            $stock->mount_new = $productJpa->mount;
-                            $stock->save();
+                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                                ->where('_product', $productJpa->id)->first();
+                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
+                            $productByTechnicalJpa->mount = $mountNew;
+                            $productByTechnicalJpa->save();
+                            $productByTechnicalJpa->save();
+
+                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                            $recordProductByTechnicalJpa->_user = $userid;
+                            $recordProductByTechnicalJpa->_technical = $request->_technical;
+                            $recordProductByTechnicalJpa->_product = $productJpa->id;
+                            $recordProductByTechnicalJpa->type_operation = "TAKEOUT";
+                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                            $recordProductByTechnicalJpa->mount = $product['mount'];
+                            $recordProductByTechnicalJpa->save();
                         } else {
                             $productJpa->disponibility = "PLANTA";
                             if ($productJpa->product_status == "NUEVO") {
@@ -646,10 +670,10 @@ class PlantPendingController extends Controller
                         if ($productJpa->type == "MATERIAL") {
                             $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
                                 ->where('_plant', $saleProductJpa->_plant)->first();
-                            if($productByPlantJpa){
+                            if ($productByPlantJpa) {
                                 $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
                                 $productByPlantJpa->save();
-                            }else{
+                            } else {
                                 $productByPlantJpa_new = new ProductByPlant();
                                 $productByPlantJpa_new->_product = $productJpa->id;
                                 $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
@@ -670,7 +694,7 @@ class PlantPendingController extends Controller
             }
 
             $response->setStatus(200);
-            $response->setMessage('La encomienda a sido eliminada correctamente');
+            $response->setMessage('Actualización correcta.');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -683,7 +707,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function getStockPlant(Request $request){
+    public function getStockPlant(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -700,9 +725,9 @@ class PlantPendingController extends Controller
 
             $stock_plant = [];
 
-            foreach($productByPlantJpa as $products){
-                $product =  gJSON::restore($products->toArray(), '__');
-                $stock_plant[]= $product;
+            foreach ($productByPlantJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_plant[] = $product;
             }
 
             $response->setStatus(200);
@@ -755,8 +780,11 @@ class PlantPendingController extends Controller
                     ->first();
 
                 if ($productJpa->type == "MATERIAL") {
-                    $productJpa->mount = intval($productJpa->mount) + intval($detail['mount']);
-                    $stock->mount_new = $productJpa->mount;
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
+                        ->where('_product', $detail['_product'])->first();
+                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
+                    $productByTechnicalJpa->mount = $mountNew;
+                    $productByTechnicalJpa->save();
                 } else {
                     $productJpa->disponibility = 'DISPONIBLE';
                     $productJpa->condition_product = "REGRESO DE PLANTA";
@@ -801,7 +829,7 @@ class PlantPendingController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
@@ -865,7 +893,7 @@ class PlantPendingController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -1060,7 +1088,7 @@ class PlantPendingController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar');
             }
 
