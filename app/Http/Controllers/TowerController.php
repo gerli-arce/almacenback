@@ -50,7 +50,7 @@ class TowerController extends Controller
                 ->first();
 
             if ($towerValidation) {
-                throw new Exception("Escoja otro nombre para el modelo ");
+                throw new Exception("Escoja otro nombre para la torre ");
             }
 
             $towerJpa = new Tower();
@@ -80,6 +80,10 @@ class TowerController extends Controller
                 }
             }
 
+            $towerJpa->_creation_user = $userid;
+            $towerJpa->creation_date = gTrace::getDate('mysql');
+            $towerJpa->_update_user = $userid;
+            $towerJpa->update_date = gTrace::getDate('mysql');
             $towerJpa->status = "1";
             $towerJpa->save();
 
@@ -248,7 +252,7 @@ class TowerController extends Controller
                     ->where('id', '!=', $request->id)
                     ->first();
                 if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta llave");
+                    throw new Exception("Error: La torre ya existe");
                 }
                 $towerJpa->name = $request->name;
             }
@@ -288,6 +292,9 @@ class TowerController extends Controller
                     $towerJpa->status = $request->status;
                 }
             }
+            
+            $towerJpa->_update_user = $userid;
+            $towerJpa->update_date = gTrace::getDate('mysql');
 
             $towerJpa->save();
 
