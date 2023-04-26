@@ -13,6 +13,7 @@ use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\ProductByTower;
 use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;

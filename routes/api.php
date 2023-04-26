@@ -269,6 +269,7 @@ Route::patch('/parcels_created', [ParcelsCreatedController::class, 'update']);
 Route::post('/parcels_created/paginate', [ParcelsCreatedController::class, 'paginate']);
 Route::post('/parcels_created/searchentry', [ParcelsCreatedController::class, 'getParcelsByPerson']);
 Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getParcelByPerson']);
+Route::post('/parcels_created/guia', [ParcelsCreatedController::class, 'generateGuia']);
 Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);

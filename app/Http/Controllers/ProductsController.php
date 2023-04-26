@@ -930,4 +930,47 @@ class ProductsController extends Controller
         }
     }
 
+    public function retunProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'update')) {
+                throw new Exception('No tienes permisos para actualizar productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $productJpa = Product::find($request->id);
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+
+            if (!$productJpa) {
+                throw new Exception("Error: El registro que intenta modificar no existe");
+            }
+
+         
+            $response->setStatus(200);
+            $response->setMessage('Producto actualizado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
 }

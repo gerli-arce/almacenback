@@ -17,12 +17,211 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewParcelsCreated;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ParcelsCreatedController extends Controller
 {
+
+    public function generateGuia(Request $request)
+    {
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+
+            $pdf = new Dompdf($options);
+
+            $template = file_get_contents('../storage/templates/reportGuia.html');
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $parcelJpa = Parcel::select([
+                'parcels.id as id',
+                'parcels.date_send as date_send',
+                'parcels.date_entry as date_entry',
+                'parcels._business_transport as _business_transport',
+                'transport.id as business_transport__id',
+                'transport.name as business_transport__name',
+                'parcels._branch_send as _branch_send',
+                'br_send.id as branch_send__id',
+                'br_send.name as branch_send__name',
+                'parcels._branch_destination as _branch_destination',
+                'br_des.id as branch_destination__id',
+                'br_des.name as branch_destination__name',
+                'parcels.price_transport as price_transport',
+                'responsible.id as responsible_pickup__id',
+                'responsible.name as responsible_pickup__name',
+                'responsible.lastname as responsible_pickup__lastname',
+                'sender.id as sender__id',
+                'sender.name as sender__name',
+                'sender.lastname as sender__lastname',
+                'parcels.parcel_type as parcel_type',
+                'parcels.parcel_status as parcel_status',
+                'parcels.description as description',
+                'parcels._branch as _branch',
+                'parcels.creation_date as creation_date',
+                'parcels._creation_user as _creation_user',
+                'parcels.update_date as update_date',
+                'parcels._update_user as _update_user',
+                'parcels.status as status',
+            ])
+                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
+                ->join('users', 'parcels._creation_user', 'users.id')
+                ->join('people as sender', 'users._person','sender.id')
+                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+                ->join('people as responsible', 'parcels._responsible_pickup', 'responsible.id')
+                ->join('transport', 'parcels._business_transport', 'transport.id')
+                ->whereNotNull('parcels.status')
+                ->find($request->id);
+
+            $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+
+            $detailsParcelJpa = DetailsParcel::select(
+                'details_parcel.id as id',
+                'details_parcel._parcel as _parcel',
+                'details_parcel.mount as mount',
+                'products.id as product__id',
+                'products.type as product__type',
+                'products.mac as product__mac',
+                'products.price_sale as product__price_sale',
+                'products.currency as product__currency',
+                'products.serie as product__serie',
+                'products.condition_product as product__condition_product',
+                'products.product_status as product__product_status',
+                'models.id as product__model__id',
+                'models.model as product__model__model',
+                'models.relative_id as product__model__relative_id',
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'details_parcel.description as description',
+                'details_parcel.status as status'
+            )
+                ->join('products', 'details_parcel._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->where('_parcel', $parcel['id'])
+                ->whereNotNull('details_parcel.status')
+                ->get();
+
+            $sumary = '';
+            $details = [];
+
+            foreach ($detailsParcelJpa as $detail) {
+                $detail = gJSON::restore($detail->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $models = array();
+            foreach ($details as $product) {
+                $model = $relativeId = $unity ="";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+
+                }
+                $mount = $product['mount'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount'] += $mount;
+                } else {
+                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity'=>$unity);
+                }
+            }
+
+            $count = 1;
+            $products = array_values($models);
+
+            foreach($products as $detail){
+               
+                $sumary .= "
+                <tr>
+                    <td><center>{$count}</center></td>
+                    <td><center>{$detail['mount']}</center></td>
+                    <td><center>{$detail['unity']}</center></td>
+                    <td><center>{$detail['model']}</center></td>
+                </tr>
+                ";
+
+                $count = $count +1;
+
+            }
+
+
+            $parcel['details'] = $details;
+
+            $template = str_replace(
+                [
+                    '{branch_name}',
+                    '{issue_long_date}',
+                    '{num_guia}',
+                    '{branch_send}',
+                    '{branch_designation}',
+                    '{responsible_pickup}',
+                    '{date_send}',
+                    '{business_transport}',
+                    '{transport_price}',
+                    '{description}',
+                    '{remitente}',
+                    '{reseptor}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    str_pad($parcel['id'], 6, "0", STR_PAD_LEFT),
+                    $parcel['branch_send']['name'],
+                    $parcel['branch_destination']['name'],
+                    $parcel['responsible_pickup']['name'] . ' ' . $parcel['responsible_pickup']['lastname'],
+                    $parcel['date_send'],
+                    $parcel['business_transport']['name'],
+                    $parcel['price_transport'],
+                    $parcel['description'],
+                    $parcel['sender']['name'].' '.$parcel['sender']['lastname'],
+                    $parcel['responsible_pickup']['name'] . ' ' . $parcel['responsible_pickup']['lastname'],
+                    $sumary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable$th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
+    }
 
     public function store(Request $request)
     {
@@ -620,8 +819,6 @@ class ParcelsCreatedController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
             $parcelJpa = Parcel::select([
                 'parcels.id as id',
                 'parcels.date_send as date_send',
@@ -636,7 +833,9 @@ class ParcelsCreatedController extends Controller
                 'br_des.id as branch_destination__id',
                 'br_des.name as branch_destination__name',
                 'parcels.price_transport as price_transport',
-                'parcels._responsible_pickup as _responsible_pickup',
+                'responsible.id as responsible_pickup__id',
+                'responsible.name as responsible_pickup__name',
+                'responsible.lastname as responsible_pickup__lastname',
                 'parcels.parcel_type as parcel_type',
                 'parcels.parcel_status as parcel_status',
                 'parcels.description as description',
@@ -649,6 +848,7 @@ class ParcelsCreatedController extends Controller
             ])
                 ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
                 ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+                ->join('people as responsible', 'parcels._responsible_pickup', 'responsible.id')
                 ->join('transport', 'parcels._business_transport', 'transport.id')
                 ->whereNotNull('parcels.status')
                 ->find($request->id);
@@ -656,21 +856,28 @@ class ParcelsCreatedController extends Controller
             $parcel = gJSON::restore($parcelJpa->toArray(), '__');
 
             $detailsParcelJpa = DetailsParcel::select(
-                'details_parcel.id',
-                'details_parcel._parcel',
-                'details_parcel.mount',
+                'details_parcel.id as id',
+                'details_parcel._parcel as _parcel',
+                'details_parcel.mount as mount',
                 'products.id as product__id',
                 'products.type as product__type',
                 'products.mac as product__mac',
+                'products.price_sale as product__price_sale',
+                'products.currency as product__currency',
                 'products.serie as product__serie',
+                'products.condition_product as product__condition_product',
+                'products.product_status as product__product_status',
                 'models.id as product__model__id',
                 'models.model as product__model__model',
                 'models.relative_id as product__model__relative_id',
-                'details_parcel.description',
-                'details_parcel.status'
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'details_parcel.description as description',
+                'details_parcel.status as status'
             )
                 ->join('products', 'details_parcel._product', 'products.id')
                 ->join('models', 'products._model', 'models.id')
+                ->join('unities', 'models._unity', 'unities.id')
                 ->where('_parcel', $parcel['id'])
                 ->whereNotNull('details_parcel.status')
                 ->get();
@@ -679,6 +886,7 @@ class ParcelsCreatedController extends Controller
             foreach ($detailsParcelJpa as $detail) {
                 $details[] = gJSON::restore($detail->toArray(), '__');
             }
+           
             $parcel['details'] = $details;
 
             $response->setStatus(200);
