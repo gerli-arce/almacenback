@@ -17,16 +17,19 @@
             }
 
             @page {
-                margin: 3cm 1.5cm;
+                margin-top: 1.5cm;
+                margin-bottom: 3cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
             }
 
-            header {
+            /* header {
                 position: fixed;
                 top: -2.25cm;
                 width: 100%;
                 padding: 10px 0;
                 border-bottom: 1px solid #6c757d;
-            }
+            } */
 
             footer {
                 position: fixed;
@@ -55,8 +58,8 @@
                 height: 2cm;
                 position: absolute;
                 right: 0;
-                font-size: 15px;
-                margin-top: -10px;
+                font-size: 13px;
+                margin-top: -18px;
             }
 
             #date {
@@ -186,7 +189,7 @@
     </head>
 
     <body>
-        <header>
+        <!-- <header>
             <img
                 id="softwareintegration"
                 src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
@@ -195,8 +198,8 @@
             <div id="num_guia">
                 <h1>Nº GUIA: [{num_guia}]</h1>
             </div>
-            <!-- <img i src="https://almacendev.fastnetperu.com.pe/api/profile/c85b4958/mini" alt="Logo de Software Developers World"> -->
-        </header>
+            <!-- <img i src="https://almacendev.fastnetperu.com.pe/api/profile/c85b4958/mini" alt="Logo de Software Developers World"> 
+        </header> -->
         <footer>
             <div>
                 FASTNETPERU R.I.R.L<br />
@@ -207,9 +210,56 @@
             </div>
         </footer>
         <main>
-            <p style="margin: 0px; padding: 0px" id="date">
+            <!-- <p style="margin: 0px; padding: 0px" id="date">
                 {branch_name}, {issue_long_date}
             </p>
+            <br /> -->
+
+            <div style="display: inline; font-size: 13px">
+                <div style="max-width: 50%; display: inline-block">
+                    <img
+                        style="width: 240px"
+                        src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
+                        alt="Logo fastnet"
+                    />
+                    <div>
+                        <strong>FASTNETPERU R.I.R.L</strong>
+                        <p>Jr. 1 de Mayo 1085 PICHANAQUI</p>
+                        <p>
+                            Telef. (51) 941415879 -
+                            Email:fastnetperu.eirl@gmail.com -
+                            www.fastnetperu.com.pe
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="
+                        max-width: 50%;
+                        display: inline-block;
+                        margin-left: 90px;
+                    "
+                >
+                    <div
+                        style="
+                            height: 140px;
+                            width:250px;
+                            background-color: rgb(234, 234, 234);
+                            font-size: 24px;
+                            font-weight: 600;
+                            text-align: center;
+                            border-radius: 12px;
+                            font-family: sans-serif;
+                            border: solid 2px #000;
+                        "
+                    >
+                <span>RUC 20602791816</span>
+                <span>GUIA </span>
+                <span>ELECTRÓNICA </span>
+                <br>
+                <span>FAS-{num_guia}</span>
+                </div>
+                </div>
+            </div>
             <br />
 
             <div style="display: inline; font-size: 13px">
@@ -275,14 +325,13 @@
                     <p>Precio de transporte:</p>
                     <strong> S/.{transport_price} </strong>
                 </div>
-                <div>
+                <!-- <div>
                     <p>Descripción</p>
-                    <strong> {description} </strong>
-                </div>
+                    <strong style="font-size: 13px;"> {description} </strong>
+                </div> -->
             </div>
-            <center class="text-bold" style="margin-top: 12px">Resumen</center>
-            <br />
-            <table>
+            <center class="text-bold" style="margin-top: 8px">Resumen</center>
+            <table style="height: 370px">
                 <thead>
                     <tr>
                         <td>ITEM</td>
@@ -296,26 +345,33 @@
                 </tbody>
             </table>
             <br />
-            <div style="display: inline; font-size: 13px;">
-                <div style="max-width: 50%; display: inline-block;margin-top: 300px; margin-left: 100px;">
-                  <center>
-                    <p>_____________________________</p>
-                    <p>Firma del remitente:</p>
-                    <p>{remitente}</p>
-                  </center>
+            <div style="display: inline; font-size: 13px">
+                <div
+                    style="
+                        max-width: 50%;
+                        display: inline-block;
+                        margin-top: 100px;
+                        margin-left: 100px;
+                    "
+                >
+                    <center>
+                        <p>_____________________________</p>
+                        <p>Firma del remitente:</p>
+                        <p>{remitente}</p>
+                    </center>
                 </div>
                 <div
                     style="
                         max-width: 50%;
                         display: inline-block;
-                        margin-left: 100px;
+                        margin-left: 50px;
                     "
                 >
-                <center>
-                  <p>_____________________________</p>
-                      <p>Firma del receptor:</p>
-                      <p>{reseptor}</p>
-                </center>
+                    <center>
+                        <p>_____________________________</p>
+                        <p>Firma del receptor:</p>
+                        <p>{reseptor}</p>
+                    </center>
                 </div>
             </div>
         </main>
