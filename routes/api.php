@@ -236,6 +236,7 @@ Route::post('/products/restore', [ProductsController::class, 'restore']);
 Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 Route::post('/products/materials/paginate', [ProductsController::class, 'paginateMaterials']);
 Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
+Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
@@ -357,5 +358,7 @@ Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
+Route::post('/record/product/return', [RecordsController::class, 'returnEqipment']);
+
 
 // Route::get('/traslat', [connect::class, 'dats']);
