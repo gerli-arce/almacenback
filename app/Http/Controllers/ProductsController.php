@@ -591,7 +591,9 @@ class ProductsController extends Controller
             if (isset($request->search['model'])) {
                 $query->where('model__id', $request->search['model']);
             }
-
+            if (isset($request->search['branch'])) {
+                $query->where('branch__id', $request->search['branch']);
+            }
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -599,10 +601,10 @@ class ProductsController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'model__brand__brand' || $column == '*') {
-                    $q->where('model__brand__brand', $type, $value);
+                    $q->orWhere('model__brand__brand', $type, $value);
                 }
                 if ($column == 'branch__name' || $column == '*') {
-                    $q->where('branch__name', $type, $value);
+                    $q->orWhere('branch__name', $type, $value);
                 }
                 if ($column == 'model__category__category' || $column == '*') {
                     $q->where('model__category__category', $type, $value);
