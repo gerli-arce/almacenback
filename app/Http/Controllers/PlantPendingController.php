@@ -17,6 +17,7 @@ use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
+use App\Models\StockPlant;
 use App\Models\ViewPlant;
 use App\Models\ViewProductsByPlant;
 use App\Models\ViewStockPlant;
@@ -225,6 +226,177 @@ class PlantPendingController extends Controller
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function setStockProductsByPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar proyectos de planta');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_plant = $request->_plant;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = "PLANTA";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "PENDIENTE";
+            $salesProduct->type_pay = "GASTOS INTERNOS";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    if ($product['product']['type'] == "MATERIAL") {
+
+                        $StockPlant = StockPlant::select(['id','_product','_plant','mount'])->where('_product', $productJpa->id)->where('_plant', $request->id)->first();
+
+                        if ($StockPlant) {
+                            $StockPlant->mount = intval($StockPlant->mount) + intval($product['mount']);
+                            $StockPlant->save();
+                        } else {
+                            $stockPlantJpa = new StockPlant();
+                            $stockPlantJpa->_product = $productJpa->id;
+                            $stockPlantJpa->_plant = $request->id;
+                            $stockPlantJpa->mount = $product['mount'];
+                            $stockPlantJpa->status = "1";
+                            $stockPlantJpa->save();
+                        }
+
+                        $stock->mount_new = intval($stock->mount_new) - intval($product['mount']);
+                        $productJpa->mount = $productJpa->mount - $product['mount'];
+
+                    } else {
+                        $stockPlantJpa = new StockPlant();
+                        $stockPlantJpa->_product = $productJpa->id;
+                        $stockPlantJpa->_plant = $request->id;
+                        $stockPlantJpa->mount = $product['mount'];
+                        $stockPlantJpa->status = "1";
+                        $stockPlantJpa->save();
+
+                        $productJpa->disponibility = "PLANTA";
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock->mount_new = $stock->mount_new - 1;
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock->mount_second = $stock->mount_second - 1;
+                        }
+                    }
+
+                    $stock->save();
+                    $productJpa->save();
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount = $product['mount'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+                }
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Registro agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStockProductsByPlant(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para leer stok de planta');
+            }
+
+            if (
+                !isset($id) 
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $stockPlantJpa = StockPlant::select([
+                'stock_plant.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'stock_plant._plant as _plant',
+                'stock_plant.mount as mount',
+                'stock_plant.status as status'
+            ])
+            ->join('products', 'stock_plant._product', 'products.id')
+            ->join('models', 'products._model', 'models.id')
+            ->where('_plant', $id)->whereNotNull('stock_plant.status')
+            ->get();
+
+            $products = array();
+            foreach ($stockPlantJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $products[] = $detail;
+            }
+
+            $response->setData($products);
+            $response->setStatus(200);
+            $response->setMessage('Registro agregado correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
         } finally {
             return response(
                 $response->toArray(),
