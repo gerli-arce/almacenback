@@ -1102,7 +1102,7 @@ class PlantPendingController extends Controller
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_plant = $request->_plant;
             $salesProduct->_type_operation = $request->_type_operation;
-            $salesProduct->type_intallation = "TOWER";
+            $salesProduct->type_intallation = "PLANT";
             if (isset($request->date_sale)) {
                 $salesProduct->date_sale = $request->date_sale;
             }
@@ -1127,9 +1127,9 @@ class PlantPendingController extends Controller
             $entryProductsJpa->_branch = $branch_->id;
             $entryProductsJpa->_type_operation = $request->_type_operation;
             $entryProductsJpa->_tower = $request->_tower;
-            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE TORRE";
+            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE PLANTA";
             $entryProductsJpa->entry_date = gTrace::getDate('mysql');
-            $entryProductsJpa->condition_product = "USADO EN TORRE";
+            $entryProductsJpa->condition_product = "USADO EN PLANTA";
             $entryProductsJpa->product_status = "USADO";
             $entryProductsJpa->_creation_user = $userid;
             $entryProductsJpa->creation_date = gTrace::getDate('mysql');
@@ -1183,6 +1183,135 @@ class PlantPendingController extends Controller
             $towerJpa->update_date = gTrace::getDate('mysql');
             $towerJpa->_update_user = $userid;
             $towerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function returnProductsStockByPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->_plant)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $plant = Plant::find($request->_plant);
+            if (!$plant) {
+                throw new Exception('La torre que deseas eliminar no existe');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            if (isset($request->_technical)) {
+                $salesProduct->_technical = $request->_technical;
+            }
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_plant = $request->_plant;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = "PLANT";
+            if (isset($request->date_sale)) {
+                $salesProduct->date_sale = $request->date_sale;
+            }
+            $salesProduct->status_sale = "CULMINADA";
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->type_pay = "GASTOS INTERNOS";
+
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "0";
+            $salesProduct->save();
+
+            $entryProductsJpa = new EntryProducts();
+            $entryProductsJpa->_user = $userid;
+            $entryProductsJpa->_technical = $request->_technical;
+            $entryProductsJpa->_branch = $branch_->id;
+            $entryProductsJpa->_type_operation = $request->_type_operation;
+            $entryProductsJpa->_tower = $request->_tower;
+            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE PLANTA";
+            $entryProductsJpa->entry_date = gTrace::getDate('mysql');
+            $entryProductsJpa->condition_product = "USADO EN PLANTA";
+            $entryProductsJpa->product_status = "USADO";
+            $entryProductsJpa->_creation_user = $userid;
+            $entryProductsJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductsJpa->_update_user = $userid;
+            $entryProductsJpa->update_date = gTrace::getDate('mysql');
+            $entryProductsJpa->status = "1";
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+                    $productJpa = Product::find($product['product']['id']);
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    $stockPlantJpa = StockPlant::find($product['id']);
+
+                    if ($product['product']['type'] == "MATERIAL") {
+                        $productJpa->mount = intval($productJpa->mount) + $product['mount'];
+                        $stock->mount_new = $productJpa->mount;
+                        $stockPlantJpa->mount = $stockPlantJpa->mount - $product['mount'];
+                    } else {
+                        $productJpa->disponibility = "DISPONIBLE";
+                        $productJpa->condition_product = "DEVUELTO DE LA PLANTA: " . $plant->name;
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock->mount_new = $stock->mount_new + 1;
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock->mount_second = $stock->mount_second + 1;
+                        }
+                        $stockPlantJpa->status = null;
+                    }
+
+                    $stockPlantJpa->save();
+                    $stock->save();
+                    $productJpa->save();
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount = $product['mount'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount = $product['mount'];
+                    $entryDetail->_entry_product = $entryProductsJpa->id;
+                    $entryDetail->status = "1";
+                }
+            }
+
+            $plant->update_date = gTrace::getDate('mysql');
+            $plant->_update_user = $userid;
+            $plant->save();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta.');
