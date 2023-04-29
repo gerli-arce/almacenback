@@ -327,6 +327,7 @@ Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate
 Route::post('/plant_pending/add/stock', [PlantPendingController::class, 'setStockProductsByPlant']);
 Route::get('/plant_pending/get/stock/{id}', [PlantPendingController::class, 'getStockProductsByPlant']);
 Route::post('/plant_pending/paginate/stock', [PlantPendingController::class, 'paginateStockPlant']);
+Route::post('/plant_pending/paginate/stock/products', [PlantPendingController::class, 'paginateStockProductsByPlant']);
 Route::post('/plant_pending/liquidation', [PlantPendingController::class, 'registerLiquidations']);
 Route::patch('/plant_pending/liquidation', [PlantPendingController::class, 'updateProductsByLiqidation']);
 Route::post('/plant_pending/liquidation/return', [PlantPendingController::class, 'returnProductsByPlant']);

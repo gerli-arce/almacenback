@@ -340,6 +340,7 @@ class ProductsController extends Controller
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
                 ->where('disponibility', '!=', 'PLANTA')
                 ->where('disponibility', '!=', 'TORRE')
+                ->where('disponibility', '!=', 'LIQUIDACION DE PLANTA')
             ;
             $iTotalDisplayRecords = $query->count();
 
