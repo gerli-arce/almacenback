@@ -339,6 +339,7 @@ Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingContro
 Route::delete('/plant_pending/liquidation/delete', [PlantPendingController::class, 'delete_liquidation']);
 Route::post('/plant_pending/stock', [PlantPendingController::class, 'getStockPlant']);
 Route::post('/plant_pending/report', [PlantPendingController::class, 'generateReportByLiquidation']);
+Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
 
 
 // TOWER
