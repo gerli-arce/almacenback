@@ -1087,6 +1087,7 @@ class TowerController extends Controller
             $entryProductsJpa->_update_user = $userid;
             $entryProductsJpa->update_date = gTrace::getDate('mysql');
             $entryProductsJpa->status = "1";
+            $entryProductsJpa->save();
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {

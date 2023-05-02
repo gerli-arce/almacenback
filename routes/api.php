@@ -157,6 +157,7 @@ Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
 
 // EJECUTIVE
+Route::post('/ejecutives', [EjecutivesController::class, 'store']);
 Route::post('/ejecutives/search', [EjecutivesController::class, 'search']);
 Route::post('/ejecutives/paginate', [EjecutivesController::class, 'paginate']);
 

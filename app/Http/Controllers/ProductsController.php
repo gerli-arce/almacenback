@@ -52,9 +52,15 @@ class ProductsController extends Controller
             $entryProduct = new EntryProducts();
             $entryProduct->_user = $userid;
             $entryProduct->_branch = $branch_->id;
+            $entryProduct->type_entry = "REGISTRO";
             $entryProduct->entry_date = gTrace::getDate('mysql');
             $entryProduct->_type_operation = $request->_type_operation;
+            $entryProduct->description = $request->description;
             $entryProduct->status = "1";
+            $entryProduct->_creation_user = $userid;
+            $entryProduct->creation_date = gTrace::getDate('mysql');
+            $entryProduct->_update_user = $userid;
+            $entryProduct->update_date = gTrace::getDate('mysql');
             $entryProduct->save();
 
             if ($request->type == "EQUIPO") {
