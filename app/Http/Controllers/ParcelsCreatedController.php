@@ -929,15 +929,23 @@ class ParcelsCreatedController extends Controller
             $parcelJpa->date_entry = gTrace::getDate('mysql');
             $parcelJpa->parcel_status = "ENTREGADO";
 
+            
             $entryProductJpa = new EntryProducts();
             $entryProductJpa->_user = $userid;
             $entryProductJpa->_branch = $branch_->id;
+            $entryProductJpa->description = $parcelJpa->description;
+            $entryProductJpa->type_entry = "REGISTRO ENCOMIENDA";
             $entryProductJpa->entry_date = gTrace::getDate('mysql');
             $entryProductJpa->_type_operation = $request->type_operation;
+            $entryProductJpa->_creation_user = $userid;
+            $entryProductJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductJpa->_update_user = $userid;
+            $entryProductJpa->update_date = gTrace::getDate('mysql');
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
-            $parcelJpa->_entry_product = $entryProductJpa->id;
 
+            $parcelJpa->_entry_product = $entryProductJpa->id;
+            
             $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
 
             foreach ($detailsParcelJpa as $detailParcel) {

@@ -1077,11 +1077,10 @@ class TowerController extends Controller
             $entryProductsJpa->_technical = $request->_technical;
             $entryProductsJpa->_branch = $branch_->id;
             $entryProductsJpa->_type_operation = $request->_type_operation;
+            $entryProductsJpa->description =  $request->description;
             $entryProductsJpa->_tower = $request->_tower;
-            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE TORRE";
+            $entryProductsJpa->type_entry = "DEVOLUCION DE TORRE";
             $entryProductsJpa->entry_date = gTrace::getDate('mysql');
-            $entryProductsJpa->condition_product = "USADO EN TORRE";
-            $entryProductsJpa->product_status = "USADO";
             $entryProductsJpa->_creation_user = $userid;
             $entryProductsJpa->creation_date = gTrace::getDate('mysql');
             $entryProductsJpa->_update_user = $userid;

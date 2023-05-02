@@ -1258,8 +1258,8 @@ class PlantPendingController extends Controller
             $entryProductsJpa->_technical = $request->_technical;
             $entryProductsJpa->_branch = $branch_->id;
             $entryProductsJpa->_type_operation = $request->_type_operation;
-            $entryProductsJpa->_tower = $request->_tower;
-            $entryProductsJpa->type_entry = "DEVOLUCIÓN DE PLANTA";
+            $entryProductsJpa->_plant = $request->_plant;
+            $entryProductsJpa->type_entry = "DEVOLUCION DE PLANTA";
             $entryProductsJpa->entry_date = gTrace::getDate('mysql');
             $entryProductsJpa->condition_product = "USADO EN PLANTA";
             $entryProductsJpa->product_status = "USADO";

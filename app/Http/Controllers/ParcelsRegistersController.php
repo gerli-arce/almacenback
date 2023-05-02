@@ -74,6 +74,11 @@ class ParcelsRegistersController extends Controller
             if (isset($request->product_status)) {
                 $entryProductJpa->product_status = $request->product_status;
             }
+            $entryProductJpa->type_entry= "REGISTRO ENCOMIENDA";
+            $entryProductJpa->_creation_user = $userid;
+            $entryProductJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductJpa->_update_user = $userid;
+            $entryProductJpa->update_date = gTrace::getDate('mysql');
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
 

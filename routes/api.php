@@ -36,6 +36,7 @@ use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ParcelsCreatedController;
 use App\Http\Controllers\ParcelsRegistersController;
 use App\Http\Controllers\PlantPendingController;
+use App\Http\Controllers\EntrysController;
 use App\Http\Controllers\connect;
 
 /*
@@ -367,6 +368,12 @@ Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
 Route::post('/record/product/return', [RecordsController::class, 'returnEqipment']);
+
+
+// ENTRYS 
+
+Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
+
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
