@@ -65,8 +65,6 @@ Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR'])
 
 // PDF
 Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
-Route::post('/pdf/report/stock/products', [PDFController::class, 'generateReportByStockByProducts']);
-Route::post('/pdf/report/stock/products/selected', [PDFController::class, 'generateReportByStockByProducts']);
 
 
 // HOME
@@ -242,6 +240,9 @@ Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquip
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::get('/stock/regularize', [StockController::class, 'regularizar']);
+Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
+Route::post('/stock/products/selected', [StockController::class, 'generateReportByStockByProducts']);
+
 
 
 // INTALLATIONS
