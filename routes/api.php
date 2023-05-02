@@ -241,7 +241,7 @@ Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::get('/stock/regularize', [StockController::class, 'regularizar']);
 Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
-Route::post('/stock/products/selected', [StockController::class, 'generateReportByStockByProducts']);
+Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 
 
 
