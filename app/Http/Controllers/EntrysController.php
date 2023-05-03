@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\{gJson, gValidate};
-use App\Models\{ Product, EntryDetail, EntryProducts, Response, Branch };
+use App\Models\{Product, EntryDetail, EntryProducts, Response, Branch};
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EntrysController extends Controller
 {
@@ -56,49 +57,27 @@ class EntrysController extends Controller
                 ->where('entry_products._branch', $branch_->id)
                 ->orderBy($request->order['column'], $request->order['dir']);
 
-            // $query->where(function ($q) use ($request) {
-            //     $column = $request->search['column'];
-            //     $type = $request->search['regex'] ? 'like' : '=';
-            //     $value = $request->search['value'];
-            //     $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
 
-            //     if ($column == 'doc_type' || $column == '*') {
-            //         $q->where('doc_type', $type, $value);
-            //     }
-            //     if ($column == 'doc_number' || $column == '*') {
-            //         $q->where('doc_number', $type, $value);
-            //     }
-            //     if ($column == 'name' || $column == '*') {
-            //         $q->orWhere('name', $type, $value);
-            //     }
-            //     if ($column == 'lastname' || $column == '*') {
-            //         $q->orWhere('lastname', $type, $value);
-            //     }
-            //     if ($column == 'birthdate' || $column == '*') {
-            //         $q->orWhere('birthdate', $type, $value);
-            //     }
-            //     if ($column == 'gender' || $column == '*') {
-            //         $q->orWhere('gender', $type, $value);
-            //     }
-            //     if ($column == 'email' || $column == '*') {
-            //         $q->orWhere('email', $type, $value);
-            //     }
-            //     if ($column == 'phone' || $column == '*') {
-            //         $q->orWhere('phone', $type, $value);
-            //     }
-            //     if ($column == 'ubigeo' || $column == '*') {
-            //         $q->orWhere('ubigeo', $type, $value);
-            //     }
-            //     if ($column == 'address' || $column == '*') {
-            //         $q->orWhere('address', $type, $value);
-            //     }
-            //     if ($column == 'branch__name' || $column == '*') {
-            //         $q->orWhere('branch__name', $type, $value);
-            //     }
-            //     if ($column == 'status' || $column == '*') {
-            //         $q->orWhere('status', $type, $value);
-            //     }
-            // });
+                $query->where('entry_products.entry_date', '>=', $dateStart)
+                    ->where('entry_products.entry_date', '<=', $dateEnd);
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'user' || $column == '*') {
+                    $q->orWhere('users.username', $type, $value);
+                }
+                if ($column == 'operation' || $column == '*') {
+                    $q->orWhere('operation_types.operation', $type, $value);
+                }
+            });
             $iTotalDisplayRecords = $query->count();
 
             $entrysJpa = $query
@@ -113,9 +92,9 @@ class EntrysController extends Controller
                 $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
 
                 $details = [];
-                foreach($detailsJpa as $detailJpa){
+                foreach ($detailsJpa as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
-                    $details[] =$detail; 
+                    $details[] = $detail;
                 }
 
                 $entry['details'] = $details;
@@ -195,7 +174,7 @@ class EntrysController extends Controller
             $response->setStatus(200);
             $response->setData($details);
             $response->setMessage('Operación correcta');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -244,8 +223,8 @@ class EntrysController extends Controller
                 'models.model AS product__model__model',
                 'models.relative_id AS product__model__relative_id',
             ])
-            ->join('models', 'products._model', 'models.id')
-            ->where('products._entry_product', $id)->get();
+                ->join('models', 'products._model', 'models.id')
+                ->where('products._entry_product', $id)->get();
 
             $details = array();
             foreach ($productJpa as $detailJpa) {
@@ -256,7 +235,7 @@ class EntrysController extends Controller
             $response->setStatus(200);
             $response->setData($details);
             $response->setMessage('Operación correcta');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
