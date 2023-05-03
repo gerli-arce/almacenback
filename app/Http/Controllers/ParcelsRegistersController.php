@@ -75,6 +75,7 @@ class ParcelsRegistersController extends Controller
                 $entryProductJpa->product_status = $request->product_status;
             }
             $entryProductJpa->type_entry= "REGISTRO ENCOMIENDA";
+            $entryProductJpa->description = $request->description;
             $entryProductJpa->_creation_user = $userid;
             $entryProductJpa->creation_date = gTrace::getDate('mysql');
             $entryProductJpa->_update_user = $userid;
@@ -232,6 +233,7 @@ class ParcelsRegistersController extends Controller
                         $productJpa->warranty = $request->warranty;
                     }
                     $productJpa->condition_product = $request->condition_product;
+                    $productJpa->_entry_product = $entryProductJpa->id;
                     $productJpa->date_entry = $request->date_entry;
                     if (isset($request->description)) {
                         $productJpa->description = $request->description;

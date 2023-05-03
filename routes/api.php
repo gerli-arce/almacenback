@@ -373,6 +373,8 @@ Route::post('/record/product/return', [RecordsController::class, 'returnEqipment
 // ENTRYS 
 
 Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
+Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
+Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
 
 
 

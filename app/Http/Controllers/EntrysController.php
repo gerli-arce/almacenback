@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\Product;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Response;
@@ -22,7 +23,7 @@ class EntrysController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'entrys', 'read')) {
                 throw new Exception('No tienes permisos para listar técnicos');
             }
 
@@ -134,6 +135,133 @@ class EntrysController extends Controller
             $response->setITotalRecords(EntryProducts::where('_branch', $branch_->id)->count());
             $response->setData($entrys);
         } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductsByEntry(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'entrys', 'read')) {
+                throw new Exception('No tienes permisos para ver detalles de encomiendas');
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $entryDetailJpa = EntryDetail::select([
+                'entry_detail.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'entry_detail.mount as mount',
+                'entry_detail.description as description',
+                'entry_detail._entry_product as _entry_product',
+                'entry_detail.status as status',
+            ])
+                ->join('products', 'entry_detail._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('entry_detail._entry_product', $id)->get();
+
+            $details = array();
+            foreach ($entryDetailJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $response->setStatus(200);
+            $response->setData($details);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductsProductsByEntry(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'entrys', 'read')) {
+                throw new Exception('No tienes permisos para ver detalles de encomiendas');
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $productJpa = Product::select([
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'products._entry_product AS product__product_status',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+            ])
+            ->join('models', 'products._model', 'models.id')
+            ->where('products._entry_product', $id)->get();
+
+            $details = array();
+            foreach ($productJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $response->setStatus(200);
+            $response->setData($details);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
