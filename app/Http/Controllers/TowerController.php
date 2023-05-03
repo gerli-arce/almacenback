@@ -1128,6 +1128,7 @@ class TowerController extends Controller
                     $entryDetail->mount = $product['mount'];
                     $entryDetail->_entry_product = $entryProductsJpa->id;
                     $entryDetail->status = "1";
+                    $entryDetail->save();
                 }
             }
 

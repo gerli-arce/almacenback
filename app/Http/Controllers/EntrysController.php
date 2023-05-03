@@ -3,25 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
-use App\gLibraries\gTrace;
-use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
-use App\Models\Product;
-use App\Models\ProductByTower;
-use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
 use App\Models\Response;
-use App\Models\Stock;
-use App\Models\Tower;
-use App\Models\ViewProductsByTower;
-use App\Models\ViewStockTower;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class EntrysController extends Controller
 {
@@ -52,6 +40,8 @@ class EntrysController extends Controller
                     'entry_products._technical AS _technical',
                     'entry_products._branch AS _branch',
                     'entry_products._type_operation AS _type_operation',
+                    'operation_types.id as operation_type__id',
+                    'operation_types.operation as operation_type__operation',
                     'entry_products._tower AS _tower',
                     'entry_products._plant AS _plant',
                     'entry_products.type_entry AS type_entry',
@@ -61,17 +51,14 @@ class EntrysController extends Controller
                     'entry_products.product_status AS product_status',
                     'entry_products._creation_user AS _creation_user',
                     'entry_products.creation_date AS creation_date',
-                    'entry_products.status AS status'
+                    'entry_products.status AS status',
                 ]
-                )
+            )
                 ->join('users', 'entry_products._user', 'users.id')
                 ->join('people', 'users._person', 'people.id')
+                ->join('operation_types', 'entry_products._type_operation', 'operation_types.id')
                 ->where('entry_products._branch', $branch_->id)
                 ->orderBy($request->order['column'], $request->order['dir']);
-
-            if (!$request->all) {
-                $query->whereNotNull('entry_products.status');
-            }
 
             // $query->where(function ($q) use ($request) {
             //     $column = $request->search['column'];
@@ -118,15 +105,26 @@ class EntrysController extends Controller
             // });
             $iTotalDisplayRecords = $query->count();
 
-            $peopleJpa = $query
+            $entrysJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $people = array();
-            foreach ($peopleJpa as $personJpa) {
-                $person = gJSON::restore($personJpa->toArray(), '__');
-                $people[] = $person;
+            $entrys = array();
+            foreach ($entrysJpa as $entryJpa) {
+                $entry = gJSON::restore($entryJpa->toArray(), '__');
+
+                $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
+
+                $details = [];
+                foreach($detailsJpa as $detailJpa){
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] =$detail; 
+                }
+
+                $entry['details'] = $details;
+
+                $entrys[] = $entry;
             }
 
             $response->setStatus(200);
@@ -134,8 +132,8 @@ class EntrysController extends Controller
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(EntryProducts::where('_branch', $branch_->id)->count());
-            $response->setData($people);
-        } catch (\Throwable$th) {
+            $response->setData($entrys);
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {

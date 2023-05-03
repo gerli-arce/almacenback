@@ -11,6 +11,7 @@ use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
+use App\Models\EntryDetail;
 use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
@@ -151,6 +152,14 @@ class ProductsController extends Controller
                         $stock->mount_new = intval($stock->mount_new) + 1;
                         $stock->save();
                     }
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount = $productJpa->mount;
+                    $entryDetail->_entry_product = $entryProduct->id;
+                    $entryDetail->status = "1";
+                    $entryDetail->save();
+
                 }
             } else if ($request->type == "MATERIAL") {
                 if (!isset($request->mount)) {
@@ -211,6 +220,14 @@ class ProductsController extends Controller
                         ->first();
                     $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
                     $stock->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $material->id;
+                    $entryDetail->mount = $request->mount;
+                    $entryDetail->_entry_product = $entryProduct->id;
+                    $entryDetail->status = "1";
+                    $entryDetail->save();
+
                 } else {
                     $productJpa = new Product();
                     $productJpa->type = $request->type;
@@ -254,7 +271,16 @@ class ProductsController extends Controller
                         ->first();
                     $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
                     $stock->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount = $request->mount;
+                    $entryDetail->_entry_product = $entryProduct->id;
+                    $entryDetail->status = "1";
+                    $entryDetail->save();
+
                 }
+               
             }
 
             $response->setStatus(200);
