@@ -2,13 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
-use App\gLibraries\gValidate;
-use App\Models\Branch;
-use App\Models\Product;
-use App\Models\EntryDetail;
-use App\Models\EntryProducts;
-use App\Models\Response;
+use App\gLibraries\{gJson, gValidate};
+use App\Models\{ Product, EntryDetail, EntryProducts, Response, Branch };
 use Exception;
 use Illuminate\Http\Request;
 
