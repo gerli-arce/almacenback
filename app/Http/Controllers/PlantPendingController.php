@@ -5,21 +5,16 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\EntryDetail;
-use App\Models\EntryProducts;
-use App\Models\Plant;
-use App\Models\Product;
-use App\Models\ProductByPlant;
-use App\Models\Response;
-use App\Models\SalesProducts;
-use App\Models\Stock;
-use App\Models\StockPlant;
-use App\Models\ViewPlant;
-use App\Models\ViewProductsByPlant;
-use App\Models\ViewStockPlant;
-use App\Models\ViewStockProductsByPlant;
+use App\Models\{
+    Branch, DetailSale,
+    EntryDetail, EntryProducts,
+    Plant, Product,
+    ProductByPlant, Response,
+    SalesProducts, Stock,
+    StockPlant, Parcel,
+    ViewPlant, ViewProductsByPlant,
+    ViewStockPlant, ViewStockProductsByPlant
+};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -87,7 +82,6 @@ class PlantPendingController extends Controller
                 $response->getStatus()
             );
         }
-
     }
 
     public function update(Request $request)
@@ -298,7 +292,6 @@ class PlantPendingController extends Controller
 
                         $stock->mount_new = intval($stock->mount_new) - intval($product['mount']);
                         $productJpa->mount = $productJpa->mount - $product['mount'];
-
                     } else {
                         $stockPlantJpa = new StockPlant();
                         $stockPlantJpa->_product = $productJpa->id;
@@ -820,7 +813,6 @@ class PlantPendingController extends Controller
 
                             $detailSale->mount = $product['mount'];
                             $stockPlantJpa->save();
-
                         }
 
                         if (!$detailSale) {
@@ -829,7 +821,6 @@ class PlantPendingController extends Controller
 
                         $detailSale->save();
                         $productJpa->save();
-
                     } else {
                         $productJpa = Product::find($product['product']['id']);
                         $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->first();
@@ -1569,7 +1560,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function generateReportByLiquidation(Request $request){
+    public function generateReportByLiquidation(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -1630,7 +1622,7 @@ class PlantPendingController extends Controller
             }
             $models = array();
             foreach ($details as $product) {
-                $model = $relativeId = $unity ="";
+                $model = $relativeId = $unity = "";
                 if ($product['product']['type'] === "EQUIPO") {
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
@@ -1639,18 +1631,17 @@ class PlantPendingController extends Controller
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
-
                 }
                 $mount = $product['mount'];
                 if (isset($models[$model])) {
                     $models[$model]['mount'] += $mount;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity'=>$unity);
+                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
                 }
             }
             $count = 1;
             $products = array_values($models);
-            foreach($products as $detail){
+            foreach ($products as $detail) {
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
@@ -1659,7 +1650,7 @@ class PlantPendingController extends Controller
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
                 ";
-                $count = $count +1;
+                $count = $count + 1;
             }
             $template = str_replace(
                 [
@@ -1677,7 +1668,7 @@ class PlantPendingController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     $request->plant['name'],
-                    $request->plant['leader']['name'].' '.$request->plant['leader']['lastname'],
+                    $request->plant['leader']['name'] . ' ' . $request->plant['leader']['lastname'],
                     $request->date_sale,
                     $request->description,
                     $sumary,
@@ -1687,7 +1678,7 @@ class PlantPendingController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Guia.pdf');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
@@ -1698,7 +1689,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function generateReportByPlant(Request $request){
+    public function generateReportByPlant(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -1730,7 +1722,7 @@ class PlantPendingController extends Controller
 
             $models = array();
             foreach ($stock_plant as $product) {
-                $model = $relativeId = $unity ="";
+                $model = $relativeId = $unity = "";
                 if ($product['product']['type'] === "EQUIPO") {
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
@@ -1739,18 +1731,17 @@ class PlantPendingController extends Controller
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
-
                 }
                 $mount = $product['mount'];
                 if (isset($models[$model])) {
                     $models[$model]['mount'] += $mount;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity'=>$unity);
+                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
                 }
             }
             $count = 1;
             $products = array_values($models);
-            foreach($products as $detail){
+            foreach ($products as $detail) {
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
@@ -1759,7 +1750,7 @@ class PlantPendingController extends Controller
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
                 ";
-                $count = $count +1;
+                $count = $count + 1;
             }
             $template = str_replace(
                 [
@@ -1778,7 +1769,7 @@ class PlantPendingController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     $request->name,
-                    $request->leader['name'].' '.$request->leader['lastname'],
+                    $request->leader['name'] . ' ' . $request->leader['lastname'],
                     $request->date_start,
                     $request->date_end,
                     $request->description,
@@ -1789,7 +1780,7 @@ class PlantPendingController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Guia.pdf');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
@@ -1799,5 +1790,4 @@ class PlantPendingController extends Controller
             );
         }
     }
-
 }
