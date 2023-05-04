@@ -134,12 +134,11 @@ class StockController extends Controller
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
             $user = User::select([
-                'users.id as id', 
+                'users.id as id',
                 'users.username as username',
                 'people.name as person__name',
                 'people.lastname as person__lastname'
-                ])
-
+            ])
                 ->join('people', 'users._person', 'people.id')
                 ->where('users.id', $userid)->first();
 
@@ -155,17 +154,27 @@ class StockController extends Controller
 
             foreach ($request->data as $model) {
 
-                $stock = "<div>
-                <p>Nue: <strong>{$model['mount_new']}</strong></p>
-                <p>Sem. Nue: <strong>{$model['mount_second']}</strong></p>
-                </div>";
+                $stock = "
+                <div>
+                    <p>Nuevos: <trong>{$model['mount_new']}</trong></p>
+                    <p>Seminuevos: <strong>{$model['mount_second']}</strong></p>
+                    <p>Pedido: <strong>{$model['mount_order']}</strong></p>
+                </div>
+                ";
+
+                $model_ = "
+                <center style='font-size:15px;'>
+                    <p><strong>{$model['model']['model']}</strong></p>
+                    <p>CAT: <strong>{$model['category']['category']}</strong></p>
+                </center>
+                ";
 
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:15px;'>{$count}</center></td>
                     <td><span style='font-size:15px;'>{$stock}</span></td>
                     <td><center style='font-size:15px;'>{$model['model']['unity']['name']}</center></td>
-                    <td><center style='font-size:15px;'>{$model['model']['model']}</center></td>
+                    <td>{$model_}</td>
                 </tr>
                 ";
                 $count = $count + 1;
@@ -180,7 +189,7 @@ class StockController extends Controller
                 ],
                 [
                     $branch_->name,
-                    $user->person__name.' '.$user->person__lastname ,
+                    $user->person__name . ' ' . $user->person__lastname,
                     gTrace::getDate('long'),
                     $sumary,
                 ],
