@@ -259,18 +259,15 @@ class EntrysController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'record_entrys', 'read')) {
                 throw new Exception('No tienes permisos para listar entradas creadas');
             }
+
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportLiquidationPlant.html');
-            if (
-                !isset($request->id)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
+            $template = file_get_contents('../storage/templates/reportEntrysByDate.html');
+          
             $sumary = '';
 
-            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             // $query = EntryProducts::select(
             //     [

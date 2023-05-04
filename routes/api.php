@@ -351,6 +351,7 @@ Route::post('/record/product/return', [RecordsController::class, 'returnEqipment
 Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
 Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
 Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
+Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 
 
 
