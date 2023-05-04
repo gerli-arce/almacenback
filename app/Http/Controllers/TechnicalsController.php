@@ -764,44 +764,44 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function restore(Request $request)
-    {
-        $response = new Response();
-        try {
+    // public function restore(Request $request)
+    // {
+    //     $response = new Response();
+    //     try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar personas');
-            }
+    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+    //         if ($status != 200) {
+    //             throw new Exception($message);
+    //         }
+    //         if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
+    //             throw new Exception('No tienes permisos para eliminar personas');
+    //         }
 
-            if (
-                !isset($request->id)
-            ) {
-                throw new Exception("Error: Es necesario el ID para esta operación");
-            }
+    //         if (
+    //             !isset($request->id)
+    //         ) {
+    //             throw new Exception("Error: Es necesario el ID para esta operación");
+    //         }
 
-            $personJpa->_update_user = $userid;
-            $personJpa->update_date = gTrace::getDate('mysql');
-            $technicalJpa = People::find($request->id);
-            if (!$technicalJpa) {
-                throw new Exception("Este reguistro no existe");
-            }
-            $technicalJpa->status = "1";
-            $technicalJpa->save();
+    //         $personJpa->_update_user = $userid;
+    //         $personJpa->update_date = gTrace::getDate('mysql');
+    //         $technicalJpa = People::find($request->id);
+    //         if (!$technicalJpa) {
+    //             throw new Exception("Este reguistro no existe");
+    //         }
+    //         $technicalJpa->status = "1";
+    //         $technicalJpa->save();
 
-            $response->setStatus(200);
-            $response->setMessage('La persona a sido restaurado correctamente');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
+    //         $response->setStatus(200);
+    //         $response->setMessage('La persona a sido restaurado correctamente');
+    //     } catch (\Throwable$th) {
+    //         $response->setStatus(400);
+    //         $response->setMessage($th->getMessage());
+    //     } finally {
+    //         return response(
+    //             $response->toArray(),
+    //             $response->getStatus()
+    //         );
+    //     }
+    // }
 }
