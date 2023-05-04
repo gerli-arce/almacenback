@@ -198,7 +198,7 @@ class TechnicalsController extends Controller
                 $recordProductByTechnicalJpa->_user = $userid;
                 $recordProductByTechnicalJpa->_technical = $request->id;
                 $recordProductByTechnicalJpa->_product = $product['product']['id'];
-                $recordProductByTechnicalJpa->type_operation = "ADD";
+                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
                 $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
                 $recordProductByTechnicalJpa->mount = $product['mount'];
                 $recordProductByTechnicalJpa->description = $product['description'];
@@ -265,9 +265,9 @@ class TechnicalsController extends Controller
 
             $recordProductByTechnicalJpa = new RecordProductByTechnical();
             $recordProductByTechnicalJpa->_user = $userid;
-            $recordProductByTechnicalJpa->_technical = $request->id;
+            $recordProductByTechnicalJpa->_technical = $request->technical['id'];
             $recordProductByTechnicalJpa->_product = $request->product['id'];
-            $recordProductByTechnicalJpa->type_operation = "ADD";
+            $recordProductByTechnicalJpa->type_operation = "AGREGADO";
             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
             $recordProductByTechnicalJpa->mount = $request->mount;
             $recordProductByTechnicalJpa->description = $request->description;
@@ -338,11 +338,11 @@ class TechnicalsController extends Controller
             $recordProductByTechnicalJpa->_product = $request->product['id'];
 
             if ($request->reazon == "ILLFATED") {
-                $recordProductByTechnicalJpa->type_operation = "ILLFATED";
+                $recordProductByTechnicalJpa->type_operation = "MALOGRADO";
             } else if ($request->reazon == "STORE") {
-                $recordProductByTechnicalJpa->type_operation = "STORE";
+                $recordProductByTechnicalJpa->type_operation = "USO EN ALMACEN";
             } else if ($request->reazon == "RETURN") {
-                $recordProductByTechnicalJpa->type_operation = "RETURN";
+                $recordProductByTechnicalJpa->type_operation = "DEVOLUCIÓN";
                 $productJpa = Product::find($request->product['id']);
                 $mount = $productJpa->mount + $request->mount;
                 $productJpa->mount = $mount;

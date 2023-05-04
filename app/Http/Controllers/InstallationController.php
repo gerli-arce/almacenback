@@ -351,26 +351,27 @@ class InstallationController extends Controller
                                 ->where('_product', $detailSale->_product)->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
 
-                                // $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                                // $recordProductByTechnicalJpa->_user = $userid;
-                                // $recordProductByTechnicalJpa->_technical = $request->_technical;
-                                // $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                                // $recordProductByTechnicalJpa->_client = $request->_client;
-                                // $recordProductByTechnicalJpa->_product = $productJpa->id;
-                                // $recordProductByTechnicalJpa->mount = $product['mount'];
-                                // $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
-                                // $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                                // $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                                // $recordProductByTechnicalJpa->description = $product['description'];
-                                // $recordProductByTechnicalJpa->save();
+                                $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                                $recordProductByTechnicalJpa->_user = $userid;
+                                $recordProductByTechnicalJpa->_technical = $request->_technical;
+                                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
+                                $recordProductByTechnicalJpa->_client = $request->_client;
+                                $recordProductByTechnicalJpa->_product = $productJpa->id;
+                                $recordProductByTechnicalJpa->mount = $product['mount'];
+                                $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
+                                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                                $recordProductByTechnicalJpa->description = $product['description'];
                                 
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
                                     $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
+                                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
                                     $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
+                                    $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
                                 }
+                                $recordProductByTechnicalJpa->save();
                             }
                             $detailSale->mount = $product['mount'];
                             $productByTechnicalJpa->save();
@@ -398,6 +399,20 @@ class InstallationController extends Controller
                         $productJpa = Product::find($product['product']['id']);
 
                         if ($product['product']['type'] == "MATERIAL") {
+
+                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                            $recordProductByTechnicalJpa->_user = $userid;
+                            $recordProductByTechnicalJpa->_technical = $request->_technical;
+                            $recordProductByTechnicalJpa->_client = $request->_client;
+                            $recordProductByTechnicalJpa->_product = $productJpa->id;
+                            $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
+                            $recordProductByTechnicalJpa->operation = "INSTALACION";
+                            $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
+                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                            $recordProductByTechnicalJpa->mount = $product['mount'];
+                            $recordProductByTechnicalJpa->description = $product['description'];
+                            $recordProductByTechnicalJpa->save();
+
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $productJpa->id)->first();
                             $mountNew = $productByTechnicalJpa->mount - $product['mount'];
@@ -555,6 +570,20 @@ class InstallationController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
+
+                $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                $recordProductByTechnicalJpa->_user = $userid;
+                $recordProductByTechnicalJpa->_technical = $salesProduct->_technical;
+                $recordProductByTechnicalJpa->_client = $salesProduct->_client;
+                $recordProductByTechnicalJpa->_product = $productJpa->id;
+                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
+                $recordProductByTechnicalJpa->operation = "USO CANCELADO";
+                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
+                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                $recordProductByTechnicalJpa->mount = $detailSale['mount'];
+                $recordProductByTechnicalJpa->description = $detailSale['description'];
+                $recordProductByTechnicalJpa->save();
+
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
                     ->where('_product', $detailSale->_product)->first();
                 $mountNew = $productByTechnicalJpa->mount + $request->mount;
@@ -657,6 +686,20 @@ class InstallationController extends Controller
                 $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
                 $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
+
+                    $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                    $recordProductByTechnicalJpa->_user = $userid;
+                    $recordProductByTechnicalJpa->_technical = $saleProductJpa->_technical;
+                    $recordProductByTechnicalJpa->_client = $saleProductJpa->_client;
+                    $recordProductByTechnicalJpa->_product = $productJpa->id;
+                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
+                    $recordProductByTechnicalJpa->operation = "INSTALACION";
+                    $recordProductByTechnicalJpa->_sale_product = $saleProductJpa->id;
+                    $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                    $recordProductByTechnicalJpa->mount = $detail['mount'];
+                    $recordProductByTechnicalJpa->description = $detail['description'];
+                    $recordProductByTechnicalJpa->save();
+
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
                         ->where('_product', $detail['_product'])->first();
                     $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
