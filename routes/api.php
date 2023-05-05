@@ -316,9 +316,11 @@ Route::get('/plant_pending/records/{id}', [PlantPendingController::class, 'getRe
 Route::get('/plant_pending/records/returns/{id}', [PlantPendingController::class, 'recordSales']);
 Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingController::class, 'cancelUseProduct']);
 Route::delete('/plant_pending/liquidation/delete', [PlantPendingController::class, 'delete_liquidation']);
-Route::post('/plant_pending/stock', [PlantPendingController::class, 'getStockPlant']);
+Route::post('/plant_pending/products', [PlantPendingController::class, 'getProductsPlant']);
+Route::post('/plant_pending/stock', [PlantPendingController::class, 'getProductsPlant']);
 Route::post('/plant_pending/report', [PlantPendingController::class, 'generateReportByLiquidation']);
 Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
+Route::post('/plant_pending/stock/plant', [PlantPendingController::class, 'generateReportByStockByPlant']);
 
 
 // TOWER

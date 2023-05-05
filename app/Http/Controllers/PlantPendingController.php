@@ -6,14 +6,22 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\{
-    Branch, DetailSale,
-    EntryDetail, EntryProducts,
-    Plant, Product,
-    ProductByPlant, Response,
-    SalesProducts, Stock,
-    StockPlant, Parcel,
-    ViewPlant, ViewProductsByPlant,
-    ViewStockPlant, ViewStockProductsByPlant
+    Branch,
+    DetailSale,
+    EntryDetail,
+    EntryProducts,
+    Plant,
+    Product,
+    ProductByPlant,
+    Response,
+    SalesProducts,
+    Stock,
+    StockPlant,
+    Parcel,
+    ViewPlant,
+    ViewProductsByPlant,
+    ViewStockPlant,
+    ViewStockProductsByPlant
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -417,8 +425,6 @@ class PlantPendingController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $stockPlantJpa = StockPlant::select([
                 'stock_plant.id as id',
@@ -896,7 +902,7 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function getStockPlant(Request $request)
+    public function getProductsPlant(Request $request)
     {
         $response = new Response();
         try {
@@ -1671,6 +1677,127 @@ class PlantPendingController extends Controller
                     $request->plant['leader']['name'] . ' ' . $request->plant['leader']['lastname'],
                     $request->date_sale,
                     $request->description,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportByStockByPlant(Request $request)
+    {
+
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportLiquidationPlantByStok.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+             $stockPlantJpa = StockPlant::select([
+                'stock_plant.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'unities.id AS product__model__unity__id',
+                'unities.name AS product__model__unity__name',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'stock_plant._plant as _plant',
+                'stock_plant.mount as mount',
+                'stock_plant.status as status',
+            ])
+                ->join('products', 'stock_plant._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->where('_plant', $request->id)->whereNotNull('stock_plant.status')
+                ->get();
+
+            $products = array();
+            foreach ($stockPlantJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $products[] = $detail;
+            }
+            $models = array();
+            foreach ($products as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                }
+                $mount = $product['mount'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount'] += $mount;
+                } else {
+                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{project_name}',
+                    '{leader}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->name,
+                    $request->leader['name'] . ' ' . $request->leader['lastname'],
                     $sumary,
                 ],
                 $template
