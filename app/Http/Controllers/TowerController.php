@@ -12,8 +12,6 @@ use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\ProductByTower;
-use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
@@ -89,7 +87,7 @@ class TowerController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La torre se a agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -160,7 +158,7 @@ class TowerController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Tower::count());
             $response->setData($towerJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -205,7 +203,7 @@ class TowerController extends Controller
             $content = $modelJpa->image_content;
             $type = $modelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/antena-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -292,7 +290,7 @@ class TowerController extends Controller
                     $towerJpa->status = $request->status;
                 }
             }
-            
+
             $towerJpa->_update_user = $userid;
             $towerJpa->update_date = gTrace::getDate('mysql');
 
@@ -300,7 +298,7 @@ class TowerController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La torre ha sido actualizada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -366,26 +364,8 @@ class TowerController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_product', $product['product']['id'])->first();
-
-                        $productByTechnicalJpa->mount = $productByTechnicalJpa->mount - $product['mount'];
-                        $productByTechnicalJpa->save();
-
-                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                        $recordProductByTechnicalJpa->_user = $userid;
-                        $recordProductByTechnicalJpa->_technical = $request->_technical;
-                        $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                        $recordProductByTechnicalJpa->_client = $request->_client;
-                        $recordProductByTechnicalJpa->_product = $productJpa->id;
-                        $recordProductByTechnicalJpa->mount = $product['mount'];
-                        $recordProductByTechnicalJpa->operation = 'USO EN TORRE';
-                        $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                        $recordProductByTechnicalJpa->description = $product['description'];
-                        $recordProductByTechnicalJpa->save();
-
-
+                        $productJpa->mount = $productJpa->mount -  $product['mount'];
+                        $stock->mount_new = $productJpa->mount;
                     } else {
                         $productJpa->disponibility = "TORRE";
                         if ($productJpa->product_status == "NUEVO") {
@@ -409,7 +389,7 @@ class TowerController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Registro agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
         } finally {
@@ -509,7 +489,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($salesProducts);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -610,7 +590,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($salesProducts);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -649,46 +629,30 @@ class TowerController extends Controller
             $detailSale->status = null;
 
             $productJpa = Product::find($request->product['id']);
+
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
             if ($productJpa->type == "MATERIAL") {
-
-                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                $recordProductByTechnicalJpa->_user = $userid;
-                $recordProductByTechnicalJpa->_technical = $salesProduct->_technical;
-                $recordProductByTechnicalJpa->_client = $salesProduct->_client;
-                $recordProductByTechnicalJpa->_product = $productJpa->id;
-                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                $recordProductByTechnicalJpa->operation = "USO CANCELADO";
-                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                $recordProductByTechnicalJpa->mount = $detailSale['mount'];
-                $recordProductByTechnicalJpa->description = $detailSale['description'];
-                $recordProductByTechnicalJpa->save();
-
-                $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
-                    ->where('_product', $detailSale->_product)->first();
-                $mountNew = $productByTechnicalJpa->mount + $request->mount;
-                $productByTechnicalJpa->mount = $mountNew;
-                $productByTechnicalJpa->save();
+                $productJpa->mount = $productJpa->mount + $detailSale->mount;
+                $stock->mount_new = $productJpa->mount;
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
                 if ($productJpa->product_status == "NUEVO") {
                     $stock->mount_new = intval($stock->mount_new) + 1;
                 } else if ($productJpa->product_status == "SEMINUEVO") {
                     $stock->mount_second = intval($stock->mount_second) + 1;
                 }
-                $stock->save();
             }
 
+            $stock->save();
             $detailSale->save();
             $salesProduct->save();
             $productJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Liquidación atualizada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
         } finally {
@@ -743,40 +707,21 @@ class TowerController extends Controller
                     if (isset($product['id'])) {
                         $productJpa = Product::find($product['product']['id']);
                         $detailSale = DetailSale::find($product['id']);
-
                         if ($product['product']['type'] == "MATERIAL") {
-
-                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                            $recordProductByTechnicalJpa->_user = $userid;
-                            $recordProductByTechnicalJpa->_technical = $request->_technical;
-                            $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                            $recordProductByTechnicalJpa->_client = $request->_client;
-                            $recordProductByTechnicalJpa->_product = $productJpa->id;
-                            $recordProductByTechnicalJpa->mount = $product['mount'];
-                            $recordProductByTechnicalJpa->operation = 'USO EN TORRE';
-                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                            $recordProductByTechnicalJpa->description = $product['description'];
-
-                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $detailSale->_product)->first();
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-
+                                    $stock->mount_new = intval($stock->mount_new) + $mount_dif;
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-
+                                    $stock->mount_new = intval($stock->mount_new) - $mount_dif;
                                 }
                             }
-
+                            $stock->save();
                             $detailSale->mount = $product['mount'];
-                            $productByTechnicalJpa->save();
-                            $productByTechnicalJpa->save();
-
                         }
 
                         if (!$detailSale) {
@@ -785,43 +730,26 @@ class TowerController extends Controller
 
                         $detailSale->save();
                         $productJpa->save();
-
                     } else {
                         $productJpa = Product::find($product['product']['id']);
 
+                        $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
+
                         if ($product['product']['type'] == "MATERIAL") {
-
-                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                            $recordProductByTechnicalJpa->_user = $userid;
-                            $recordProductByTechnicalJpa->_technical = $request->_technical;
-                            $recordProductByTechnicalJpa->_client = $request->_client;
-                            $recordProductByTechnicalJpa->_product = $productJpa->id;
-                            $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                            $recordProductByTechnicalJpa->operation = "USO EN TORRE";
-                            $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                            $recordProductByTechnicalJpa->mount = $product['mount'];
-                            $recordProductByTechnicalJpa->description = $product['description'];
-                            $recordProductByTechnicalJpa->save();
-
-                            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $productJpa->id)->first();
-                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                            $productByTechnicalJpa->mount = $mountNew;
-                            $productByTechnicalJpa->save();
-                            $productByTechnicalJpa->save();
+                            $productJpa->mount = $productJpa->mount - $product['mount'];
+                            $stock->mount_new = $productJpa->mount;
                         } else {
                             $productJpa->disponibility = "PLANTA";
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
                                 $stock->mount_second = $stock->mount_second - 1;
                             }
-                            $stock->save();
                         }
+
+                        $stock->save();
                         $productJpa->save();
 
                         $detailSale = new DetailSale();
@@ -874,7 +802,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
         } finally {
@@ -911,7 +839,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($stock_tower);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -958,25 +886,8 @@ class TowerController extends Controller
                     ->first();
 
                 if ($productJpa->type == "MATERIAL") {
-
-                    $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                    $recordProductByTechnicalJpa->_user = $userid;
-                    $recordProductByTechnicalJpa->_technical = $saleProductJpa->_technical;
-                    $recordProductByTechnicalJpa->_client = $saleProductJpa->_client;
-                    $recordProductByTechnicalJpa->_product = $productJpa->id;
-                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                    $recordProductByTechnicalJpa->operation = "USO EN TORRE";
-                    $recordProductByTechnicalJpa->_sale_product = $saleProductJpa->id;
-                    $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                    $recordProductByTechnicalJpa->mount = $detail['mount'];
-                    $recordProductByTechnicalJpa->description = $detail['description'];
-                    $recordProductByTechnicalJpa->save();
-
-                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
-                        ->where('_product', $detail['_product'])->first();
-                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
-                    $productByTechnicalJpa->mount = $mountNew;
-                    $productByTechnicalJpa->save();
+                    $productJpa->mount = $productJpa->mount + $detail['mount'];
+                    $stock->mount_new = $productJpa->mount;
                 } else {
                     $productJpa->disponibility = 'DISPONIBLE';
                     $productJpa->condition_product = "REGRESO DE TORRE";
@@ -986,7 +897,6 @@ class TowerController extends Controller
                     } else if ($productJpa->product_status == "SEMINUEVO") {
                         $stock->mount_second = $stock->mount_second + 1;
                     }
-
                 }
 
                 $stock->save();
@@ -1000,7 +910,7 @@ class TowerController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La liquidación se elimino correctamente.');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
         } finally {
@@ -1065,7 +975,7 @@ class TowerController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Tower::count());
             $response->setData($stock);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1195,7 +1105,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1294,7 +1204,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($salesProducts);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1337,7 +1247,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('La torre a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1377,7 +1287,7 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('La torre a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
