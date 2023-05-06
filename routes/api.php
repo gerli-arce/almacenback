@@ -321,6 +321,7 @@ Route::post('/plant_pending/stock', [PlantPendingController::class, 'getProducts
 Route::post('/plant_pending/report', [PlantPendingController::class, 'generateReportByLiquidation']);
 Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
 Route::post('/plant_pending/stock/plant', [PlantPendingController::class, 'generateReportByStockByPlant']);
+Route::post('/plant_pending/update/stock/product', [PlantPendingController::class, 'updateStokByProduct']);
 
 
 // TOWER

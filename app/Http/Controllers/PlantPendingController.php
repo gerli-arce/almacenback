@@ -961,7 +961,7 @@ class PlantPendingController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
-            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
                 ->get();
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
@@ -1718,7 +1718,7 @@ class PlantPendingController extends Controller
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $sumary = '';
 
-             $stockPlantJpa = StockPlant::select([
+            $stockPlantJpa = StockPlant::select([
                 'stock_plant.id as id',
                 'products.id AS product__id',
                 'products.type AS product__type',
@@ -1911,6 +1911,46 @@ class PlantPendingController extends Controller
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateStokByProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $stockPlantJpa = StockPlant::find($request->id);
+            if (!$stockPlantJpa) {
+                throw new Exception('El producto no existe');
+            }
+
+            $stockPlantJpa->mount = $request->mount;
+            $stockPlantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El producto se actualizo correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
             return response(
                 $response->toArray(),
                 $response->getStatus()
