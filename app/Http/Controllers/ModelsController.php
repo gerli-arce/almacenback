@@ -473,4 +473,78 @@ class ModelsController extends Controller
             );
         }
     }
+
+    public function changeStar(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'models', 'update')) {
+                throw new Exception('No tienes permisos para restaurar modelos.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelsJpa = Models::find($request->id);
+            if (!$modelsJpa) {
+                throw new Exception('El modelo que deseas cambiar no existe');
+            }
+
+            $modelsJpa->star = $request->star;
+            $modelsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El modelo a sido cambiado correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStar(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
+                throw new Exception('No tienes permisos para leer modelos.');
+            }
+
+            $modelsJpa = ViewModels::select(['*'])->whereNotNull('status')->where('star', '1')->get();
+
+            $models = array();
+            foreach ($modelsJpa as $modelJpa) {
+                $model = gJSON::restore($modelJpa->toArray(), '__');
+                $models[] = $model;
+            }
+
+            $response->setData($models);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
