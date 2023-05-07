@@ -49,6 +49,7 @@ Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
+Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
 
 
 
@@ -203,7 +204,6 @@ Route::post('/models/paginate', [ModelsController::class, 'paginate']);
 Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
 Route::post('/models/search', [ModelsController::class, 'search']);
 Route::post('/models/star', [ModelsController::class, 'changeStar']);
-Route::get('/models/get/star', [ModelsController::class, 'getStar']);
 
 // PRODUCTS
 Route::get('/products', [ProductsController::class, 'index']);

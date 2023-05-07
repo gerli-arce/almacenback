@@ -186,6 +186,10 @@ class ModelsController extends Controller
                 $query->whereNotNull('status');
             }
 
+            if($request->star){
+                $query->where('star', 1);
+            }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -514,37 +518,5 @@ class ModelsController extends Controller
         }
     }
 
-    public function getStar(Request $request){
-        $response = new Response();
-        try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
-                throw new Exception('No tienes permisos para leer modelos.');
-            }
-
-            $modelsJpa = ViewModels::select(['*'])->whereNotNull('status')->where('star', '1')->get();
-
-            $models = array();
-            foreach ($modelsJpa as $modelJpa) {
-                $model = gJSON::restore($modelJpa->toArray(), '__');
-                $models[] = $model;
-            }
-
-            $response->setData($models);
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-        } catch (\Throwable$th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
 }
