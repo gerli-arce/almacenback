@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     UserLoginController, SalesProductsController, FauldController, TowerController,
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
-    ParcelsRegistersController, PlantPendingController, EntrysController, connect,
+    ParcelsRegistersController, PlantPendingController, EntrysController, 
+    SalesController, connect,
 };
 
 /*
@@ -357,6 +358,11 @@ Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
 Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
 Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
 Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
+
+// SALES
+
+Route::post('/sales/paginate', [SalesController::class, 'paginate']);
+
 
 
 
