@@ -17,9 +17,178 @@ use App\Models\viewInstallations;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class InstallationController extends Controller
 {
+
+    public function generateReportByInstallation(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar instalaciones creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportInstallation.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $host = '';
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount as mount',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $request->id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $InstallationJpa = viewInstallations::find($request->id);
+
+            $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
+            $installJpa['products'] = $details;
+
+            $type_operation = '';
+
+        
+
+            $sumary = '';
+
+
+            foreach ( $details as $detail) {
+
+                $model = "
+                <div>
+                    <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
+                    <img class='img-fluid img-thumbnail' 
+                        src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+                </div>
+                ";
+
+                $medida = "
+                <div>
+                    <p>{$detail['product']['model']['unity']['name']}</p>
+                    <p>{$detail['mount']}</p>
+                </div>
+                ";
+
+                $mac_serie = "
+                    <div>
+                        <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
+                        <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
+                    </div>
+                ";
+
+
+                $sumary .= "
+                <tr>
+                    <td><center >{$detail['id']}</center></td>
+                    <td><center >{$model}</center></td>
+                    <td><center >{$medida}</center></td>
+                    <td><center >{$mac_serie}</center></td>
+                </tr>
+                ";
+            }
+
+            $fecha_hora = $installJpa['issue_date'];
+            $parts_date = explode(" ", $fecha_hora);
+            $fecha = $parts_date[0];
+            $hora = $parts_date[1];
+
+            $template = str_replace(
+                [
+                    '{num_operation}',
+                    '{type_operation}',
+                    '{client}',
+                    '{issue_date}',
+                    '{technical}',
+                    '{issue_hour}',
+                    '{date_sale}',
+                    '{ejecutive}',
+                    '{price}',
+                    '{type}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
+                    $installJpa['type_operation']['operation'],
+                    $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
+                    $fecha,
+                    $installJpa['technical']['name'].' '.$installJpa['technical']['lastname'],
+                    $hora,
+                    $installJpa['date_sale'],
+                    $installJpa['user_issue']['people']['name'].' '.$installJpa['user_issue']['people']['lastname'],
+                    'S/.'.$installJpa['price_installation'],
+                    $installJpa['type_intallation'],
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function registerInstallation(Request $request)
     {
         $response = new Response();
@@ -33,7 +202,8 @@ class InstallationController extends Controller
                 throw new Exception('No tienes permisos para agregar instalaciones');
             }
 
-            if (!isset($request->_client) ||
+            if (
+                !isset($request->_client) ||
                 !isset($request->type_intallation) ||
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
@@ -41,7 +211,8 @@ class InstallationController extends Controller
                 !isset($request->price_all) ||
                 !isset($request->type_pay) ||
                 !isset($request->mount_dues) ||
-                !isset($request->date_sale)) {
+                !isset($request->date_sale)
+            ) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
@@ -96,7 +267,6 @@ class InstallationController extends Controller
                         $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
                         $recordProductByTechnicalJpa->description = $product['description'];
                         $recordProductByTechnicalJpa->save();
-
                     } else {
 
                         $stock = Stock::where('_model', $productJpa->_model)
@@ -107,7 +277,7 @@ class InstallationController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
-                        
+
                         $stock->save();
                         $productJpa->save();
                     }
@@ -123,7 +293,7 @@ class InstallationController extends Controller
             }
             $response->setStatus(200);
             $response->setMessage('Instalación agregada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -198,7 +368,7 @@ class InstallationController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->where('branch__correlative', $branch)->count());
             $response->setData($installations);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -276,7 +446,7 @@ class InstallationController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($installJpa);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -301,8 +471,10 @@ class InstallationController extends Controller
                 throw new Exception('No tienes permisos para listar modelos');
             }
 
-            if (!isset($request->id) ||
-                !isset($request->_technical)) {
+            if (
+                !isset($request->id) ||
+                !isset($request->_technical)
+            ) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
@@ -361,7 +533,7 @@ class InstallationController extends Controller
                                 $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
                                 $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
                                 $recordProductByTechnicalJpa->description = $product['description'];
-                                
+
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
                                     $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
@@ -419,7 +591,6 @@ class InstallationController extends Controller
                             $productByTechnicalJpa->mount = $mountNew;
                             $productByTechnicalJpa->save();
                             $productByTechnicalJpa->save();
-
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
                             $stock = Stock::where('_model', $productJpa->_model)
@@ -445,7 +616,7 @@ class InstallationController extends Controller
             $salesProduct->save();
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
         } finally {
@@ -530,7 +701,7 @@ class InstallationController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Viewinstallations::where('status_sale', 'CULMINADA')->where('branch__correlative', $branch)->count());
             $response->setData($installations);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -609,7 +780,7 @@ class InstallationController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
         } finally {
@@ -646,7 +817,7 @@ class InstallationController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La instalación se ha pasado a pendientes.');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
         } finally {
@@ -715,7 +886,7 @@ class InstallationController extends Controller
             $saleProductJpa->save();
             $response->setStatus(200);
             $response->setMessage('La instalación se elimino correctamente.');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
