@@ -51,7 +51,7 @@ class TechnicalsController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($peopleJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -161,7 +161,7 @@ class TechnicalsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Tecnico agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -185,8 +185,10 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para crear productos');
             }
 
-            if (!isset($request->id) ||
-                !isset($request->details)) {
+            if (
+                !isset($request->id) ||
+                !isset($request->details)
+            ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
@@ -225,7 +227,7 @@ class TechnicalsController extends Controller
             }
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
         } finally {
@@ -249,9 +251,11 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para crear productos');
             }
 
-            if (!isset($request->product) ||
+            if (
+                !isset($request->product) ||
                 !isset($request->technical) ||
-                !isset($request->mount)) {
+                !isset($request->mount)
+            ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
@@ -289,7 +293,7 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa->save();
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
         } finally {
@@ -313,10 +317,12 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para actualizar productos de técnico');
             }
 
-            if (!isset($request->product) ||
+            if (
+                !isset($request->product) ||
                 !isset($request->technical) ||
                 !isset($request->reazon) ||
-                !isset($request->mount)) {
+                !isset($request->mount)
+            ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
@@ -342,7 +348,7 @@ class TechnicalsController extends Controller
             } else if ($request->reazon == "STORE") {
                 $recordProductByTechnicalJpa->type_operation = "USO EN ALMACEN";
             } else if ($request->reazon == "RETURN") {
-                $recordProductByTechnicalJpa->type_operation = "DEVOLUCIÓN";
+                $recordProductByTechnicalJpa->type_operation = "DEVOLUCION";
                 $productJpa = Product::find($request->product['id']);
                 $mount = $productJpa->mount + $request->mount;
                 $productJpa->mount = $mount;
@@ -352,7 +358,7 @@ class TechnicalsController extends Controller
                 $stock->mount_new = $mount;
                 $stock->save();
                 $productJpa->save();
-            } else if ($request->reazon == "DISCOUNT"){
+            } else if ($request->reazon == "DISCOUNT") {
                 $recordProductByTechnicalJpa->type_operation = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
             }
             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
@@ -363,7 +369,7 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa->save();
             $response->setStatus(200);
             $response->setMessage('Salida de productos registrados correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
         } finally {
@@ -397,7 +403,7 @@ class TechnicalsController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($products);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -427,7 +433,9 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $recordProducts = RecordProductByTechnical::select([
+
+
+            $query = RecordProductByTechnical::select([
                 'record_product_by_technical.id as id',
                 'users.id as user__id',
                 'users.username as user__username',
@@ -441,22 +449,49 @@ class TechnicalsController extends Controller
                 'record_product_by_technical.mount as mount',
                 'record_product_by_technical.description as description',
             ])
-            ->join('users','record_product_by_technical._user', 'users.id')
-            ->join('products','record_product_by_technical._product', 'products.id')
-            ->join('models','products._model', 'models.id')
-            ->orderBy('id', 'desc')
-            ->where('record_product_by_technical._technical', $request->id)->get();
+                ->join('users', 'record_product_by_technical._user', 'users.id')
+                ->join('products', 'record_product_by_technical._product', 'products.id')
+                ->join('models', 'products._model', 'models.id');
+
+
+            $query = $query->orderBy('id', 'desc')
+                ->where('record_product_by_technical._technical', $request->id);
+
+            if (isset($request->date_start) && isset($request->date_end) && isset($request->reazon)) {
+                $query = $query->where('record_product_by_technical.date_operation', '>=', $request->date_start)
+                    ->where('record_product_by_technical.date_operation', '<=', $request->date_end);
+                if ($request->reazon != '*') {
+                    if ($request->reazon == "ILLFATED") {
+                        $query = $query->where('record_product_by_technical.type_operation', 'MALOGRADO');
+                    } else if ($request->reazon == "STORE") {
+                        $query = $query->where('record_product_by_technical.type_operation', 'USO EN ALMACEN');
+                    } else if ($request->reazon == "RETURN") {
+                        $query = $query->where('record_product_by_technical.type_operation', 'DEVOLUCION');
+                    } else if ($request->reazon == "DISCOUNT") {
+                        $query = $query->where('record_product_by_technical.type_operation', 'DESCUENTO MALOGRADO-NO-JUSTIFICCADO');
+                    }else if($request->reazon == "ADD"){
+                        $query = $query->where('record_product_by_technical.type_operation', 'AGREGADO');
+
+                    }
+                }
+            }
+
+
+            $recordProducts = $query->get();
+
+
+
 
             $records = array();
             foreach ($recordProducts as $recordJpa) {
                 $record = gJSON::restore($recordJpa->toArray(), '__');
                 $records[] = $record;
             }
-         
+
             $response->setData($records);
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -583,7 +618,7 @@ class TechnicalsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewPeople::where('type', 'TECHNICAL')->where('branch__correlative', $branch)->count());
             $response->setData($people);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -713,7 +748,7 @@ class TechnicalsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La persona se a actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -755,7 +790,7 @@ class TechnicalsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Técnico se a eliminado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
