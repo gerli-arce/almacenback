@@ -8,6 +8,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
+use App\Models\ViewDetailSale;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
@@ -22,7 +23,8 @@ use Illuminate\Support\Facades\DB;
 
 class SalesController extends Controller
 {
-    public function paginate(Request $request){
+    public function paginate(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -38,53 +40,36 @@ class SalesController extends Controller
             $query = viewInstallations::select([
                 '*',
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->where('branch__correlative', $branch);
 
-            if (!$request->all) {
-                $query->whereNotNull('status');
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+
+                $query->where('date_sale', '>=', $dateStart)
+                    ->where('date_sale', '<=', $dateEnd);
             }
 
-            $query->where(function ($q) use ($request) {
-                $column = $request->search['column'];
-                $type = $request->search['regex'] ? 'like' : '=';
-                $value = $request->search['value'];
-                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'id') {
-                    $value = intval(ltrim($request->search['value'], '0'));
-                    $q->where('id', $value);
-                }
-                if ($column == 'technical__name' || $column == '*') {
-                    $q->orWhere('technical__name', $type, $value);
-                }
-                if ($column == 'technical__lastname' || $column == '*') {
-                    $q->orWhere('technical__lastname', $type, $value);
-                }
-                if ($column == 'client__lastname' || $column == '*') {
-                    $q->orWhere('client__lastname', $type, $value);
-                }
-                if ($column == 'client__name' || $column == '*') {
-                    $q->orWhere('client__name', $type, $value);
-                }
-                if ($column == 'user_creation__username' || $column == '*') {
-                    $q->orWhere('user_creation__username', $type, $value);
-                }
-                if ($column == 'date_sale' || $column == '*') {
-                    $q->orWhere('date_sale', $type, $value);
-                }
-            })
-                ->where('branch__correlative', $branch);
             $iTotalDisplayRecords = $query->count();
 
-            $installationsPendingJpa = $query
+            $salesJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $installations = array();
-            foreach ($installationsPendingJpa as $pending) {
-                $install = gJSON::restore($pending->toArray(), '__');
-                $installations[] = $install;
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailSale::select(['*'])->whereNotNull('status')->where('sale_product__id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
             }
 
             $response->setStatus(200);
@@ -92,8 +77,8 @@ class SalesController extends Controller
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Viewinstallations::where('branch__correlative', $branch)->count());
-            $response->setData($installations);
-        } catch (\Throwable$th) {
+            $response->setData($sales);
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
