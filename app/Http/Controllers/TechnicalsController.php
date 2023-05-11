@@ -352,6 +352,8 @@ class TechnicalsController extends Controller
                 $stock->mount_new = $mount;
                 $stock->save();
                 $productJpa->save();
+            } else if ($request->reazon == "DISCOUNT"){
+                $recordProductByTechnicalJpa->type_operation = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
             }
             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
             $recordProductByTechnicalJpa->mount = $request->mount;

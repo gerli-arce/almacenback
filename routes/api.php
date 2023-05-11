@@ -133,7 +133,7 @@ Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
-Route::post('/technicals/records', [TechnicalsController::class, 'technicals/recordstechnicals/recordstechnicals/recordstechnicals/records']);
+Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);
