@@ -61,7 +61,6 @@
             }
 
             #date {
-                font-weight: bolder;
                 text-align: right;
             }
 
@@ -234,20 +233,17 @@
                         "
                     >
                 <span>RUC 20602791816</span>
-                <span>LIQUIDACION </span>
-                <span>ELECTRÓNICA </span>
+                <span>SALIDAS</span>
+                <span>{branch_interaction} </span>
                 <br>
-                <span>NUM-{id}</span>
                 </div>
                 </div>
             </div>
             <br />
-            <p id="date">{branch_onteraction}, {issue_long_date}</p>
-            <p>Nombre del proyecto: <strong>{project_name}</strong></p>
-            <p>Lider: <strong>{leader}</strong></p>
-            <p>Fecha Inicio: <strong>{date_start}</strong></p>
-            <p>Fecha Fin: <strong>{date_end}</strong></p>
-            <p style="margin-top: 8px;">Descripción: <strong>{description}</strong></p>
+            <p id="date">{branch_interaction}, {issue_long_date}</p>
+            <p>Usiario generación: <strong>{user_generate}</strong></p>
+            <p>Fecha inicio: <strong>{date_start_str}</strong></p>
+            <p>Fecha fin: <strong>{date_end_str}</strong></p>
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
             <table style="height: 370px">
@@ -263,36 +259,6 @@
                     {summary}
                 </tbody>
             </table>
-            <!-- <br />
-            <div style="display: inline; font-size: 13px">
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-top: 100px;
-                        margin-left: 100px;
-                    "
-                >
-                    <center>
-                        <p>_____________________________</p>
-                        <p>Firma del remitente:</p>
-                        <p>{remitente}</p>
-                    </center>
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 50px;
-                    "
-                >
-                    <center>
-                        <p>_____________________________</p>
-                        <p>Firma del receptor:</p>
-                        <p>{reseptor}</p>
-                    </center>
-                </div>
-            </div> -->
         </main>
     </body>
 </html>

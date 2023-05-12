@@ -363,6 +363,7 @@ Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 // SALES
 
 Route::post('/sales/paginate', [SalesController::class, 'paginate']);
+Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
 
 
 
