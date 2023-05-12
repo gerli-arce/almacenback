@@ -509,6 +509,7 @@ class InstallationController extends Controller
             if (isset($request->status_sale)) {
                 $salesProduct->status_sale = $request->status_sale;
             }
+            $salesProduct->description = $request->description;
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
