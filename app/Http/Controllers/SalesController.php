@@ -14,7 +14,8 @@ use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
-use App\Models\Stock;
+use App\Models\ViewDetailsSales;
+use App\Models\ViewSales;
 use App\Models\viewInstallations;
 use Exception;
 
@@ -37,11 +38,13 @@ class SalesController extends Controller
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
-            $query = viewInstallations::select([
+            $query = ViewSales::select([
                 '*',
             ])
                 ->orderBy($request->order['column'], $request->order['dir'])
+                ->whereNotNUll('status')
                 ->where('branch__correlative', $branch);
+
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
@@ -62,7 +65,7 @@ class SalesController extends Controller
             $sales = array();
             foreach ($salesJpa as $saleJpa) {
                 $sale = gJSON::restore($saleJpa->toArray(), '__');
-                $detailSalesJpa = ViewDetailSale::select(['*'])->whereNotNull('status')->where('sale_product__id', $sale['id'])->get();
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
                 $details = array();
                 foreach ($detailSalesJpa as $detailJpa) {
                     $detail =  gJSON::restore($detailJpa->toArray(), '__');
