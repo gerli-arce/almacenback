@@ -96,7 +96,8 @@ class SalesController extends Controller
         }
     }
 
-    public function generateReportBydate(Request $request){
+    public function generateReportBydate(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -111,11 +112,14 @@ class SalesController extends Controller
             $template = file_get_contents('../storage/templates/reportSales.html');
 
 
-            // if (
-            //     !isset($request->id)
-            // ) {
-            //     throw new Exception("Error: No deje campos vacíos");
-            // }
+            if (
+                !isset($request->date_start) ||
+                !isset($request->date_end)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $user = ViewUsers::select([
                 'id',
@@ -124,77 +128,95 @@ class SalesController extends Controller
                 'person__lastname'
             ])->where('id', $userid)->first();
             $sumary = '';
-            // $detailSaleJpa = DetailSale::select([
-            //     'detail_sales.id as id',
-            //     'products.id AS product__id',
-            //     'products.type AS product__type',
-            //     'models.id AS product__model__id',
-            //     'models.model AS product__model__model',
-            //     'models.relative_id AS product__model__relative_id',
-            //     'unities.id as product__model__unity__id',
-            //     'unities.name as product__model__unity__name',
-            //     'products.relative_id AS product__relative_id',
-            //     'products.mac AS product__mac',
-            //     'products.serie AS product__serie',
-            //     'products.price_sale AS product__price_sale',
-            //     'products.currency AS product__currency',
-            //     'products.num_guia AS product__num_guia',
-            //     'products.condition_product AS product__condition_product',
-            //     'products.disponibility AS product__disponibility',
-            //     'products.product_status AS product__product_status',
-            //     'branches.id AS sale_product__branch__id',
-            //     'branches.name AS sale_product__branch__name',
-            //     'branches.correlative AS sale_product__branch__correlative',
-            //     'detail_sales.mount as mount',
-            //     'detail_sales.description as description',
-            //     'detail_sales._sales_product as _sales_product',
-            //     'detail_sales.status as status',
-            // ])
-            //     ->join('products', 'detail_sales._product', 'products.id')
-            //     ->join('models', 'products._model', 'models.id')
-            //     ->join('unities', 'models._unity', 'unities.id')
-            //     ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
-            //     ->join('branches', 'sales_products._branch', 'branches.id')
-            //     ->whereNotNull('detail_sales.status')
-            //     ->where('_sales_product', $request->id)
-            //     ->get();
-            // $details = array();
-            // foreach ($detailSaleJpa as $detailJpa) {
-            //     $detail = gJSON::restore($detailJpa->toArray(), '__');
-            //     $details[] = $detail;
-            // }
-            // $models = array();
-            // foreach ($details as $product) {
-            //     $model = $relativeId = $unity = "";
-            //     if ($product['product']['type'] === "EQUIPO") {
-            //         $model = $product['product']['model']['model'];
-            //         $relativeId = $product['product']['model']['relative_id'];
-            //         $unity =  $product['product']['model']['unity']['name'];
-            //     } else {
-            //         $model = $product['product']['model']['model'];
-            //         $relativeId = $product['product']['model']['relative_id'];
-            //         $unity =  $product['product']['model']['unity']['name'];
-            //     }
-            //     $mount = $product['mount'];
-            //     if (isset($models[$model])) {
-            //         $models[$model]['mount'] += $mount;
-            //     } else {
-            //         $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
-            //     }
-            // }
-            // $count = 1;
-            // $products = array_values($models);
-            // foreach ($products as $detail) {
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center style='font-size:12px;'>{$count}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-            //     </tr>
-            //     ";
-            //     $count = $count + 1;
-            // }
+
+            $dateStart = date('Y-m-d', strtotime($request->date_start));
+            $dateEnd = date('Y-m-d', strtotime($request->date_end));
+
+            $salesJpa = ViewSales::select([
+                '*',
+            ])
+                ->orderBy('date_sale', 'desc')
+                ->whereNotNUll('status')
+                ->where('branch__correlative', $branch)
+                ->where('date_sale', '>=', $dateStart)
+                ->where('date_sale', '<=', $dateEnd)->get();
+
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $count = 1;
+            $view_details = '';
+            foreach ($sales as $sale) {
+
+
+
+
+                $usuario = "
+                <div>
+                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
+                    <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
+                    <p>{$sale['date_sale']}</p>
+                </div>
+                ";
+
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+
+                $datos = "
+                    <div>
+                        <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
+                        <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
+                        <p>Descripción: <strong>{$sale['description']}</strong></p>
+                    </div>
+                ";
+
+
+                $sumary .= "
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$usuario}</td>
+                    <td>{$datos}</td>
+                </tr>
+                ";
+
+                $view_details .= "
+                <div style='margin-top:8px;'>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']} - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']}</strong> </p>
+                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+
+                foreach ($sale['details'] as $detailJpa) {
+                    $view_details .= "
+                            <div style='border: 1px solid black; width: 30%; display: inline-block; padding:8px;'>
+                            <center>
+                                <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
+                                <img src='https://almacendev.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:80px;margin:0px;'></img>
+                                <p style='font-size:20px; color:#2f6593'>{$detailJpa['mount']}</p>
+                            </center>
+                            </div>
+                        ";
+                }
+
+                $view_details .= "
+                            </div>
+                        </div>
+                    ";
+
+
+                $count = $count + 1;
+            }
+
+
+
             $template = str_replace(
                 [
                     '{branch_interaction}',
@@ -203,14 +225,16 @@ class SalesController extends Controller
                     '{date_start_str}',
                     '{date_end_str}',
                     '{summary}',
+                    '{details}',
                 ],
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
-                    $user->person__name.' '.$user->person__lastname,
+                    $user->person__name . ' ' . $user->person__lastname,
                     $request->date_start_str,
                     $request->date_end_str,
                     $sumary,
+                    $view_details,
                 ],
                 $template
             );

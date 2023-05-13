@@ -16,7 +16,7 @@
 
             @page {
                 margin-top: 1.5cm;
-                margin-bottom: 3cm;
+                margin-bottom: 1.5cm;
                 margin-left: 1.5cm;
                 margin-right: 1.5cm;
             }
@@ -185,7 +185,7 @@
         </style>
     </head>
     <body>
-        <footer>
+        <!-- <footer>
             <div>
                 FASTNETPERU E.I.R.L<br />
                 Jr. 1 de Mayo 1085 PICHANAQUI<br />
@@ -193,7 +193,7 @@
             <div class="issue-detail">
                 T: <a href="tel:51941415879">51 941 415 879</a>
             </div>
-        </footer>
+        </footer> -->
         <main>
             <div style="display: inline; font-size: 13px">
                 <div style="max-width: 50%; display: inline-block">
@@ -246,19 +246,26 @@
             <p>Fecha fin: <strong>{date_end_str}</strong></p>
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table style="height: 370px">
+            <table style="height: 370px; font-size: 14px;">
                 <thead>
                     <tr>
                         <td>ITEM</td>
-                        <td>CANT.</td>
-                        <td>UNID.</td>
-                        <td>DESCRIPCIÓN</td>
+                        <td>Usuario.</td>
+                        <td>Datos</td>
                     </tr>
                 </thead>
                 <tbody>
                     {summary}
                 </tbody>
             </table>
+            <div style="margin-top: 18px;">
+                <center>
+                    <h3>DETALLES</h3>
+                </center>
+            </div>
+            <div style="margin-top: 50px; font-size: 14px;">
+                {details}
+            </div>
         </main>
     </body>
 </html>
