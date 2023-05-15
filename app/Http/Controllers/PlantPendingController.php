@@ -262,7 +262,7 @@ class PlantPendingController extends Controller
 
             $salesProduct = new SalesProducts();
             $salesProduct->_branch = $branch_->id;
-            $salesProduct->_plant = $request->_plant;
+            $salesProduct->_plant = $request->id;
             $salesProduct->_type_operation = $request->_type_operation;
             $salesProduct->type_intallation = "PLANTA";
             $salesProduct->date_sale = gTrace::getDate('mysql');
@@ -1095,8 +1095,8 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $towerJpa = Plant::find($request->_plant);
-            if (!$towerJpa) {
+            $plantJpa = Plant::find($request->_plant);
+            if (!$plantJpa) {
                 throw new Exception('La torre que deseas eliminar no existe');
             }
 
@@ -1160,7 +1160,7 @@ class PlantPendingController extends Controller
                         $productByPlantJpa->mount = $productByPlantJpa->mount - $product['mount'];
                     } else {
                         $productJpa->disponibility = "DISPONIBLE";
-                        $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $towerJpa->name;
+                        $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $plantJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new + 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -1189,9 +1189,9 @@ class PlantPendingController extends Controller
                 }
             }
 
-            $towerJpa->update_date = gTrace::getDate('mysql');
-            $towerJpa->_update_user = $userid;
-            $towerJpa->save();
+            $plantJpa->update_date = gTrace::getDate('mysql');
+            $plantJpa->_update_user = $userid;
+            $plantJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta.');

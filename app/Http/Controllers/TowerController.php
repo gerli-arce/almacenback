@@ -611,7 +611,7 @@ class TowerController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'tower_pending', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -741,7 +741,7 @@ class TowerController extends Controller
                             $productJpa->mount = $productJpa->mount - $product['mount'];
                             $stock->mount_new = $productJpa->mount;
                         } else {
-                            $productJpa->disponibility = "PLANTA";
+                            $productJpa->disponibility = "TORRE";
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {

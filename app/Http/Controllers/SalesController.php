@@ -9,7 +9,7 @@ use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\ViewDetailSale;
-use App\Models\Product;
+use App\Models\ViewPlant;
 use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
 use App\Models\Response;
@@ -159,8 +159,80 @@ class SalesController extends Controller
             $view_details = '';
             foreach ($sales as $sale) {
 
+                $instalation_details = "";
+                $plant_details = "";
+                $tower_details = "";
+                $fauld_details = "";
+                
+
+                if($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'AVERIA'){
+                    $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
+                    $install = gJSON::restore($viewInstallations->toArray(), '__');
+                    
+                    $instalation_details = "
+                    <div>
+                        <p>Cliente: <strong>{$install['client']['name']} {$install['client']['lastname']}</strong></p>
+                        <p>Técnico: <strong>{$install['technical']['name']} {$install['technical']['lastname']}</strong></p>
+                        <p>Fecha: <strong>{$install['date_sale']}</strong></p>
+                    </div>
+                    ";
 
 
+                }else if($sale['type_operation']['operation'] == 'PLANTA'){
+
+                    $viewPlant = SalesProducts::select([
+                        'sales_products.id as id',
+                        'tech.id as technical__id',
+                        'tech.name as technical__name',
+                        'tech.lastname as technical__lastname',
+                        'plant.id as plant__id',
+                        'plant.name as plant__name',
+                        'sales_products.date_sale as date_sale',
+                        'sales_products.status_sale as status_sale',
+                        'sales_products.description as description',
+                        'sales_products.status as status',
+                    ])
+                        ->join('people as tech', 'sales_products._technical', 'tech.id')
+                        ->join('plant', 'sales_products._plant', 'plant.id')
+                        ->where('sales_products.id', $sale['id'])->first();
+
+
+                    if($viewPlant){
+                        $plant_details = "
+                        <div>
+                            <p>Torre: <strong>{$viewPlant->plant__name}</strong></p>
+                            <p>Técnico: <strong>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</strong></p>
+                            <p>Fecha: <strong>{$viewPlant->date_sale}</strong></p>
+                        </div>
+                        ";
+                    }
+
+                }else if ($sale['type_operation']['operation'] == 'TORRE'){
+
+                    $saleProductJpa = SalesProducts::select([
+                        'sales_products.id as id',
+                        'tech.id as technical__id',
+                        'tech.name as technical__name',
+                        'tech.lastname as technical__lastname',
+                        'towers.id as tower__id',
+                        'towers.name as tower__name',
+                        'sales_products.date_sale as date_sale',
+                        'sales_products.status_sale as status_sale',
+                        'sales_products.description as description',
+                        'sales_products.status as status',
+                    ])
+                        ->join('people as tech', 'sales_products._technical', 'tech.id')
+                        ->join('towers', 'sales_products._tower', 'towers.id')
+                        ->where('sales_products.id', $sale['id'])->first();
+
+                    $tower_details ="
+                    <div>
+                        <p>Torre: <strong>{$saleProductJpa->tower__name}</strong></p>
+                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+                }
 
                 $usuario = "
                 <div>
@@ -191,17 +263,31 @@ class SalesController extends Controller
 
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']} - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']}</strong> </p>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <div style='margin-buttom: 12px;margin-left:20px;'>
+                        {$instalation_details}
+                        {$plant_details}
+                        {$tower_details}
+                        {$fauld_details}
+                    </div>
                     <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
 
                 foreach ($sale['details'] as $detailJpa) {
+                    $details_equipment = 'display:none;';
+                    if($detailJpa['product']['type'] == 'EQUIPO'){
+                        $details_equipment = '';
+                    }
                     $view_details .= "
-                            <div style='border: 1px solid black; width: 30%; display: inline-block; padding:8px;'>
-                            <center>
-                                <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
-                                <img src='https://almacendev.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:80px;margin:0px;'></img>
-                                <p style='font-size:20px; color:#2f6593'>{$detailJpa['mount']}</p>
-                            </center>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                                <center>
+                                    <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
+                                    <img src='https://almacendev.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'></img>
+                                    <div style='{$details_equipment}'>
+                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
+                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>                                 
+                                    </div>
+                                    <p style='font-size:20px; color:#2f6593'>{$detailJpa['mount']}</p>
+                                </center>
                             </div>
                         ";
                 }
