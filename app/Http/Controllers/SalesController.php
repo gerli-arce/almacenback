@@ -58,6 +58,19 @@ class SalesController extends Controller
                     ->where('date_sale', '<=', $dateEnd);
             }
 
+            if ($request->search['column'] != '*') {
+                if($request->search['column'] == 'INSTALLATION'){
+                    $query->where('type_operation__operation', 'INSTALACIÓN');
+                }else if($request->search['column'] == 'FAULD'){
+                    $query->where('type_operation__operation', 'AVERIA');
+                }else if($request->search['column'] == 'TOWER'){
+                    $query->where('type_operation__operation', 'TORRE');
+                }else if($request->search['column'] == 'PLANT'){
+                    $query->where('type_operation__operation', 'PLANTA');
+                }
+            }
+
+
 
             $iTotalDisplayRecords = $query->count();
 
@@ -132,14 +145,29 @@ class SalesController extends Controller
             $dateStart = date('Y-m-d', strtotime($request->date_start));
             $dateEnd = date('Y-m-d', strtotime($request->date_end));
 
-            $salesJpa = ViewSales::select([
+            $query = ViewSales::select([
                 '*',
             ])
                 ->orderBy('date_sale', 'desc')
                 ->whereNotNUll('status')
                 ->where('branch__correlative', $branch)
                 ->where('date_sale', '>=', $dateStart)
-                ->where('date_sale', '<=', $dateEnd)->get();
+                ->where('date_sale', '<=', $dateEnd);
+
+            if ($request->filter != '*') {
+                if($request->filter == 'INSTALLATION'){
+                    $query->where('type_operation__operation', 'INSTALACIÓN');
+                }else if($request->filter == 'FAULD'){
+                    $query->where('type_operation__operation', 'AVERIA');
+                }else if($request->filter == 'TOWER'){
+                    $query->where('type_operation__operation', 'TORRE');
+                }else if($request->filter == 'PLANT'){
+                    $query->where('type_operation__operation', 'PLANTA');
+                }
+            }
+
+
+            $salesJpa = $query->get();
 
 
             $sales = array();
@@ -163,12 +191,12 @@ class SalesController extends Controller
                 $plant_details = "";
                 $tower_details = "";
                 $fauld_details = "";
-                
 
-                if($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'AVERIA'){
+
+                if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'AVERIA') {
                     $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
                     $install = gJSON::restore($viewInstallations->toArray(), '__');
-                    
+
                     $instalation_details = "
                     <div>
                         <p>Cliente: <strong>{$install['client']['name']} {$install['client']['lastname']}</strong></p>
@@ -176,9 +204,7 @@ class SalesController extends Controller
                         <p>Fecha: <strong>{$install['date_sale']}</strong></p>
                     </div>
                     ";
-
-
-                }else if($sale['type_operation']['operation'] == 'PLANTA'){
+                } else if ($sale['type_operation']['operation'] == 'PLANTA') {
 
                     $viewPlant = SalesProducts::select([
                         'sales_products.id as id',
@@ -197,7 +223,7 @@ class SalesController extends Controller
                         ->where('sales_products.id', $sale['id'])->first();
 
 
-                    if($viewPlant){
+                    if ($viewPlant) {
                         $plant_details = "
                         <div>
                             <p>Torre: <strong>{$viewPlant->plant__name}</strong></p>
@@ -206,8 +232,7 @@ class SalesController extends Controller
                         </div>
                         ";
                     }
-
-                }else if ($sale['type_operation']['operation'] == 'TORRE'){
+                } else if ($sale['type_operation']['operation'] == 'TORRE') {
 
                     $saleProductJpa = SalesProducts::select([
                         'sales_products.id as id',
@@ -225,7 +250,7 @@ class SalesController extends Controller
                         ->join('towers', 'sales_products._tower', 'towers.id')
                         ->where('sales_products.id', $sale['id'])->first();
 
-                    $tower_details ="
+                    $tower_details = "
                     <div>
                         <p>Torre: <strong>{$saleProductJpa->tower__name}</strong></p>
                         <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
@@ -274,7 +299,7 @@ class SalesController extends Controller
 
                 foreach ($sale['details'] as $detailJpa) {
                     $details_equipment = 'display:none;';
-                    if($detailJpa['product']['type'] == 'EQUIPO'){
+                    if ($detailJpa['product']['type'] == 'EQUIPO') {
                         $details_equipment = '';
                     }
                     $view_details .= "

@@ -544,7 +544,7 @@ class PlantPendingController extends Controller
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
                     $detailSale->mount = $product['mount'];
-                    $detailSale->description = $product['description'];
+                    // $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
