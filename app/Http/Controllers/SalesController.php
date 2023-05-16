@@ -306,7 +306,7 @@ class SalesController extends Controller
                             <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
-                                    <img src='https://almacendev.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'></img>
+                                    <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
                                         <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
                                         <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>                                 

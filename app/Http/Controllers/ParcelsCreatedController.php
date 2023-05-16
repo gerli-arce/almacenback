@@ -378,6 +378,9 @@ class ParcelsCreatedController extends Controller
 
             $parcelJpa = Parcel::select(['id'])->find($request->id);
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
