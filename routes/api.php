@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect,
+    SalesController, connect, SaleController,
 };
 
 /*
@@ -345,6 +345,12 @@ Route::get('/towers/records/returns/{id}', [TowerController::class, 'recordSales
 Route::post('/towers/stock', [TowerController::class, 'getStockTower']);
 Route::delete('/towers/liquidation/delete', [TowerController::class, 'delete_liquidation']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
+
+
+// SALE
+Route::post('/sale', [SaleController::class, 'store']);
+
+
 
 
 // RECORDS
