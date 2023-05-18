@@ -714,10 +714,12 @@ class TowerController extends Controller
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $stock->mount_new = intval($stock->mount_new) + $mount_dif;
+                                    $productJpa->mount = $productJpa->mount + $mount_dif;
+                                    $stock->mount_new = $productJpa->mount;
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
                                     $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $stock->mount_new = intval($stock->mount_new) - $mount_dif;
+                                    $productJpa->mount = $productJpa->mount - $mount_dif;
+                                    $stock->mount_new = $productJpa->mount;
                                 }
                             }
                             $stock->save();
