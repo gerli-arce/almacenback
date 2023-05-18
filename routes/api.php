@@ -349,6 +349,9 @@ Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
 // SALE
 Route::post('/sale', [SaleController::class, 'store']);
+Route::patch('/sale', [SaleController::class, 'update']);
+Route::post('/sale/paginate', [SaleController::class, 'paginate']);
+Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
 
 
 
