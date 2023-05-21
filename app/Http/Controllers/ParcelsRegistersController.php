@@ -661,13 +661,7 @@ class ParcelsRegistersController extends Controller
             if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
             }
-            if (isset($request->_entry_product)) {
-                $parcelJpa->_entry_product = $entryProductJpa->id;
-            }
-            if (isset($request->_branch)) {
-                $parcelJpa->_branch = $branch_->id;
-            }
-
+          
             $parcelJpa->update_date = gTrace::getDate('mysql');
             $parcelJpa->_update_user = $userid;
 

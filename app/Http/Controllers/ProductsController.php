@@ -166,6 +166,10 @@ class ProductsController extends Controller
                     throw new Exception("Error: No deje campos vacíos");
                 }
 
+                $stock = Stock::where('_model', $request->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
                 $material = Product::select([
                     'id',
                     'mount',
@@ -181,13 +185,20 @@ class ProductsController extends Controller
                 if (isset($material)) {
                     $mount_old = $material->mount;
                     $mount_new = $mount_old + $request->mount;
+                    $material->mount = $mount_new;
+                    if ($request->product_status == "SEMINUEVO") {
+                        $stock->mount_second = intval($stock->mount_second) + 1;
+                    } else if ($request->product_status == "NUEVO") {
+                        $stock->mount_new = intval($stock->mount_new) + 1;
+                    }
+                    
+                    $stock->save();
 
                     $material->type = $request->type;
                     $material->_branch = $branch_->id;
                     $material->relative_id = guid::short();
                     $material->_provider = $request->_provider;
                     $material->_model = $request->_model;
-                    $material->mount = $mount_new;
                     $material->currency = $request->currency;
                     $material->price_buy = $request->price_buy;
                     $material->price_sale = $request->price_sale;
@@ -1049,7 +1060,7 @@ class ProductsController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
-            $response->setDate($productJpa);
+            $response->setData($productJpa);
             $response->setStatus(200);
             $response->setMessage('El producto a sido restaurado correctamente');
         } catch (\Throwable$th) {
