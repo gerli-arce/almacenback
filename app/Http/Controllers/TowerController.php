@@ -133,16 +133,16 @@ class TowerController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'name' || $column == '*') {
-                    $q->where('name', $type, $value);
+                    $q->orWhere('name', $type, $value);
                 }
                 if ($column == 'coordenates' || $column == '*') {
-                    $q->where('coordenates', $type, $value);
+                    $q->orWhere('coordenates', $type, $value);
                 }
                 if ($column == 'address' || $column == '*') {
                     $q->orWhere('address', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
-                    $q->where('description', $type, $value);
+                    $q->orWhere('description', $type, $value);
                 }
             });
 

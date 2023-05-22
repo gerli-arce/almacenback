@@ -147,11 +147,13 @@ class ProductsController extends Controller
                         ->first();
                     if ($request->product_status == "SEMINUEVO") {
                         $stock->mount_second = intval($stock->mount_second) + 1;
-                        $stock->save();
                     } else if ($request->product_status == "NUEVO") {
                         $stock->mount_new = intval($stock->mount_new) + 1;
-                        $stock->save();
+                    } else if ($request->product_status == "MALOGRADO"){
+                        $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                     }
+
+                    $stock->save();
 
                     $entryDetail = new EntryDetail();
                     $entryDetail->_product = $productJpa->id;
@@ -159,7 +161,6 @@ class ProductsController extends Controller
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();
-
                 }
             } else if ($request->type == "MATERIAL") {
                 if (!isset($request->mount)) {
@@ -167,10 +168,10 @@ class ProductsController extends Controller
                 }
 
                 $stock = Stock::where('_model', $request->_model)
-                ->where('_branch', $branch_->id)
-                ->first();
+                    ->where('_branch', $branch_->id)
+                    ->first();
 
-                $material = Product::select([
+                $productJpa = Product::select([
                     'id',
                     'mount',
                     'num_guia',
@@ -182,71 +183,23 @@ class ProductsController extends Controller
                     ->where('_branch', $branch_->id)
                     ->first();
 
-                if (isset($material)) {
-                    $mount_old = $material->mount;
-                    $mount_new = $mount_old + $request->mount;
-                    $material->mount = $mount_new;
-                    if ($request->product_status == "SEMINUEVO") {
-                        $stock->mount_second = intval($stock->mount_second) + 1;
-                    } else if ($request->product_status == "NUEVO") {
-                        $stock->mount_new = intval($stock->mount_new) + 1;
-                    }
+                if (isset($productJpa)) {
                     
-                    $stock->save();
-
-                    $material->type = $request->type;
-                    $material->_branch = $branch_->id;
-                    $material->relative_id = guid::short();
-                    $material->_provider = $request->_provider;
-                    $material->_model = $request->_model;
-                    $material->currency = $request->currency;
-                    $material->price_buy = $request->price_buy;
-                    $material->price_sale = $request->price_sale;
-                    if (isset($request->num_guia)) {
-                        $material->num_guia = $request->num_guia;
+                    if ($request->product_status == "SEMINUEVO") {
+                        $stock->mount_second = intval($stock->mount_second) + $request->mount;
+                        $productJpa->mount = $productJpa->mount + $request->mount;
+                    } else if ($request->product_status == "NUEVO") {
+                        $productJpa->mount = $productJpa->mount + $request->mount;
+                        $stock->mount_new = intval($stock->mount_new) + $request->mount;
+                    } else if ($request->product_status == "MALOGRADO"){
+                        $stock->mount_ill_fated = intval($stock->mount_ill_fated) + $request->mount;
                     }
-                    if (isset($request->num_bill)) {
-                        $material->num_bill = $request->num_bill;
-                    }
-                    if (isset($request->warranty)) {
-                        $material->warranty = $request->warranty;
-                    }
-                    $material->date_entry = $request->date_entry;
-                    $material->_entry_product = $entryProduct->id;
-                    $material->condition_product = $request->condition_product;
-                    $material->product_status = $request->product_status;
-                    $material->disponibility = $request->disponibility;
-                    if (isset($request->description)) {
-                        $material->description = $request->description;
-                    }
-                    $material->creation_date = gTrace::getDate('mysql');
-                    $material->_creation_user = $userid;
-                    $material->update_date = gTrace::getDate('mysql');
-                    $material->_update_user = $userid;
-                    $material->status = "1";
-                    $material->save();
 
-                    $stock = Stock::where('_model', $request->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
-                    $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
-                    $stock->save();
-
-                    $entryDetail = new EntryDetail();
-                    $entryDetail->_product = $material->id;
-                    $entryDetail->mount = $request->mount;
-                    $entryDetail->_entry_product = $entryProduct->id;
-                    $entryDetail->status = "1";
-                    $entryDetail->save();
-
-                } else {
-                    $productJpa = new Product();
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
                     $productJpa->relative_id = guid::short();
                     $productJpa->_provider = $request->_provider;
                     $productJpa->_model = $request->_model;
-                    $productJpa->mount = $request->mount;
                     $productJpa->currency = $request->currency;
                     $productJpa->price_buy = $request->price_buy;
                     $productJpa->price_sale = $request->price_sale;
@@ -257,7 +210,47 @@ class ProductsController extends Controller
                         $productJpa->num_bill = $request->num_bill;
                     }
                     if (isset($request->warranty)) {
-                        $material->warranty = $request->warranty;
+                        $productJpa->warranty = $request->warranty;
+                    }
+                    $productJpa->date_entry = $request->date_entry;
+                    $productJpa->_entry_product = $entryProduct->id;
+                    $productJpa->condition_product = $request->condition_product;
+                    $productJpa->product_status = "NUEVO";
+                    $productJpa->disponibility = $request->disponibility;
+                    if (isset($request->description)) {
+                        $productJpa->description = $request->description;
+                    }
+                    $productJpa->creation_date = gTrace::getDate('mysql');
+                    $productJpa->_creation_user = $userid;
+                    $productJpa->update_date = gTrace::getDate('mysql');
+                    $productJpa->_update_user = $userid;
+                    $productJpa->status = "1";
+                    $productJpa->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount = $request->mount;
+                    $entryDetail->_entry_product = $entryProduct->id;
+                    $entryDetail->status = "1";
+                    $entryDetail->save();
+                } else {
+                    $productJpa = new Product();
+                    $productJpa->type = $request->type;
+                    $productJpa->_branch = $branch_->id;
+                    $productJpa->relative_id = guid::short();
+                    $productJpa->_provider = $request->_provider;
+                    $productJpa->_model = $request->_model;
+                    $productJpa->currency = $request->currency;
+                    $productJpa->price_buy = $request->price_buy;
+                    $productJpa->price_sale = $request->price_sale;
+                    if (isset($request->num_guia)) {
+                        $productJpa->num_guia = $request->num_guia;
+                    }
+                    if (isset($request->num_bill)) {
+                        $productJpa->num_bill = $request->num_bill;
+                    }
+                    if (isset($request->warranty)) {
+                        $productJpa->warranty = $request->warranty;
                     }
                     if (isset($request->warranty)) {
                         $productJpa->warranty = $request->warranty;
@@ -275,13 +268,20 @@ class ProductsController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    $productJpa->save();
 
-                    $stock = Stock::where('_model', $request->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
-                    $stock->mount_new = intval($stock->mount_new) + intval($request->mount);
-                    $stock->save();
+                    if ($request->product_status == "SEMINUEVO") {
+                        $stock->mount_second = intval($stock->mount_second) + $request->mount;
+                        $productJpa->mount = $request->mount;
+                    } else if ($request->product_status == "NUEVO") {
+                        $stock->mount_new = intval($stock->mount_new) + $request->mount;
+                        $productJpa->mount = $request->mount;
+                    } else if ($request->product_status == "MALOGRADO") {
+                        $stock->mount_ill_fated = intval($stock->mount_new) + $request->mount;
+                        $productJpa->mount = 0;
+                    }
+
+
+                    $productJpa->save();
 
                     $entryDetail = new EntryDetail();
                     $entryDetail->_product = $productJpa->id;
@@ -289,14 +289,13 @@ class ProductsController extends Controller
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();
-
                 }
-               
+                $stock->save();
             }
 
             $response->setStatus(200);
             $response->setMessage('Producto agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -383,8 +382,7 @@ class ProductsController extends Controller
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
                 ->where('disponibility', '!=', 'PLANTA')
                 ->where('disponibility', '!=', 'TORRE')
-                ->where('disponibility', '!=', 'LIQUIDACION DE PLANTA')
-            ;
+                ->where('disponibility', '!=', 'LIQUIDACION DE PLANTA');
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query
@@ -405,7 +403,7 @@ class ProductsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
             $response->setData($products);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -500,7 +498,7 @@ class ProductsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
             $response->setData($products);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -596,7 +594,7 @@ class ProductsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
             $response->setData($products);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -694,7 +692,7 @@ class ProductsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
             $response->setData($products);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -854,7 +852,6 @@ class ProductsController extends Controller
                                 $stock->save();
                             }
                         }
-
                     }
                 }
                 $productJpa->product_status = $request->product_status;
@@ -887,17 +884,17 @@ class ProductsController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            if (isset($request->mount)) {
-                $productJpa->mount = $request->mount;
-                if (isset($request->product_status)) {
-                    if ($productJpa->type == "MATERIAL") {
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)->first();
-                        $stock->mount_new = $request->mount;
-                        $stock->save();
-                    }
-                }
-            }
+            // if (isset($request->mount)) {
+            //     $productJpa->mount = $request->mount;
+            //     if (isset($request->product_status)) {
+            //         if ($productJpa->type == "MATERIAL") {
+            //             $stock = Stock::where('_model', $productJpa->_model)
+            //                 ->where('_branch', $branch_->id)->first();
+            //             $stock->mount_new = $request->mount;
+            //             $stock->save();
+            //         }
+            //     }
+            // }
 
             $productJpa->update_date = gTrace::getDate('mysql');
             $productJpa->_update_user = $userid;
@@ -913,7 +910,7 @@ class ProductsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -981,7 +978,7 @@ class ProductsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El producto se a eliminado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1022,7 +1019,7 @@ class ProductsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El producto a sido restaurado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1063,7 +1060,7 @@ class ProductsController extends Controller
             $response->setData($productJpa);
             $response->setStatus(200);
             $response->setMessage('El producto a sido restaurado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -1073,5 +1070,4 @@ class ProductsController extends Controller
             );
         }
     }
-
 }

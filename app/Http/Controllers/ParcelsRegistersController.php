@@ -74,7 +74,7 @@ class ParcelsRegistersController extends Controller
             if (isset($request->product_status)) {
                 $entryProductJpa->product_status = $request->product_status;
             }
-            $entryProductJpa->type_entry= "REGISTRO ENCOMIENDA";
+            $entryProductJpa->type_entry = "REGISTRO ENCOMIENDA";
             $entryProductJpa->description = $request->description;
             $entryProductJpa->_creation_user = $userid;
             $entryProductJpa->creation_date = gTrace::getDate('mysql');
@@ -395,7 +395,7 @@ class ParcelsRegistersController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Producto agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -404,7 +404,6 @@ class ParcelsRegistersController extends Controller
                 $response->getStatus()
             );
         }
-
     }
 
     public function paginate(Request $request)
@@ -504,7 +503,7 @@ class ParcelsRegistersController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -544,7 +543,7 @@ class ParcelsRegistersController extends Controller
             $content = $parcelJpa->image_content;
             $type = $parcelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/factura-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -648,6 +647,13 @@ class ParcelsRegistersController extends Controller
             }
             if (isset($request->amount)) {
                 $parcelJpa->amount = $request->amount;
+                // $EntryDetailJpa = EntryDetail::where('_entry_product', $parcelJpa->_entry_product)->first();
+                // $product = Product::find($EntryDetailJpa->_product);
+                // if($product->type == "MATERIAL"){
+                //     $EntryDetailJpa->mount = $request->amount;
+                //     $EntryDetailJpa->save();
+                // }
+
             }
             if (isset($request->value_unity)) {
                 $parcelJpa->value_unity = $request->value_unity;
@@ -661,7 +667,7 @@ class ParcelsRegistersController extends Controller
             if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
             }
-          
+
             $parcelJpa->update_date = gTrace::getDate('mysql');
             $parcelJpa->_update_user = $userid;
 
@@ -675,7 +681,7 @@ class ParcelsRegistersController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -742,7 +748,7 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(200);
             $response->setData($details);
             $response->setMessage('Operación correcta');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -783,7 +789,7 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -824,7 +830,7 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -834,5 +840,4 @@ class ParcelsRegistersController extends Controller
             );
         }
     }
-
 }

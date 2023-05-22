@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Response;
+use App\Models\Product;
 use App\Models\Stock;
 use App\Models\User;
 use App\Models\ViewStock;
@@ -71,6 +72,7 @@ class StockController extends Controller
                 $stock = "
                 <p style='margin-top:0px;magin-bottom:0px;'>Nuevos: <strong>{$models['mount_new']}</strong></p>
                 <p style='margin-top:0px;magin-bottom:0px;'>Seminuevos <strong>{$models['mount_second']}</strong></p>
+                <p style='margin-top:0px;magin-bottom:0px;'>Malogrados <strong>{$models['mount_ill_fated']}</strong></p>
                ";
 
                 $sumary .= "
@@ -158,6 +160,7 @@ class StockController extends Controller
                 <div>
                     <p>Nuevos: <trong>{$model['mount_new']}</trong></p>
                     <p>Seminuevos: <strong>{$model['mount_second']}</strong></p>
+                    <p>Malogrados: <strong>{$model['mount_ill_fated']}</strong></p>
                     <p>Pedido: <strong>{$model['mount_order']}</strong></p>
                 </div>
                 ";
@@ -283,6 +286,7 @@ class StockController extends Controller
     public function update(Request $request)
     {
         $response = new Response();
+        $tatus = 400;
         try {
 
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -313,12 +317,34 @@ class StockController extends Controller
                 $stockJpa->mount_second = $request->mount_second;
             }
 
+            if (isset($request->mount_ill_fated)) {
+                $stockJpa->mount_ill_fated = $request->mount_ill_fated;
+            }
+
+            $ProductJpa = Product::where('_model', $stockJpa->_model)->where('_branch', $stockJpa->_branch)->first();
+
+            if ($ProductJpa) {
+                if ($ProductJpa->type == "MATERIAL") {
+                    $ProductJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
+                }
+                $ProductJpa->save();
+            } else {
+                $stockJpa->mount_new = 0;
+                $stockJpa->mount_second = 0;
+                $stockJpa->mount_ill_fated = 0;
+                $tatus = 411;
+                $stockJpa->save();
+
+                throw new Exception("No tiene este producto en su almacen.");
+            }
+
+
             $stockJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
         } catch (\Throwable $th) {
-            $response->setStatus(400);
+            $response->setStatus($tatus);
             $response->setMessage($th->getMessage());
         } finally {
             return response(
