@@ -176,7 +176,8 @@ class PlantPendingController extends Controller
 
             $query = ViewPlant::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir'])
-                ->orderBy('id', 'desc');
+                ->orderBy('id', 'desc')
+                ->where('plant_status', 'EN EJECUCION');
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -1958,6 +1959,162 @@ class PlantPendingController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function projectCompleted(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar encomiendas.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $plantJpa = Plant::find($request->id);
+            if (!$plantJpa) {
+                throw new Exception('La planta que deseas cambiar no existe');
+            }
+
+            $plantJpa->plant_status = "COMPLETED";
+            $plantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Proyecto marcado como terminado');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function projectPending(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar encomiendas.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $plantJpa = Plant::find($request->id);
+            if (!$plantJpa) {
+                throw new Exception('La planta que deseas cambiar no existe');
+            }
+
+            $plantJpa->plant_status = "EN EJECUCION";
+            $plantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Proyecto marcado como terminado');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginatePlantFinished(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar proyectos finalizados');
+            }
+
+            $query = ViewPlant::select(['*'])
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->orderBy('id', 'desc')
+                ->where('plant_status', 'COMPLETED');
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                if ($column == 'name' || $column == '*') {
+                    $q->orWhere('name', $type, $value);
+                }
+                if ($column == 'leader__name' || $column == '*') {
+                    $q->orWhere('leader__name', $type, $value);
+                }
+                if ($column == 'leader__lastname' || $column == '*') {
+                    $q->orWhere('leader__lastname', $type, $value);
+                }
+                if ($column == 'plant_status' || $column == '*') {
+                    $q->orWhere('plant_status', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+            });
+
+            $iTotalDisplayRecords = $query->count();
+            $plantJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $plants = array();
+            foreach ($plantJpa as $plantlJpa) {
+                $plant = gJSON::restore($plantlJpa->toArray(), '__');
+                $plants[] = $plant;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewPlant::count());
+            $response->setData($plants);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
