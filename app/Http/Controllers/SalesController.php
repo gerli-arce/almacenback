@@ -193,7 +193,7 @@ class SalesController extends Controller
                 $fauld_details = "";
 
 
-                if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'AVERIA') {
+                if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] ==  'INSTALACION' || $sale['type_operation']['operation'] == 'AVERIA') {
                     $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
                     $install = gJSON::restore($viewInstallations->toArray(), '__');
 
@@ -226,7 +226,7 @@ class SalesController extends Controller
                     if ($viewPlant) {
                         $plant_details = "
                         <div>
-                            <p>Torre: <strong>{$viewPlant->plant__name}</strong></p>
+                            <p>Proyecto: <strong>{$viewPlant->plant__name}</strong></p>
                             <p>Técnico: <strong>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</strong></p>
                             <p>Fecha: <strong>{$viewPlant->date_sale}</strong></p>
                         </div>
@@ -268,6 +268,7 @@ class SalesController extends Controller
                 ";
 
                 $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
 
                 $datos = "
                     <div>
