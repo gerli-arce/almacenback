@@ -132,8 +132,10 @@ Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTech
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
+Route::post('/technicals/products/stock', [TechnicalsController::class, 'getProductsByTechnicalStock']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
+Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);

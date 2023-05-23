@@ -393,6 +393,40 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')->get();
+
+            $products = array();
+            foreach ($productsJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $product;
+            }
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductsByTechnicalStock(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->get();
 
             $products = array();
@@ -469,9 +503,8 @@ class TechnicalsController extends Controller
                         $query = $query->where('record_product_by_technical.type_operation', 'DEVOLUCION');
                     } else if ($request->reazon == "DISCOUNT") {
                         $query = $query->where('record_product_by_technical.type_operation', 'DESCUENTO MALOGRADO-NO-JUSTIFICCADO');
-                    }else if($request->reazon == "ADD"){
+                    } else if ($request->reazon == "ADD") {
                         $query = $query->where('record_product_by_technical.type_operation', 'AGREGADO');
-
                     }
                 }
             }
@@ -790,6 +823,51 @@ class TechnicalsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Técnico se a eliminado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function changeStatusStockTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para actualizar estado de productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $ProductByTechnicalJpa = ProductByTechnical::find($request->id);
+
+            if (!$ProductByTechnicalJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            if($request->status == 1){
+                $ProductByTechnicalJpa->status = null;
+            }else{
+                $ProductByTechnicalJpa->status = 1;
+            }
+
+            $ProductByTechnicalJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Registro actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
