@@ -2110,7 +2110,7 @@ class PlantPendingController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPlant::count());
+            $response->setITotalRecords(ViewPlant::where('plant_status', 'COMPLETED')->count());
             $response->setData($plants);
         } catch (\Throwable $th) {
             $response->setStatus(400);
