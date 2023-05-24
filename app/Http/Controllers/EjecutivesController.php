@@ -136,7 +136,7 @@ class EjecutivesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'technicalls', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'ejecutives', 'read')) {
                 throw new Exception('No tienes permisos para listar técnicos');
             }
 
@@ -177,7 +177,7 @@ class EjecutivesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'ejecutives', 'read')) {
                 throw new Exception('No tienes permisos para listar técnicos');
             }
 
@@ -304,7 +304,7 @@ class EjecutivesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'ejecutives', 'update')) {
                 throw new Exception('No tienes permisos para actualizar personas');
             }
 
