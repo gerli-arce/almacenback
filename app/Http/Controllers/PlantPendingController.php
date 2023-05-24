@@ -862,43 +862,81 @@ class PlantPendingController extends Controller
 
             $salesProduct->save();
 
-            if (isset($request->status_sale)) {
-                if ($request->status_sale == 'CULMINADA') {
-                    $saleProductJpa = SalesProducts::find($request->id);
-                    $saleProductJpa->status_sale = 'CULMINADA';
-                    $saleProductJpa->save();
-                    $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
-                        ->get();
-                    foreach ($detailsSalesJpa as $detail) {
-                        $productJpa = Product::find($detail['_product']);
-                        if ($productJpa->type == "MATERIAL") {
-                            $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
-                                ->where('_plant', $saleProductJpa->_plant)->first();
-                            if ($productByPlantJpa) {
-                                $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
-                                $productByPlantJpa->save();
-                            } else {
-                                $productByPlantJpa_new = new ProductByPlant();
-                                $productByPlantJpa_new->_product = $productJpa->id;
-                                $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-                                $productByPlantJpa_new->mount = $detail['mount'];
-                                $productByPlantJpa_new->status = '1';
-                                $productByPlantJpa_new->save();
-                            }
-                        } else {
-                            $productByPlantJpa_new = new ProductByPlant();
-                            $productByPlantJpa_new->_product = $productJpa->id;
-                            $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-                            $productByPlantJpa_new->mount = $detail['mount'];
-                            $productByPlantJpa_new->status = '1';
-                            $productByPlantJpa_new->save();
-                        }
-                    }
-                }
-            }
+            // if (isset($request->status_sale)) {
+            //     if ($request->status_sale == 'CULMINADA') {
+            //         $saleProductJpa = SalesProducts::find($request->id);
+            //         $saleProductJpa->status_sale = 'CULMINADA';
+            //         $saleProductJpa->save();
+            //         $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
+            //             ->get();
+            //         foreach ($detailsSalesJpa as $detail) {
+            //             $productJpa = Product::find($detail['_product']);
+            //             if ($productJpa->type == "MATERIAL") {
+            //                 $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
+            //                     ->where('_plant', $saleProductJpa->_plant)->first();
+            //                 if ($productByPlantJpa) {
+            //                     $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
+            //                     $productByPlantJpa->save();
+            //                 } else {
+            //                     $productByPlantJpa_new = new ProductByPlant();
+            //                     $productByPlantJpa_new->_product = $productJpa->id;
+            //                     $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+            //                     $productByPlantJpa_new->mount = $detail['mount'];
+            //                     $productByPlantJpa_new->status = '1';
+            //                     $productByPlantJpa_new->save();
+            //                 }
+            //             } else {
+            //                 $productByPlantJpa_new = new ProductByPlant();
+            //                 $productByPlantJpa_new->_product = $productJpa->id;
+            //                 $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+            //                 $productByPlantJpa_new->mount = $detail['mount'];
+            //                 $productByPlantJpa_new->status = '1';
+            //                 $productByPlantJpa_new->save();
+            //             }
+            //         }
+            //     }
+            // }
 
             $response->setStatus(200);
             $response->setMessage('Actualización correcta.');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function liquidationFinished(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar liquidaciones');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $saleProductJpa = SalesProducts::find($request->id);
+            $saleProductJpa->status_sale = 'CULMINADA';
+            $saleProductJpa->save();
+            
+            $response->setStatus(200);
+            $response->setMessage('Liquidacion culminada.');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
@@ -1967,7 +2005,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function projectCompleted(Request $request){
+    public function projectCompleted(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -2007,7 +2046,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function projectPending(Request $request){
+    public function projectPending(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -2047,7 +2087,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function paginatePlantFinished(Request $request){
+    public function paginatePlantFinished(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
