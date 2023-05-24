@@ -265,7 +265,7 @@ class PlantPendingController extends Controller
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_plant = $request->id;
             $salesProduct->_type_operation = $request->_type_operation;
-            $salesProduct->type_intallation = "PLANTA";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
             $salesProduct->date_sale = gTrace::getDate('mysql');
             $salesProduct->status_sale = "PENDIENTE";
             $salesProduct->type_pay = "GASTOS INTERNOS";
@@ -934,7 +934,7 @@ class PlantPendingController extends Controller
             $saleProductJpa = SalesProducts::find($request->id);
             $saleProductJpa->status_sale = 'CULMINADA';
             $saleProductJpa->save();
-            
+
             $response->setStatus(200);
             $response->setMessage('Liquidacion culminada.');
             $response->setData($role->toArray());

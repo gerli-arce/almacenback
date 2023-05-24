@@ -59,31 +59,48 @@ class StockController extends Controller
                 if ($models['model']['currency'] == "SOLES") {
                     $currency = "S/.";
                 }
-                $curencies = "
-                <p style='margin-top:0px;magin-bottom:0px;'>Compra:
-                <strong>{$currency}{$models['model']['price_buy']}
-                </strong></p>
-                <p style='margin-top:0px;magin-bottom:0px;'>Nuevo: <strong>{$currency}{$models['model']['price_sale']}
-                </strong></p>
-                   <p style='margin-top:0px;magin-bottom:0px;'>Seminuevo: <strong>{$currency}{$models['model']['price_sale_second']}
-                </strong></p>
+
+                $product = "
+                <div style='font-size:12px'>
+                    <p style='margin-top:0px;magin-bottom:0px;'>Modelo: <strong>{$models['model']['model']}</strong></p>
+                    <p style='margin-top:0px;magin-bottom:0px;'>Categoria: <strong>{$models['category']['category']}</strong></p>
+                </div>
                 ";
 
                 $stock = "
-                <p style='margin-top:0px;magin-bottom:0px;'>Nuevos: <strong>{$models['mount_new']}</strong></p>
-                <p style='margin-top:0px;magin-bottom:0px;'>Seminuevos <strong>{$models['mount_second']}</strong></p>
-                <p style='margin-top:0px;magin-bottom:0px;'>Malogrados <strong>{$models['mount_ill_fated']}</strong></p>
-               ";
+                <div style='padding:0px;'>
+                    <p style='margin:0px;'>Nuevos: <strong style='font-size:16px'>{$models['mount_new']}</strong></p>
+                    <p style='margin:0px'>Seminuevos <strong style='font-size:16px'>{$models['mount_second']}</strong></p>
+                    <p style='margin:0px'>Malogrados <strong style='font-size:16px'>{$models['mount_ill_fated']}</strong></p>
+                </div>
+                ";
+
+            //     $sumary .= "
+            //     <tr>
+            //         <td class='text-center'>{$models['id']}</td>
+            //         <td><p><strong style='font-size:14px;'>{$models['model']['model']}</strong></p><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
+            //         <td>{$curencies}</td>
+            //         <td class='text-center'>{$stock}</td>
+            //         <td class=''>{$models['model']['description']}</td>
+            //     </tr>
+            // ";
+
+            $actual = "
+                <div style='margin-left:35px;'>
+                    <input style='width:80px; border:solid 2px #000; height: 20px; margin: 1px;'> <br>
+                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
+                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
+                </div>
+            ";
 
                 $sumary .= "
-                <tr>
-                    <td class='text-center'>{$models['id']}</td>
-                    <td><p><strong style='font-size:14px;'>{$models['model']['model']}</strong></p><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
-                    <td>{$curencies}</td>
-                    <td class='text-center'>{$stock}</td>
-                    <td class=''>{$models['model']['description']}</td>
-                </tr>
-            ";
+            <tr>
+                <td class='text-center'>{$models['id']}</td>
+                <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
+                <td>{$stock}</td>
+                <td>{$actual}</td>
+            </tr>
+        ";
             }
 
             $template = str_replace(
