@@ -2214,9 +2214,9 @@ class PlantPendingController extends Controller
             ->join('plant', 'view_sales.plant_id', 'plant.id');
 
             $query = $query->orderBy('id', 'desc');
-            if (isset($request->date_start) && isset($request->date_end) && isset($request->reazon)) {
-                $query = $query->where('date_sale', '>=', $request->date_start)
-                    ->where('date_sale', '<=', $request->date_end);
+            if (isset($request->date_start) && isset($request->date_end)) {
+                $query = $query->where('view_sales.date_sale', '>=', $request->date_start)
+                    ->where('view_sales.date_sale', '<=', $request->date_end);
             }
 
             $recordSales = $query->get();
