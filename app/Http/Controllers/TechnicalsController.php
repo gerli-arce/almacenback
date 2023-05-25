@@ -6,15 +6,19 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\Branch;
-use App\Models\People;
-use App\Models\Product;
-use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
-use App\Models\Response;
-use App\Models\Stock;
-use App\Models\ViewPeople;
-use App\Models\ViewProductByTechnical;
+use App\Models\{
+    Branch,
+    People,
+    Product,
+    ProductByTechnical,
+    RecordProductByTechnical,
+    Response,
+    Stock,
+    SalesProducts,
+    ViewPeople,
+    ViewProductByTechnical,
+};
+
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -258,6 +262,23 @@ class TechnicalsController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
+
+            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            // $salesProduct = new SalesProducts();
+            // $salesProduct->_branch = $branch_->id;
+            // $salesProduct->_plant = $request->id;
+            // $salesProduct->_type_operation = $request->_type_operation;
+            // $salesProduct->type_intallation = "";
+            // $salesProduct->date_sale = gTrace::getDate('mysql');
+            // $salesProduct->status_sale = "PENDIENTE";
+            // $salesProduct->type_pay = "GASTOS INTERNOS";
+            // $salesProduct->_creation_user = $userid;
+            // $salesProduct->creation_date = gTrace::getDate('mysql');
+            // $salesProduct->_update_user = $userid;
+            // $salesProduct->update_date = gTrace::getDate('mysql');
+            // $salesProduct->status = "1";
+            // $salesProduct->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->where('_product', $request->product['id'])->first();
@@ -879,44 +900,5 @@ class TechnicalsController extends Controller
         }
     }
 
-    // public function restore(Request $request)
-    // {
-    //     $response = new Response();
-    //     try {
 
-    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-    //         if ($status != 200) {
-    //             throw new Exception($message);
-    //         }
-    //         if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
-    //             throw new Exception('No tienes permisos para eliminar personas');
-    //         }
-
-    //         if (
-    //             !isset($request->id)
-    //         ) {
-    //             throw new Exception("Error: Es necesario el ID para esta operación");
-    //         }
-
-    //         $personJpa->_update_user = $userid;
-    //         $personJpa->update_date = gTrace::getDate('mysql');
-    //         $technicalJpa = People::find($request->id);
-    //         if (!$technicalJpa) {
-    //             throw new Exception("Este reguistro no existe");
-    //         }
-    //         $technicalJpa->status = "1";
-    //         $technicalJpa->save();
-
-    //         $response->setStatus(200);
-    //         $response->setMessage('La persona a sido restaurado correctamente');
-    //     } catch (\Throwable$th) {
-    //         $response->setStatus(400);
-    //         $response->setMessage($th->getMessage());
-    //     } finally {
-    //         return response(
-    //             $response->toArray(),
-    //             $response->getStatus()
-    //         );
-    //     }
-    // }
 }
