@@ -13,6 +13,7 @@ use App\Models\{
     Plant,
     Product,
     ProductByPlant,
+    ViewSales,
     Response,
     SalesProducts,
     Stock,
@@ -20,6 +21,7 @@ use App\Models\{
     Parcel,
     ViewPlant,
     ViewProductsByPlant,
+    ViewDetailsSales,
     ViewStockPlant,
     ViewStockProductsByPlant
 };
@@ -2156,6 +2158,88 @@ class PlantPendingController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getRegistersStockByPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para leer registros');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__id',
+                'view_sales.branch__correlative as branch__correlative',
+                'view_sales.type_operation__operation as type_operation__operation',
+                'view_sales.plant_id as plant_id',
+                'plant.id as plant__id',
+                'plant.name as plant__name',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status'
+            ])->where('view_sales.type_intallation', 'AGREGADO_A_STOCK')
+            ->where('view_sales.branch__correlative',$branch)
+            ->where('view_sales.type_operation__operation', 'PLANTA')
+            ->where('view_sales.plant_id', $request->id)
+            ->join('plant', 'view_sales.plant_id', 'plant.id');
+
+            $query = $query->orderBy('id', 'desc');
+            if (isset($request->date_start) && isset($request->date_end) && isset($request->reazon)) {
+                $query = $query->where('date_sale', '>=', $request->date_start)
+                    ->where('date_sale', '<=', $request->date_end);
+            }
+
+            $recordSales = $query->get();
+
+            $records = array();
+            foreach ($recordSales as $recordJpa) {
+                $record = gJSON::restore($recordJpa->toArray(), '__');
+                $ViewDetailsSales = ViewDetailsSales::where('sale_product_id', $recordJpa['id'])->get();
+                $details = [];
+                foreach ($ViewDetailsSales as $detailJpa){
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $record['details'] = $details;
+                $records[] = $record;
+            }
+
+            $response->setData($records);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),

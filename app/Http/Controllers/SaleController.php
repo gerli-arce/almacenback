@@ -86,6 +86,7 @@ class SaleController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
+                        $productJpa->disponibility = "VENDIDO";
                     }
                     $stock->save();
                     $productJpa->save();
@@ -313,8 +314,7 @@ class SaleController extends Controller
                             $productJpa->mount = $productJpa->mount -  $product['mount'];
                             $stock->mount_new = $productJpa->mount;
                         } else {
-                            $productJpa->disponibility = "VENDIENDO";
-
+                            $productJpa->disponibility = "VENDIDO";
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
