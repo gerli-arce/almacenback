@@ -136,6 +136,7 @@ Route::post('/technicals/products/stock', [TechnicalsController::class, 'getProd
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
 Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);
+Route::post('/technicals/records/paginate', [TechnicalsController::class, 'paginateRecords']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);

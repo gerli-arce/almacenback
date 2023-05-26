@@ -70,8 +70,6 @@ class SalesController extends Controller
                 }
             }
 
-
-
             $iTotalDisplayRecords = $query->count();
 
             $salesJpa = $query
@@ -96,7 +94,7 @@ class SalesController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::where('branch__correlative', $branch)->count());
+            $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->count());
             $response->setData($sales);
         } catch (\Throwable $th) {
             $response->setStatus(400);

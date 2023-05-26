@@ -18,6 +18,8 @@ use App\Models\{
     ViewPeople,
     ViewProductByTechnical,
     DetailSale,
+    ViewSales,
+    ViewDetailsSales,
 };
 
 use Exception;
@@ -880,9 +882,9 @@ class TechnicalsController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
-            if($request->status == 1){
+            if ($request->status == 1) {
                 $ProductByTechnicalJpa->status = null;
-            }else{
+            } else {
                 $ProductByTechnicalJpa->status = 1;
             }
 
@@ -901,7 +903,8 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function registersOperationByTechnicals(Request $request){
+    public function registersOperationByTechnicals(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -928,7 +931,7 @@ class TechnicalsController extends Controller
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
             $salesProduct->date_sale = gTrace::getDate('mysql');
-            $salesProduct->status_sale = "CULMINADA";
+            $salesProduct->status_sale = "AGREGADO";
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
             $salesProduct->_update_user = $userid;
@@ -949,14 +952,14 @@ class TechnicalsController extends Controller
                 $productJpa->mount =  $stock->mount_new + $stock->mount_second;
                 $stock->save();
                 $productJpa->save();
-                
+
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
-                if($productByTechnicalJpa){
+                if ($productByTechnicalJpa) {
                     $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                     $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
                     $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
                     $productByTechnicalJpa->save();
-                }else{
+                } else {
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
                     $productByTechnicalJpaNew->_product = $productJpa->id;
@@ -988,4 +991,77 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function  paginateRecords(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
+                throw new Exception('No tienes permisos para listar las salidas');
+            }
+
+            $query = ViewSales::select([
+                '*',
+            ])
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->whereNotNUll('status')
+                ->where('branch__correlative', $branch)
+                ->where('technical_id', $request->id)
+                ->where('type_intallation', 'AGREGADO_A_STOCK')
+                ->where('type_operation__id', '10');
+
+
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+
+                $query->where('date_sale', '>=', $dateStart)
+                    ->where('date_sale', '<=', $dateEnd);
+            }
+
+            $iTotalDisplayRecords = $query->count();
+
+            $salesJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->whereNotNUll('status')
+                ->where('branch__correlative', $branch)
+                ->where('technical_id', $request->id)
+                ->where('type_intallation', 'AGREGADO_A_STOCK')
+                ->where('type_operation__id', '10')->count());
+            $response->setData($sales);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
