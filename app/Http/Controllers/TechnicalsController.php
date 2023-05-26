@@ -17,6 +17,7 @@ use App\Models\{
     SalesProducts,
     ViewPeople,
     ViewProductByTechnical,
+    DetailSale,
 };
 
 use Exception;
@@ -935,23 +936,44 @@ class TechnicalsController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
-
             foreach ($request->details as $product) {
-               
                 $productJpa = Product::find($product['product']['id']);
-
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
+
+                $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+
+                $productJpa->mount =  $stock->mount_new + $stock->mount_second;
                 $stock->save();
                 $productJpa->save();
+                
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
+                if($productByTechnicalJpa){
+                    $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
+                    $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
+                    $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                    $productByTechnicalJpa->save();
+                }else{
+                    $productByTechnicalJpaNew = new ProductByTechnical();
+                    $productByTechnicalJpaNew->_technical = $request->id;
+                    $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                    $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                    $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                    $productByTechnicalJpaNew->save();
+                }
 
-                $productByTechnicalJpa = new ProductByTechnical();
-                $productByTechnicalJpa->_technical = $request->id;
-                $productByTechnicalJpa->_product = $product['product']['id'];
-                $productByTechnicalJpa->mount = $product['mount'];
-                $productByTechnicalJpa->description = $product['description'];
-                $productByTechnicalJpa->save();
+                $detailSale = new DetailSale();
+                $detailSale->_product = $productJpa->id;
+                $detailSale->mount_new = $product['mount_new'];
+                $detailSale->mount_second = $product['mount_second'];
+                $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->_sales_product = $salesProduct->id;
+                $detailSale->status = '1';
+                $detailSale->save();
             }
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');

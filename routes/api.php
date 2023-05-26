@@ -126,7 +126,7 @@ Route::post('/client/paginate', [ClientsController::class, 'paginate']);
 Route::post('/technicals', [TechnicalsController::class, 'store']);
 Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
-Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
+Route::post('/technicals/add/products', [TechnicalsController::class, 'registersOperationByTechnicals']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
 Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
