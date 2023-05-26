@@ -44,7 +44,7 @@ class StockController extends Controller
 
             $sumary = '';
 
-            $query = ViewStock::select(['*']);
+            $query = ViewStock::select(['*'])->orderBy('category__category', 'asc');
 
             $stocksJpa = $query->where('branch__correlative', $branch)->get();
 
@@ -98,7 +98,7 @@ class StockController extends Controller
                 <td class='text-center'>{$models['id']}</td>
                 <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
                 <td>{$stock}</td>
-                <td>{$actual}</td>
+                <td></td>
             </tr>
         ";
             }
@@ -358,6 +358,42 @@ class StockController extends Controller
 
             $stockJpa->save();
 
+            $response->setStatus(200);
+            $response->setMessage('Producto actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus($tatus);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStockByModel(Request $request){
+        $response = new Response();
+        $tatus = 400;
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'read')) {
+                throw new Exception('No tienes permisos para ver el stock');
+            }
+
+            if (
+                !isset($request->model_id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            $stockJpa = Stock::where('_model', $request->model_id)->where('_branch', $branch_->id)->first();
+
+            $response->setData([$stockJpa]);
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
         } catch (\Throwable $th) {

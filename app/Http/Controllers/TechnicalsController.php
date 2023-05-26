@@ -900,5 +900,70 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function registersOperationByTechnicals(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear agregar productos a stock de técnicos');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->details)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->id;
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "CULMINADA";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+
+            foreach ($request->details as $product) {
+               
+                $productJpa = Product::find($product['product']['id']);
+
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                $stock->save();
+                $productJpa->save();
+
+                $productByTechnicalJpa = new ProductByTechnical();
+                $productByTechnicalJpa->_technical = $request->id;
+                $productByTechnicalJpa->_product = $product['product']['id'];
+                $productByTechnicalJpa->mount = $product['mount'];
+                $productByTechnicalJpa->description = $product['description'];
+                $productByTechnicalJpa->save();
+            }
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
 }
