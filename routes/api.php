@@ -219,6 +219,7 @@ Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 Route::post('/products/materials/paginate', [ProductsController::class, 'paginateMaterials']);
 Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
 Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
+Route::post('/products/epp/paginate', [ProductsController::class, 'paginateEPP']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);

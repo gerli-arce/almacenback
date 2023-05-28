@@ -149,7 +149,7 @@ class ProductsController extends Controller
                         $stock->mount_second = intval($stock->mount_second) + 1;
                     } else if ($request->product_status == "NUEVO") {
                         $stock->mount_new = intval($stock->mount_new) + 1;
-                    } else if ($request->product_status == "MALOGRADO"){
+                    } else if ($request->product_status == "MALOGRADO") {
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                     }
 
@@ -184,14 +184,14 @@ class ProductsController extends Controller
                     ->first();
 
                 if (isset($productJpa)) {
-                    
+
                     if ($request->product_status == "SEMINUEVO") {
                         $stock->mount_second = intval($stock->mount_second) + $request->mount;
                         $productJpa->mount = $productJpa->mount + $request->mount;
                     } else if ($request->product_status == "NUEVO") {
                         $productJpa->mount = $productJpa->mount + $request->mount;
                         $stock->mount_new = intval($stock->mount_new) + $request->mount;
-                    } else if ($request->product_status == "MALOGRADO"){
+                    } else if ($request->product_status == "MALOGRADO") {
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + $request->mount;
                     }
 
@@ -1063,6 +1063,104 @@ class ProductsController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateEPP(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'all_equipment', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
+            $query = ViewProducts::select(['*'])
+                ->orderBy($request->order['column'], $request->order['dir'])->where('model__category__category', 'EPP');
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            if (isset($request->search['brand'])) {
+                $query->where('brand__id', $request->search['brand']);
+            }
+            if (isset($request->search['category'])) {
+                $query->where('category__id', $request->search['category']);
+            }
+            if (isset($request->search['model'])) {
+                $query->where('model__id', $request->search['model']);
+            }
+            if (isset($request->search['branch'])) {
+                $query->where('branch__id', $request->search['branch']);
+            }
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'model__brand__brand' || $column == '*') {
+                    $q->orWhere('model__brand__brand', $type, $value);
+                }
+                if ($column == 'branch__name' || $column == '*') {
+                    $q->orWhere('branch__name', $type, $value);
+                }
+                if ($column == 'model__category__category' || $column == '*') {
+                    $q->where('model__category__category', $type, $value);
+                }
+                if ($column == 'model__model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
+                }
+                if ($column == 'mac' || $column == '*') {
+                    $q->orWhere('mac', $type, $value);
+                }
+                if ($column == 'serie' || $column == '*') {
+                    $q->orWhere('serie', $type, $value);
+                }
+                if ($column == 'price_buy' || $column == '*') {
+                    $q->orWhere('price_buy', $type, $value);
+                }
+                if ($column == 'disponibility' || $column == '*') {
+                    $q->orWhere('disponibility', $type, $value);
+                }
+                if ($column == 'num_guia' || $column == '*') {
+                    $q->orWhere('num_guia', $type, $value);
+                }
+                if ($column == 'num_bill' || $column == '*') {
+                    $q->orWhere('num_bill', $type, $value);
+                }
+            })->where('type', 'MATERIAL');
+
+            $iTotalDisplayRecords = $query->count();
+            $productsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $products = array();
+            foreach ($productsJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewProducts::where('branch__correlative', $branch)->count());
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
