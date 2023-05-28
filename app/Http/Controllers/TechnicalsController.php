@@ -1011,15 +1011,13 @@ class TechnicalsController extends Controller
                 ->orderBy($request->order['column'], $request->order['dir'])
                 ->whereNotNUll('status')
                 ->where('branch__correlative', $branch)
-                ->where('technical_id', $request->id)
+                ->where('technical_id', $request->search['technical'])
                 ->where('type_intallation', 'AGREGADO_A_STOCK')
                 ->where('type_operation__id', '10');
-
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
                 $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
-
                 $query->where('date_sale', '>=', $dateStart)
                     ->where('date_sale', '<=', $dateEnd);
             }
