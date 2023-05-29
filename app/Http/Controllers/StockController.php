@@ -407,6 +407,46 @@ class StockController extends Controller
         }
     }
 
+    public function changeStar(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'update')) {
+                throw new Exception('No tienes permisos para actualizar stock.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelsJpa = Stock::find($request->id);
+            if (!$modelsJpa) {
+                throw new Exception('El stock que deseas cambiar no existe');
+            }
+
+            $modelsJpa->star = $request->star;
+            $modelsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El stock a sido cambiado correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     // public function regularizar(Request $request)
     // {
     //     $response = new Response();

@@ -6,7 +6,7 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\{Branch, People, Response, ViewPeople, ViewModels, ViewStock,};
+use App\Models\{Branch, People, Response, ViewPeople, ViewModels,ViewStock,};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -189,6 +189,43 @@ class HomeController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
         } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductsMin(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
+            $productsJpa = ViewStock::orderBy('mount_new', 'asc')->where('star', '1')->take(7)->get();
+
+
+            $products = array();
+            foreach ($productsJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($products);
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {

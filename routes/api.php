@@ -51,6 +51,7 @@ Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
 Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
+Route::get('/products/min', [HomeController::class, 'getProductsMin']);
 
 
 
@@ -229,6 +230,7 @@ Route::get('/stock/regularize', [StockController::class, 'regularizar']);
 Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
 Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
+Route::post('/stock/star', [StockController::class, 'changeStar']);
 
 
 
