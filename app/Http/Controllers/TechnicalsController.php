@@ -451,13 +451,50 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type','PRODUCTO')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
                 $product = gJSON::restore($productJpa->toArray(), '__');
                 $products[] = $product;
             }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getEpp(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type','EPP')->get();
+
+            $products = array();
+            foreach ($productsJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $product;
+            }
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($products);
@@ -963,6 +1000,7 @@ class TechnicalsController extends Controller
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
                     $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
