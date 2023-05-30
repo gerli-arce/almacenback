@@ -226,8 +226,7 @@ class InstallationController extends Controller
             $salesProduct->type_intallation = $request->type_intallation;
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
-            $salesProduct->price_all = $request->price_all;
-            $salesProduct->price_all = $request->price_all;
+            // $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
             $salesProduct->type_pay = $request->type_pay;
@@ -255,18 +254,18 @@ class InstallationController extends Controller
                         $productByTechnicalJpa->mount = $mountNew;
                         $productByTechnicalJpa->save();
 
-                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                        $recordProductByTechnicalJpa->_user = $userid;
-                        $recordProductByTechnicalJpa->_technical = $request->_technical;
-                        $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                        $recordProductByTechnicalJpa->_client = $request->_client;
-                        $recordProductByTechnicalJpa->_product = $productJpa->id;
-                        $recordProductByTechnicalJpa->mount = $product['mount'];
-                        $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
-                        $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                        $recordProductByTechnicalJpa->description = $product['description'];
-                        $recordProductByTechnicalJpa->save();
+                        // $recordProductByTechnicalJpa = new RecordProductByTechnical();
+                        // $recordProductByTechnicalJpa->_user = $userid;
+                        // $recordProductByTechnicalJpa->_technical = $request->_technical;
+                        // $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
+                        // $recordProductByTechnicalJpa->_client = $request->_client;
+                        // $recordProductByTechnicalJpa->_product = $productJpa->id;
+                        // $recordProductByTechnicalJpa->mount = $product['mount'];
+                        // $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
+                        // $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
+                        // $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+                        // $recordProductByTechnicalJpa->description = $product['description'];
+                        // $recordProductByTechnicalJpa->save();
                     } else {
 
                         $stock = Stock::where('_model', $productJpa->_model)
