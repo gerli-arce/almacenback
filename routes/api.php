@@ -244,7 +244,7 @@ Route::get('/install/id/{id}', [InstallationController::class, 'getSales']);
 Route::get('/installation/{id}', [InstallationController::class, 'getSaleInstallation']);
 Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
 Route::post('/install/completed/pending', [InstallationController::class, 'returnToPendient']);
-Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
+Route::post('/install/canseluse', [InstallationController::class, 'cancelUseProduct']);
 Route::post('/install/generate/report', [InstallationController::class, 'generateReportByInstallation']);
 
 // FAULDS

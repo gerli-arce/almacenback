@@ -857,24 +857,11 @@ class InstallationController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-
-                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                $recordProductByTechnicalJpa->_user = $userid;
-                $recordProductByTechnicalJpa->_technical = $salesProduct->_technical;
-                $recordProductByTechnicalJpa->_client = $salesProduct->_client;
-                $recordProductByTechnicalJpa->_product = $productJpa->id;
-                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                $recordProductByTechnicalJpa->operation = "USO CANCELADO";
-                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                $recordProductByTechnicalJpa->mount = $detailSale['mount'];
-                $recordProductByTechnicalJpa->description = $detailSale['description'];
-                $recordProductByTechnicalJpa->save();
-
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
                     ->where('_product', $detailSale->_product)->first();
-                $mountNew = $productByTechnicalJpa->mount + $request->mount;
-                $productByTechnicalJpa->mount = $mountNew;
+                $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
+                $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
+                $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
                 $productByTechnicalJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
