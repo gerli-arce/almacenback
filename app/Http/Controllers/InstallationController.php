@@ -97,12 +97,12 @@ class InstallationController extends Controller
 
             $type_operation = '';
 
-        
+
 
             $sumary = '';
 
 
-            foreach ( $details as $detail) {
+            foreach ($details as $detail) {
 
                 $model = "
                 <div>
@@ -163,11 +163,11 @@ class InstallationController extends Controller
                     $installJpa['type_operation']['operation'],
                     $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
                     $fecha,
-                    $installJpa['technical']['name'].' '.$installJpa['technical']['lastname'],
+                    $installJpa['technical']['name'] . ' ' . $installJpa['technical']['lastname'],
                     $hora,
                     $installJpa['date_sale'],
-                    $installJpa['user_issue']['people']['name'].' '.$installJpa['user_issue']['people']['lastname'],
-                    'S/.'.$installJpa['price_installation'],
+                    $installJpa['user_issue']['people']['name'] . ' ' . $installJpa['user_issue']['people']['lastname'],
+                    'S/.' . $installJpa['price_installation'],
                     $installJpa['type_intallation'],
                     $branch_->name,
                     gTrace::getDate('long'),
@@ -208,7 +208,7 @@ class InstallationController extends Controller
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
-                !isset($request->price_all) ||
+                // !isset($request->price_all) ||
                 !isset($request->type_pay) ||
                 !isset($request->mount_dues) ||
                 !isset($request->date_sale)
@@ -246,26 +246,23 @@ class InstallationController extends Controller
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['id']);
 
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                        ->where('_product', $productJpa->id)->first();
+
                     if ($product['product']['type'] == "MATERIAL") {
+                        if ($product['mount_new'] > 0) {
+                            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
+                        }
 
-                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_product', $product['product']['id'])->first();
-                        $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                        $productByTechnicalJpa->mount = $mountNew;
+                        if ($product['mount_second'] > 0) {
+                            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $product['mount_second'];
+                        }
+
+                        if ($product['mount_ill_fated'] > 0) {
+                            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        }
+
                         $productByTechnicalJpa->save();
-
-                        // $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                        // $recordProductByTechnicalJpa->_user = $userid;
-                        // $recordProductByTechnicalJpa->_technical = $request->_technical;
-                        // $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                        // $recordProductByTechnicalJpa->_client = $request->_client;
-                        // $recordProductByTechnicalJpa->_product = $productJpa->id;
-                        // $recordProductByTechnicalJpa->mount = $product['mount'];
-                        // $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
-                        // $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                        // $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                        // $recordProductByTechnicalJpa->description = $product['description'];
-                        // $recordProductByTechnicalJpa->save();
                     } else {
 
                         $stock = Stock::where('_model', $productJpa->_model)
@@ -283,7 +280,9 @@ class InstallationController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
@@ -417,7 +416,9 @@ class InstallationController extends Controller
                 'products.condition_product AS product__condition_product',
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
-                'detail_sales.mount as mount',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
                 'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
@@ -521,31 +522,39 @@ class InstallationController extends Controller
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $detailSale->_product)->first();
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-
-                                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                                $recordProductByTechnicalJpa->_user = $userid;
-                                $recordProductByTechnicalJpa->_technical = $request->_technical;
-                                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                                $recordProductByTechnicalJpa->_client = $request->_client;
-                                $recordProductByTechnicalJpa->_product = $productJpa->id;
-                                $recordProductByTechnicalJpa->mount = $product['mount'];
-                                $recordProductByTechnicalJpa->operation = 'INSTALACIÓN';
-                                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                                $recordProductByTechnicalJpa->description = $product['description'];
-
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
+                            if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
+                                if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
+                                    $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
+                                    $productByTechnicalJpa->mount_new = intval($productByTechnicalJpa->mount_new) + $mount_dif;
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
+                                    $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
+                                    $productByTechnicalJpa->mount_new = intval($productByTechnicalJpa->mount_new) - $mount_dif;
                                 }
-                                $recordProductByTechnicalJpa->save();
                             }
-                            $detailSale->mount = $product['mount'];
+
+                            if (intval($detailSale->mount_second) != intval($product['mount_second'])) {
+                                if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
+                                    $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
+                                    $productByTechnicalJpa->mount_second = intval($productByTechnicalJpa->mount_second) + $mount_dif;
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
+                                    $productByTechnicalJpa->mount_second = intval($productByTechnicalJpa->mount_second) - $mount_dif;
+                                }
+                            }
+
+                            if (intval($detailSale->mount_ill_fated) != intval($product['mount_ill_fated'])) {
+                                if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
+                                    $productByTechnicalJpa->mount_ill_fated = intval($productByTechnicalJpa->mount_ill_fated) + $mount_dif;
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
+                                    $productByTechnicalJpa->mount_ill_fated = intval($productByTechnicalJpa->mount_ill_fated) - $mount_dif;
+                                }
+                            }
+
+                            $detailSale->mount_new = $product['mount_new'];
+                            $detailSale->mount_second = $product['mount_second'];
+                            $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                             $productByTechnicalJpa->save();
                         }
                         $detailSale->description = $product['description'];
@@ -572,24 +581,21 @@ class InstallationController extends Controller
 
                         if ($product['product']['type'] == "MATERIAL") {
 
-                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                            $recordProductByTechnicalJpa->_user = $userid;
-                            $recordProductByTechnicalJpa->_technical = $request->_technical;
-                            $recordProductByTechnicalJpa->_client = $request->_client;
-                            $recordProductByTechnicalJpa->_product = $productJpa->id;
-                            $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                            $recordProductByTechnicalJpa->operation = "INSTALACION";
-                            $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                            $recordProductByTechnicalJpa->mount = $product['mount'];
-                            $recordProductByTechnicalJpa->description = $product['description'];
-                            $recordProductByTechnicalJpa->save();
-
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $productJpa->id)->first();
-                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                            $productByTechnicalJpa->mount = $mountNew;
-                            $productByTechnicalJpa->save();
+
+                            if ($product['mount_new'] > 0) {
+                                $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
+                            }
+
+                            if ($product['mount_second'] > 0) {
+                                $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $product['mount_second'];
+                            }
+
+                            if ($product['mount_ill_fated'] > 0) {
+                                $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $product['mount_ill_fated'];
+                            }
+
                             $productByTechnicalJpa->save();
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
@@ -603,10 +609,15 @@ class InstallationController extends Controller
                             }
                             $stock->save();
                         }
+
                         $productJpa->save();
+
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
-                        $detailSale->mount = $product['mount'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                        $detailSale->description = $product['description'];
                         $detailSale->_sales_product = $salesProduct->id;
                         $detailSale->status = '1';
                         $detailSale->save();
