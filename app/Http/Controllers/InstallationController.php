@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\Product;
-use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
-use App\Models\Response;
-use App\Models\SalesProducts;
-use App\Models\Stock;
-use App\Models\viewInstallations;
+use App\Models\{Branch,
+    DetailSale,
+    Product,
+    ProductByTechnical,
+    RecordProductByTechnical,
+    Response,
+    SalesProducts,
+    Stock,
+    viewInstallations,
+};
+
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +71,9 @@ class InstallationController extends Controller
                 'products.condition_product AS product__condition_product',
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
-                'detail_sales.mount as mount',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
                 'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
@@ -115,7 +119,7 @@ class InstallationController extends Controller
                 $medida = "
                 <div>
                     <p>{$detail['product']['model']['unity']['name']}</p>
-                    <p>{$detail['mount']}</p>
+                    <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
                 </div>
                 ";
 
@@ -449,6 +453,107 @@ class InstallationController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getSales(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $InstallationJpa = viewInstallations::find($id);
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                if ($detail['product']['type'] == "MATERIAL") {
+                    $productByTechnicalJpa = ProductByTechnical::select(
+                        [
+                            'id',
+                            '_technical', 
+                            '_product', 
+                            'mount_new', 
+                            'mount_second', 
+                            'mount_ill_fated', 
+                        ]
+                    )
+                    ->where('_technical', $InstallationJpa->technical__id)
+                    ->where('_product', $detail['product']['id'])
+                    ->first();
+
+                    $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
+                    $detail['max_second'] = $productByTechnicalJpa->mount_second + $detail['mount_second'];
+                    $detail['max_ill_fated'] = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
+                }
+                $details[] = $detail;
+            }
+
+            $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
+            $installJpa['products'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($installJpa);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
