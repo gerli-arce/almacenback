@@ -40,7 +40,7 @@ class FauldController extends Controller
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
-                !isset($request->price_all) ||
+                // !isset($request->price_all) ||
                 !isset($request->type_pay) ||
                 !isset($request->mount_dues) ||
                 !isset($request->date_sale)
@@ -58,8 +58,7 @@ class FauldController extends Controller
             $salesProduct->type_intallation = $request->type_intallation;
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
-            $salesProduct->price_all = $request->price_all;
-            $salesProduct->price_all = $request->price_all;
+            // $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
             $salesProduct->type_pay = $request->type_pay;
@@ -80,28 +79,25 @@ class FauldController extends Controller
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['id']);
 
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                        ->where('_product', $productJpa->id)->first();
+
                     if ($product['product']['type'] == "MATERIAL") {
+                        if ($product['mount_new'] > 0) {
+                            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
+                        }
 
-                        $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_product', $product['product']['id'])->first();
-                        $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                        $productByTechnicalJpa->mount = $mountNew;
+                        if ($product['mount_second'] > 0) {
+                            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $product['mount_second'];
+                        }
+
+                        if ($product['mount_ill_fated'] > 0) {
+                            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        }
+
                         $productByTechnicalJpa->save();
-
-                        $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                        $recordProductByTechnicalJpa->_user = $userid;
-                        $recordProductByTechnicalJpa->_technical = $request->_technical;
-                        $recordProductByTechnicalJpa->_client = $request->_client;
-                        $recordProductByTechnicalJpa->_product = $productJpa->id;
-                        $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                        $recordProductByTechnicalJpa->operation = "AVERIA";
-                        $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                        $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                        $recordProductByTechnicalJpa->mount = $product['mount'];
-                        $recordProductByTechnicalJpa->description = $product['description'];
-                        $recordProductByTechnicalJpa->save();
                     } else {
-                        $productJpa->disponibility = "VENDIENDO";
+
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -110,13 +106,16 @@ class FauldController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
+
                         $stock->save();
                         $productJpa->save();
                     }
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
@@ -217,14 +216,18 @@ class FauldController extends Controller
         $response = new Response();
         try {
 
-            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            // if ($status != 200) {
-            //     throw new Exception($message);
-            // }
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
 
-            // if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
-            //     throw new Exception('No tienes permisos para listar las instataciónes pendientes');
-            // }
+            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $InstallationJpa = viewInstallations::find($id);
 
             $detailSaleJpa = DetailSale::select([
                 'detail_sales.id as id',
@@ -251,7 +254,9 @@ class FauldController extends Controller
                 'products.condition_product AS product__condition_product',
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
-                'detail_sales.mount as mount',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
                 'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
@@ -268,10 +273,27 @@ class FauldController extends Controller
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
+                if ($detail['product']['type'] == "MATERIAL") {
+                    $productByTechnicalJpa = ProductByTechnical::select(
+                        [
+                            'id',
+                            '_technical', 
+                            '_product', 
+                            'mount_new', 
+                            'mount_second', 
+                            'mount_ill_fated', 
+                        ]
+                    )
+                    ->where('_technical', $InstallationJpa->technical__id)
+                    ->where('_product', $detail['product']['id'])
+                    ->first();
+
+                    $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
+                    $detail['max_second'] = $productByTechnicalJpa->mount_second + $detail['mount_second'];
+                    $detail['max_ill_fated'] = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
+                }
                 $details[] = $detail;
             }
-
-            $InstallationJpa = viewInstallations::find($id);
 
             $installJpa = gJSON::restore($InstallationJpa->toArray(), '__');
             $installJpa['products'] = $details;
@@ -281,7 +303,7 @@ class FauldController extends Controller
             $response->setData($installJpa);
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -344,7 +366,6 @@ class FauldController extends Controller
             }
 
             $salesProduct->description = $request->description;
-
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
@@ -355,38 +376,41 @@ class FauldController extends Controller
                         $detailSale = DetailSale::find($product['id']);
                         if ($product['product']['type'] == "MATERIAL") {
 
-
-
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $productJpa->id)->first();
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-
-                                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                                $recordProductByTechnicalJpa->_user = $userid;
-                                $recordProductByTechnicalJpa->_technical = $request->_technical;
-                                $recordProductByTechnicalJpa->_client = $request->_client;
-                                $recordProductByTechnicalJpa->_product = $productJpa->id;
-                                $recordProductByTechnicalJpa->operation = "AVERIA";
-                                $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                                $recordProductByTechnicalJpa->mount = $product['mount'];
-                                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                                $recordProductByTechnicalJpa->description = $product['description'];
-
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) + $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productByTechnicalJpa->mount = intval($productByTechnicalJpa->mount) - $mount_dif;
-                                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
+                                ->where('_product', $detailSale->_product)->first();
+                            if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
+                                if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
+                                    $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
+                                    $productByTechnicalJpa->mount_new = intval($productByTechnicalJpa->mount_new) + $mount_dif;
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
+                                    $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
+                                    $productByTechnicalJpa->mount_new = intval($productByTechnicalJpa->mount_new) - $mount_dif;
                                 }
-                                $recordProductByTechnicalJpa->save();
                             }
-                            if (!$productByTechnicalJpa) {
-                                throw new Exception('Error: product: ' . $productJpa->id . ' technical' . $request->_technical);
+
+                            if (intval($detailSale->mount_second) != intval($product['mount_second'])) {
+                                if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
+                                    $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
+                                    $productByTechnicalJpa->mount_second = intval($productByTechnicalJpa->mount_second) + $mount_dif;
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
+                                    $productByTechnicalJpa->mount_second = intval($productByTechnicalJpa->mount_second) - $mount_dif;
+                                }
                             }
-                            $detailSale->mount = $product['mount'];
+
+                            if (intval($detailSale->mount_ill_fated) != intval($product['mount_ill_fated'])) {
+                                if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
+                                    $productByTechnicalJpa->mount_ill_fated = intval($productByTechnicalJpa->mount_ill_fated) + $mount_dif;
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
+                                    $productByTechnicalJpa->mount_ill_fated = intval($productByTechnicalJpa->mount_ill_fated) - $mount_dif;
+                                }
+                            }
+
+                            $detailSale->mount_new = $product['mount_new'];
+                            $detailSale->mount_second = $product['mount_second'];
+                            $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                             $productByTechnicalJpa->save();
                         }
                         $detailSale->description = $product['description'];
@@ -413,24 +437,21 @@ class FauldController extends Controller
 
                         if ($product['product']['type'] == "MATERIAL") {
 
-                            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                            $recordProductByTechnicalJpa->_user = $userid;
-                            $recordProductByTechnicalJpa->_technical = $request->_technical;
-                            $recordProductByTechnicalJpa->_client = $request->_client;
-                            $recordProductByTechnicalJpa->_product = $productJpa->id;
-                            $recordProductByTechnicalJpa->type_operation = "OPERACION DE SALIDA";
-                            $recordProductByTechnicalJpa->operation = "AVERIA";
-                            $recordProductByTechnicalJpa->_sale_product = $salesProduct->id;
-                            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                            $recordProductByTechnicalJpa->mount = $product['mount'];
-                            $recordProductByTechnicalJpa->description = $product['description'];
-                            $recordProductByTechnicalJpa->save();
-
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                                 ->where('_product', $productJpa->id)->first();
-                            $mountNew = $productByTechnicalJpa->mount - $product['mount'];
-                            $productByTechnicalJpa->mount = $mountNew;
-                            $productByTechnicalJpa->save();
+
+                            if ($product['mount_new'] > 0) {
+                                $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
+                            }
+
+                            if ($product['mount_second'] > 0) {
+                                $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $product['mount_second'];
+                            }
+
+                            if ($product['mount_ill_fated'] > 0) {
+                                $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $product['mount_ill_fated'];
+                            }
+
                             $productByTechnicalJpa->save();
                         } else {
                             $productJpa->disponibility = "VENDIENDO";
@@ -444,10 +465,15 @@ class FauldController extends Controller
                             }
                             $stock->save();
                         }
+
                         $productJpa->save();
+
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
-                        $detailSale->mount = $product['mount'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                        $detailSale->description = $product['description'];
                         $detailSale->_sales_product = $salesProduct->id;
                         $detailSale->status = '1';
                         $detailSale->save();
