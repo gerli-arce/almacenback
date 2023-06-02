@@ -6,24 +6,7 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\{
-    Branch,
-    DetailSale,
-    EntryDetail,
-    EntryProducts,
-    Plant,
-    Product,
-    ProductByPlant,
-    ViewSales,
-    Response,
-    SalesProducts,
-    Stock,
-    StockPlant,
-    Parcel,
-    ViewPlant,
-    ViewProductsByPlant,
-    ViewDetailsSales,
-    ViewStockPlant,
-    ViewStockProductsByPlant
+    Branch, DetailSale, EntryDetail, EntryProducts, Plant, Product, ProductByPlant, ViewSales, Response, SalesProducts, Stock, StockPlant, Parcel, ViewPlant, ViewProductsByPlant, ViewDetailsSales, ViewStockPlant, ViewStockProductsByPlant
 };
 use Exception;
 use Illuminate\Http\Request;
