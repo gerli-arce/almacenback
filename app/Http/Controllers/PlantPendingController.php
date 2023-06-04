@@ -270,36 +270,45 @@ class PlantPendingController extends Controller
 
                     if ($product['product']['type'] == "MATERIAL") {
 
-                        $StockPlant = StockPlant::select(['id', '_product', '_plant', 'mount'])->where('_product', $productJpa->id)->where('_plant', $request->id)->first();
+                        $StockPlant = StockPlant::select(['id', '_product', '_plant', 'mount_new', 'mount_second', 'mount_ill_fated'])->where('_product', $productJpa->id)->where('_plant', $request->id)->first();
 
                         if ($StockPlant) {
-                            $StockPlant->mount = intval($StockPlant->mount) + intval($product['mount']);
+                            $StockPlant->mount_new = intval($StockPlant->mount_new) + intval($product['mount_new']);
+                            $StockPlant->mount_second = intval($StockPlant->mount_second) + intval($product['mount_second']);
+                            $StockPlant->mount_ill_fated = intval($StockPlant->mount_ill_fated) + intval($product['mount_ill_fated']);
                             $StockPlant->save();
                         } else {
                             $stockPlantJpa = new StockPlant();
                             $stockPlantJpa->_product = $productJpa->id;
                             $stockPlantJpa->_plant = $request->id;
-                            $stockPlantJpa->mount = $product['mount'];
+                            $stockPlantJpa->mount_new = $product['mount_new'];
+                            $stockPlantJpa->mount_second = $product['mount_second'];
+                            $stockPlantJpa->mount_ill_fated = $product['mount_ill_fated'];
                             $stockPlantJpa->status = "1";
                             $stockPlantJpa->save();
                         }
 
-                        $stock->mount_new = intval($stock->mount_new) - intval($product['mount']);
-                        $productJpa->mount = $productJpa->mount - $product['mount'];
+                        $stock->mount_new = intval($stock->mount_new) - intval($product['mount_new']);
+                        $stock->mount_second = intval($stock->mount_second) - intval($product['mount_second']);
+                        $stock->mount_ill_fated = intval($stock->mount_ill_fated) - intval($product['mount_ill_fated']);
+
+                        $productJpa->mount = $stock->mount_new +  $stock->mount_second;
                     } else {
                         $stockPlantJpa = new StockPlant();
                         $stockPlantJpa->_product = $productJpa->id;
                         $stockPlantJpa->_plant = $request->id;
-                        $stockPlantJpa->mount = $product['mount'];
-                        $stockPlantJpa->status = "1";
-                        $stockPlantJpa->save();
-
-                        $productJpa->disponibility = "PLANTA";
                         if ($productJpa->product_status == "NUEVO") {
+                            $stockPlantJpa->mount_new = 1;
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stockPlantJpa->mount_second = 1;
                             $stock->mount_second = $stock->mount_second - 1;
+                        }else{
+                            $stockPlantJpa->mount_ill_fated = 1;
                         }
+                        $stockPlantJpa->status = "1";
+                        $stockPlantJpa->save();
+                        $productJpa->disponibility = "PLANTA";
                     }
 
                     $stock->save();
@@ -307,7 +316,9 @@ class PlantPendingController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -429,7 +440,9 @@ class PlantPendingController extends Controller
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
                 'stock_plant._plant as _plant',
-                'stock_plant.mount as mount',
+                'stock_plant.mount_new as mount_new',
+                'stock_plant.mount_second as mount_second',
+                'stock_plant.mount_ill_fated as mount_ill_fated',
                 'stock_plant.status as status',
             ])
                 ->join('products', 'stock_plant._product', 'products.id')
@@ -1478,7 +1491,9 @@ class PlantPendingController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
@@ -1974,7 +1989,9 @@ class PlantPendingController extends Controller
                 throw new Exception('El producto no existe');
             }
 
-            $stockPlantJpa->mount = $request->mount;
+            $stockPlantJpa->mount_new = $request->mount_new;
+            $stockPlantJpa->mount_second = $request->mount_second;
+            $stockPlantJpa->mount_ill_fated = $request->mount_ill_fated;
             $stockPlantJpa->save();
 
             $response->setStatus(200);
