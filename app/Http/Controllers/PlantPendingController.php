@@ -263,12 +263,12 @@ class PlantPendingController extends Controller
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
-                    $productJpa = Product::find($product['product']['id']);
+                    $productJpa = Product::find($product['product']['product']['id']);
                     $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
 
-                    if ($product['product']['type'] == "MATERIAL") {
+                    if ($product['product']['product']['type'] == "MATERIAL") {
 
                         $StockPlant = StockPlant::select(['id', '_product', '_plant', 'mount_new', 'mount_second', 'mount_ill_fated'])->where('_product', $productJpa->id)->where('_plant', $request->id)->first();
 
@@ -369,9 +369,7 @@ class PlantPendingController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-                if ($column == 'mount' || $column == '*') {
-                    $q->orWhere('mount', $type, $value);
-                }
+               
             })->where('plant__id', $request->search['plant'])
                 ->where('product__disponibility', '!=', 'LIQUIDACION DE PLANTA');
 
@@ -470,6 +468,42 @@ class PlantPendingController extends Controller
         }
     }
 
+    public function searchMountsStockByPlant(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para leer stok de planta');
+            }
+
+            if (
+                !isset($request->plant)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $stockPlantJpa = StockPlant::where('_plant', $request->plant)
+                ->where('_product', $request->product)
+                ->first();
+
+            $response->setData([$stockPlantJpa]);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln. ' . $th->getLine() . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function registerLiquidations(Request $request)
     {
         $response = new Response();
@@ -524,7 +558,9 @@ class PlantPendingController extends Controller
                     $stockPlantJpa = StockPlant::find($product['id']);
 
                     if ($product['product']['type'] == "MATERIAL") {
-                        $stockPlantJpa->mount = $stockPlantJpa->mount - $product['mount'];
+                        $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
+                        $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_second'];
+                        $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $stockPlantJpa->status = null;
                         $productJpa->disponibility = "LIQUIDACION DE PLANTA";
@@ -535,18 +571,13 @@ class PlantPendingController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
 
-                    // $detailSale = new DetailSale();
-                    // $detailSale->_product = $productJpa->id;
-                    // $detailSale->mount = $product['mount'];
-                    // // $detailSale->description = $product['description'];
-                    // $detailSale->_sales_product = $salesProduct->id;
-                    // $detailSale->status = '1';
-                    // $detailSale->save();
                 }
             }
 
@@ -626,7 +657,9 @@ class PlantPendingController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
@@ -726,7 +759,9 @@ class PlantPendingController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
@@ -814,17 +849,40 @@ class PlantPendingController extends Controller
 
                         if ($product['product']['type'] == "MATERIAL") {
                             $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->first();
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $stockPlantJpa->mount = intval($stockPlantJpa->mount) + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $stockPlantJpa->mount = intval($stockPlantJpa->mount) - $mount_dif;
+
+                            if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
+                                if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
+                                    $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
+                                    $stockPlantJpa->mount_new = intval($stockPlantJpa->mount_new) + $mount_dif;
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
+                                    $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
+                                    $stockPlantJpa->mount_new = intval($stockPlantJpa->mount_new) - $mount_dif;
                                 }
                             }
 
-                            $detailSale->mount = $product['mount'];
+                            if (intval($detailSale->mount_second) != intval($product['mount_second'])) {
+                                if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
+                                    $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
+                                    $stockPlantJpa->mount_second = intval($stockPlantJpa->mount_second) + $mount_dif;
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
+                                    $stockPlantJpa->mount_second = intval($stockPlantJpa->mount_second) - $mount_dif;
+                                }
+                            }
+
+                            if (intval($detailSale->mount_ill_fated) != intval($product['mount_ill_fated'])) {
+                                if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
+                                    $stockPlantJpa->mount_ill_fated = intval($stockPlantJpa->mount_ill_fated) + $mount_dif;
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
+                                    $stockPlantJpa->mount_ill_fated = intval($stockPlantJpa->mount_ill_fated) - $mount_dif;
+                                }
+                            }
+
+                            $detailSale->mount_new = $product['mount_new'];
+                            $detailSale->mount_second = $product['mount_second'];
+                            $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                             $stockPlantJpa->save();
                         }
 
@@ -839,7 +897,9 @@ class PlantPendingController extends Controller
                         $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $stockPlantJpa->mount = $stockPlantJpa->mount - $product['mount'];
+                            $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
+                            $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_second'];
+                            $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                         } else {
                             $stockPlantJpa->status = null;
                             $productJpa->disponibility = "LIQUIDACION DE PLANTA";
@@ -850,7 +910,9 @@ class PlantPendingController extends Controller
 
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
-                        $detailSale->mount = $product['mount'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                         $detailSale->_sales_product = $request->id;
                         $detailSale->status = '1';
                         $detailSale->save();
@@ -1655,7 +1717,9 @@ class PlantPendingController extends Controller
                 'branches.id AS sale_product__branch__id',
                 'branches.name AS sale_product__branch__name',
                 'branches.correlative AS sale_product__branch__correlative',
-                'detail_sales.mount as mount',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
                 'detail_sales.description as description',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
@@ -1685,11 +1749,21 @@ class PlantPendingController extends Controller
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
                 }
-                $mount = $product['mount'];
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
                 if (isset($models[$model])) {
-                    $models[$model]['mount'] += $mount;
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
+                    $models[$model] = array(
+                        'model' => $model, 
+                        'mount_new' => $mount_new, 
+                        'mount_second' => $mount_second, 
+                        'mount_ill_fated' => $mount_ill_fated, 
+                        'relative_id' => $relativeId, 
+                        'unity' => $unity);
                 }
             }
             $count = 1;
@@ -1698,7 +1772,13 @@ class PlantPendingController extends Controller
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td>
+                        <center style='font-size:12px;color:green;'>
+                            Nu:{$detail['mount_new']} | 
+                            Se:{$detail['mount_second']} | 
+                            Ma:{$detail['mount_ill_fated']}
+                        </center>
+                    </td>
                     <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>

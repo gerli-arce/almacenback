@@ -340,6 +340,7 @@ Route::post('/plant_pending/change/pending', [PlantPendingController::class, 'pr
 Route::post('/plant_pending/is/finished', [PlantPendingController::class, 'liquidationFinished']);
 Route::post('/plant_pending/completed/paginate', [PlantPendingController::class, 'paginatePlantFinished']);
 Route::post('/plant_pending/stock/records', [PlantPendingController::class, 'getRegistersStockByPlant']);
+Route::post('/plant_pending/search', [PlantPendingController::class, 'searchMountsStockByPlant']);
 
 
 // TOWER
