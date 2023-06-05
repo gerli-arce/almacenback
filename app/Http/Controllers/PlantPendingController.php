@@ -1280,9 +1280,12 @@ class PlantPendingController extends Controller
                     $productByPlantJpa = ProductByPlant::find($product['id']);
 
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productJpa->mount = intval($productJpa->mount) + $product['mount'];
-                        $stock->mount_new = $productJpa->mount;
-                        $productByPlantJpa->mount = $productByPlantJpa->mount - $product['mount'];
+                        $stock->mount_new = $stock->mount_new + $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second + $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByPlantJpa->mount_new = $productByPlantJpa->mount_new - $product['mount_new'];
+                        $productByPlantJpa->mount_second = $productByPlantJpa->mount_second - $product['mount_second'];
+                        $productByPlantJpa->mount_ill_fated = $productByPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $productJpa->disponibility = "DISPONIBLE";
                         $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $plantJpa->name;
@@ -1300,14 +1303,18 @@ class PlantPendingController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
 
                     $entryDetail = new EntryDetail();
                     $entryDetail->_product = $productJpa->id;
-                    $entryDetail->mount = $product['mount'];
+                    $entryDetail->mount_new = $product['mount_new'];
+                    $entryDetail->mount_second = $product['mount_second'];
+                    $entryDetail->mount_ill_fated = $product['mount_ill_fated'];
                     $entryDetail->_entry_product = $entryProductsJpa->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();
@@ -1890,7 +1897,9 @@ class PlantPendingController extends Controller
                 'products.disponibility AS product__disponibility',
                 'products.product_status AS product__product_status',
                 'stock_plant._plant as _plant',
-                'stock_plant.mount as mount',
+                'stock_plant.mount_new as mount_new',
+                'stock_plant.mount_second as mount_second',
+                'stock_plant.mount_ill_fated as mount_ill_fated',
                 'stock_plant.status as status',
             ])
                 ->join('products', 'stock_plant._product', 'products.id')
@@ -1916,11 +1925,21 @@ class PlantPendingController extends Controller
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
                 }
-                $mount = $product['mount'];
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
                 if (isset($models[$model])) {
-                    $models[$model]['mount'] += $mount;
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
+                    $models[$model] = array(
+                        'model' => $model, 
+                        'mount_new' => $mount_new, 
+                        'mount_second' => $mount_second, 
+                        'mount_ill_fated' => $mount_ill_fated, 
+                        'relative_id' => $relativeId, 
+                        'unity' => $unity);
                 }
             }
             $count = 1;
@@ -1929,7 +1948,7 @@ class PlantPendingController extends Controller
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td><center style='font-size:12px;'>Nu:{$detail['mount_new']} | Se:{$detail['mount_second']} | Ma:{$detail['mount_ill_fated']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
@@ -2012,11 +2031,21 @@ class PlantPendingController extends Controller
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
                 }
-                $mount = $product['mount'];
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
                 if (isset($models[$model])) {
-                    $models[$model]['mount'] += $mount;
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
+                    $models[$model] = array(
+                        'model' => $model, 
+                        'mount_new' => $mount_new, 
+                        'mount_second' => $mount_second, 
+                        'mount_ill_fated' => $mount_ill_fated, 
+                        'relative_id' => $relativeId, 
+                        'unity' => $unity);
                 }
             }
             $count = 1;
@@ -2025,7 +2054,7 @@ class PlantPendingController extends Controller
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td><center style='font-size:12px;'>Nu:{$detail['mount_new']} || Se:{$detail['mount_second']} || Ma:{$detail['mount_ill_fated']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
