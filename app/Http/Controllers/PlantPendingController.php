@@ -1141,9 +1141,6 @@ class PlantPendingController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-                if ($column == 'mount' || $column == '*') {
-                    $q->orWhere('mount', $type, $value);
-                }
             })->where('plant__id', $request->search['plant']);
 
             $iTotalDisplayRecords = $query->count();
@@ -1162,8 +1159,37 @@ class PlantPendingController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewStockPlant::count());
+            $response->setITotalRecords(ViewStockPlant::where('plant__id', $request->search['plant'])->count());
             $response->setData($stock);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function searchProductPlant(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
+
+            $ProductByPlant = ProductByPlant::where('_plant', $request->plant)->where('_product', $request->product)->first();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData([$ProductByPlant]);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
