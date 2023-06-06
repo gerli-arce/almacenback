@@ -559,7 +559,7 @@ class PlantPendingController extends Controller
 
                     if ($product['product']['type'] == "MATERIAL") {
                         $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
-                        $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_second'];
+                        $stockPlantJpa->mount_second = $stockPlantJpa->mount_second - $product['mount_second'];
                         $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $stockPlantJpa->status = null;
