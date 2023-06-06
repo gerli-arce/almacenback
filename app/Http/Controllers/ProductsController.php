@@ -302,8 +302,12 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $entryDetail = new EntryDetail();
+                    if($request->product_status== 'NUEVO'){
+                        $entryDetail->mount_new = $request->mount;
+                    }else if($request->product_status== 'SEMINUEVO'){
+                        $entryDetail->mount_second = $request->mount;
+                    }
                     $entryDetail->_product = $productJpa->id;
-                    $entryDetail->mount = $request->mount;
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();

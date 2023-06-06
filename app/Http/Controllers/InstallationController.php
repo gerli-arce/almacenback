@@ -471,7 +471,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installations_pending', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar las instataciónes pendientes');
             }
 
