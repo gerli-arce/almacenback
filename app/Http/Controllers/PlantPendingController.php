@@ -577,7 +577,6 @@ class PlantPendingController extends Controller
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
-
                 }
             }
 
