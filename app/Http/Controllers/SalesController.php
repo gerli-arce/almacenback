@@ -310,7 +310,9 @@ class SalesController extends Controller
                                         <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
                                         <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>                                 
                                     </div>
-                                    <p style='font-size:20px; color:#2f6593'>{$detailJpa['mount']}</p>
+                                    <div>
+                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                    </div>
                                 </center>
                             </div>
                         ";

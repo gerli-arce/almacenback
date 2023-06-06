@@ -70,9 +70,9 @@ class ProductsController extends Controller
                 }
                
                 foreach ($request->data as $product) {
+                    $reppet_product = false;
 
                     if (isset($product['mac']) && isset($product['serie'])) {
-                        $reppet_product = false;
                         $productValidation = Product::select(['mac', 'serie'])
                             ->whereNotNull('mac')
                             ->whereNotNull('serie')
