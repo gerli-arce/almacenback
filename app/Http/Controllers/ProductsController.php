@@ -63,14 +63,16 @@ class ProductsController extends Controller
             $entryProduct->_update_user = $userid;
             $entryProduct->update_date = gTrace::getDate('mysql');
             $entryProduct->save();
-
+            $message_error = '';
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
+               
                 foreach ($request->data as $product) {
 
                     if (isset($product['mac']) && isset($product['serie'])) {
+                        $reppet_product = false;
                         $productValidation = Product::select(['mac', 'serie'])
                             ->whereNotNull('mac')
                             ->whereNotNull('serie')
@@ -79,10 +81,12 @@ class ProductsController extends Controller
                             ->first();
                         if ($productValidation) {
                             if ($productValidation->mac == $product['mac']) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $message_error .= "|| Ya existe un produto con el número MAC: " . $product['mac'];
+                                $reppet_product = true;
                             }
                             if ($productValidation->serie == $product['serie']) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
+                                $reppet_product = true;
                             }
                         }
                     } else {
@@ -92,7 +96,8 @@ class ProductsController extends Controller
                                 ->where('mac', $product['mac'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
+                                $reppet_product = true;
                             }
                         }
                         if (isset($product['serie'])) {
@@ -101,7 +106,8 @@ class ProductsController extends Controller
                                 ->where('serie', $product['serie'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
+                                $reppet_product = true;
                             }
                         }
                     }
@@ -140,27 +146,35 @@ class ProductsController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    $productJpa->save();
-
+                    if(!$reppet_product){
+                        $productJpa->save();
+                    }
+                    
+                    $entryDetail = new EntryDetail();
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($request->product_status == "SEMINUEVO") {
+                        $entryDetail->mount_second = $productJpa->mount_second;
                         $stock->mount_second = intval($stock->mount_second) + 1;
                     } else if ($request->product_status == "NUEVO") {
+                        $entryDetail->mount_new = $productJpa->mount_new;
                         $stock->mount_new = intval($stock->mount_new) + 1;
                     } else if ($request->product_status == "MALOGRADO") {
+                        $entryDetail->mount_ill_fated = $productJpa->mount_ill_fated;
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                     }
 
-                    $stock->save();
-
-                    $entryDetail = new EntryDetail();
+                    if(!$reppet_product){
+                        $stock->save();
+                    }
+                   
                     $entryDetail->_product = $productJpa->id;
-                    $entryDetail->mount = $productJpa->mount;
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
-                    $entryDetail->save();
+                    if(!$reppet_product){
+                        $entryDetail->save();
+                    }
                 }
             } else if ($request->type == "MATERIAL") {
                 if (!isset($request->mount)) {
@@ -228,8 +242,12 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $entryDetail = new EntryDetail();
+                    if($request->product_status== 'NUEVO'){
+                        $entryDetail->mount_new = $request->mount;
+                    }else if($request->product_status== 'SEMINUEVO'){
+                        $entryDetail->mount_second = $request->mount;
+                    }
                     $entryDetail->_product = $productJpa->id;
-                    $entryDetail->mount = $request->mount;
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();
