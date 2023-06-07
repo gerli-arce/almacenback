@@ -401,6 +401,7 @@ class ProductsController extends Controller
                 }
             })->where('branch__correlative', $branch)
                 ->where('disponibility', '!=', 'VENDIDO')
+                ->where('disponibility', '!=', 'VENDIENDO')
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
                 ->where('disponibility', '!=', 'PLANTA')
                 ->where('disponibility', '!=', 'TORRE')
@@ -596,6 +597,7 @@ class ProductsController extends Controller
             })->where('branch__correlative', $branch)
                 ->where('disponibility', '!=', 'VENDIDO')
                 ->where('disponibility', '!=', 'EN ENCOMIENDA')
+                ->where('disponibility', '!=', 'VENDIENDO')
                 ->where('type', 'EQUIPO');
 
             $iTotalDisplayRecords = $query->count();
