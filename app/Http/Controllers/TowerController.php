@@ -462,7 +462,9 @@ class TowerController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
@@ -563,7 +565,9 @@ class TowerController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
@@ -634,8 +638,10 @@ class TowerController extends Controller
                 ->where('_branch', $branch_->id)
                 ->first();
             if ($productJpa->type == "MATERIAL") {
-                $productJpa->mount = $productJpa->mount + $detailSale->mount;
-                $stock->mount_new = $productJpa->mount;
+                $stock->mount_new = $stock->mount_new + $detailSale->mount_new;
+                $stock->mount_second = $stock->mount_second + $detailSale->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $detailSale->mount_ill_fated;
+                $productJpa->mount = $stock->mount_new + $stock->mount_second;
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->product_status == "NUEVO") {
@@ -711,19 +717,43 @@ class TowerController extends Controller
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productJpa->mount = $productJpa->mount + $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
+
+
+                            if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
+                                if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
+                                    $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
+                                    $stock->mount_new = $stock->mount_new + $mount_dif;
                                 } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productJpa->mount = $productJpa->mount - $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
+                                    $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
+                                    $stock->mount_new = $stock->mount_new - $mount_dif;
                                 }
                             }
+
+                            if (intval($detailSale->mount_second) != intval($product['mount_second'])) {
+                                if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
+                                    $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
+                                    $stock->mount_second = $stock->mount_second + $mount_dif;
+                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
+                                    $stock->mount_second = $stock->mount_second - $mount_dif;
+                                }
+                            }
+
+                            if (intval($detailSale->mount_ill_fated) != intval($product['mount_ill_fated'])) {
+                                if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
+                                    $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
+                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
+                                    $stock->mount_ill_fated = $stock->mount_ill_fated - $mount_dif;
+                                }
+                            }
+
                             $stock->save();
-                            $detailSale->mount = $product['mount'];
+                            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                            $detailSale->mount_new = $product['mount_new'];
+                            $detailSale->mount_second = $product['mount_second'];
+                            $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                         }
 
                         if (!$detailSale) {
@@ -779,13 +809,17 @@ class TowerController extends Controller
                             $productByTowerJpa = ProductByTower::where('_product', $productJpa->id)
                                 ->where('_tower', $saleProductJpa->_tower)->first();
                             if ($productByTowerJpa) {
-                                $productByTowerJpa->mount = $productByTowerJpa->mount + $detail['mount'];
+                                $productByTowerJpa->mount_new = $productByTowerJpa->mount_new + $detail['mount_new'];
+                                $productByTowerJpa->mount_second = $productByTowerJpa->mount_second + $detail['mount_second'];
+                                $productByTowerJpa->mount_ill_fated = $productByTowerJpa->mount_ill_fated + $detail['mount_ill_fated'];
                                 $productByTowerJpa->save();
                             } else {
                                 $productByTowerJpa_new = new ProductByTower();
                                 $productByTowerJpa_new->_product = $productJpa->id;
                                 $productByTowerJpa_new->_tower = $saleProductJpa->_tower;
-                                $productByTowerJpa_new->mount = $detail['mount'];
+                                $productByTowerJpa_new->mount_new = $detail['mount_new'];
+                                $productByTowerJpa_new->mount_second = $detail['mount_second'];
+                                $productByTowerJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
                                 $productByTowerJpa_new->status = '1';
                                 $productByTowerJpa_new->save();
                             }
@@ -793,7 +827,9 @@ class TowerController extends Controller
                             $productByTowerJpa_new = new ProductByTower();
                             $productByTowerJpa_new->_product = $productJpa->id;
                             $productByTowerJpa_new->_tower = $saleProductJpa->_tower;
-                            $productByTowerJpa_new->mount = $detail['mount'];
+                            $productByTowerJpa_new->mount_new = $detail['mount_new'];
+                            $productByTowerJpa_new->mount_second = $detail['mount_second'];
+                            $productByTowerJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
                             $productByTowerJpa_new->status = '1';
                             $productByTowerJpa_new->save();
                         }

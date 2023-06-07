@@ -610,12 +610,16 @@ class ParcelsCreatedController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $productJpa->mount = intval($productJpa->mount) + $request->mount;
+
+
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount_new = $productJpa->mount;
+                $stock->mount_new = $stock->mount_new + $detailParcelJpa->mount_new;
+                $stock->mount_second = $stock->mount_second + $detailParcelJpa->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $detailParcelJpa->mount_ill_fated;
                 $stock->save();
+                $productJpa->mount = $stock->mount_new + $stock->mount_second;
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
                 $stock = Stock::where('_model', $productJpa->_model)
@@ -1016,9 +1020,9 @@ class ParcelsCreatedController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
 
-                    if($productJpa->product_status == 'NUEVO'){
+                    if ($productJpa->product_status == 'NUEVO') {
                         $stock->mount_new =  $stock->mount_new + 1;
-                    }else if($productJpa->product_status == 'SEMINUEVO'){
+                    } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second =  $stock->mount_second + 1;
                     }
                 } else {
@@ -1190,7 +1194,9 @@ class ParcelsCreatedController extends Controller
                             ->where('_branch', $branch_->id)
                             ->first();
 
-                        $stock->mount_new = intval($stock->mount_new) + intval($detailParcel['mount']);
+                        $stock->mount_new = intval($stock->mount_new) + intval($detailParcel['mount_new']);
+                        $stock->mount_second = intval($stock->mount_second) + intval($detailParcel['mount_second']);
+                        $stock->mount_ill_fated = intval($stock->mount_ill_fated) + intval($detailParcel['mount_ill_fated']);
                         $stock->save();
                     }
                 }

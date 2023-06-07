@@ -685,23 +685,11 @@ class FauldController extends Controller
                 $productJpa->status_product = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
 
-                    $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                    $recordProductByTechnicalJpa->_user = $userid;
-                    $recordProductByTechnicalJpa->_technical = $saleProductJpa->_technical;
-                    $recordProductByTechnicalJpa->_client = $saleProductJpa->_client;
-                    $recordProductByTechnicalJpa->_product = $productJpa->id;
-                    $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                    $recordProductByTechnicalJpa->operation = "AVERIA";
-                    $recordProductByTechnicalJpa->_sale_product = $saleProductJpa->id;
-                    $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                    $recordProductByTechnicalJpa->mount = $detail['mount'];
-                    $recordProductByTechnicalJpa->description = $detail['description'];
-                    $recordProductByTechnicalJpa->save();
-
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
                         ->where('_product', $detail['_product'])->first();
-                    $mountNew = $productByTechnicalJpa->mount + $detail['mount'];
-                    $productByTechnicalJpa->mount = $mountNew;
+                    $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $detail['mount_new'];
+                    $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $detail['mount_second'];
+                    $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
                     $productByTechnicalJpa->save();
                 }
                 $productJpa->save();

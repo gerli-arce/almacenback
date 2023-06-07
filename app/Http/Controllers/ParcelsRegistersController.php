@@ -157,11 +157,14 @@ class ParcelsRegistersController extends Controller
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
+            $message_error = "";
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
+
                 foreach ($request->data as $product) {
+                    $is_duplicate = false;
                     if (isset($product['mac']) && isset($product['serie'])) {
                         $productValidation = Product::select(['mac', 'serie'])
                             ->whereNotNull('mac')
@@ -171,10 +174,12 @@ class ParcelsRegistersController extends Controller
                             ->first();
                         if ($productValidation) {
                             if ($productValidation->mac == $product['mac']) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $is_duplicate = true;
+                                $message_error .=  "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                             if ($productValidation->serie == $product['serie']) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $is_duplicate = true;
+                                $message_error .= " || Ya existe un produto con el número de serie: " . $product['serie'];
                             }
                         }
                     } else {
@@ -184,7 +189,8 @@ class ParcelsRegistersController extends Controller
                                 ->where('mac', $product['mac'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $is_duplicate = true;
+                                $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                         }
                         if (isset($product['serie'])) {
@@ -193,7 +199,8 @@ class ParcelsRegistersController extends Controller
                                 ->Where('serie', $product['serie'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $is_duplicate = true;
+                                $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
                             }
                         }
                     }
@@ -246,17 +253,21 @@ class ParcelsRegistersController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    $productJpa->save();
+                    if(!$is_duplicate){
+                        $productJpa->save();
+                    }
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = "1";
+                    $entryDetailJpa->mount_new = "1";
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
                     }
                     $entryDetailJpa->status = "1";
-                    $entryDetailJpa->save();
+                    if(!$is_duplicate){
+                        $entryDetailJpa->save();
+                    }
                 }
             } else if ($request->type == "MATERIAL") {
                 $productJpa = Product::select([
@@ -321,7 +332,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -377,7 +388,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -394,7 +405,7 @@ class ParcelsRegistersController extends Controller
             $stock->save();
 
             $response->setStatus(200);
-            $response->setMessage('Producto agregado correctamente');
+            $response->setMessage('Producto agregado correctamente .'.$message_error);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());

@@ -78,8 +78,10 @@ class SaleController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productJpa->mount = $productJpa->mount - $product['mount'];
-                        $stock->mount_new = $productJpa->mount;
+                        $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+                        $productJpa->mount = $stock->mount_new + $stock->mount_second;
                     } else {
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = intval($stock->mount_new) - 1;
@@ -93,7 +95,9 @@ class SaleController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated= $product['mount_ill_fated'];
                     // $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
@@ -288,6 +292,7 @@ class SaleController extends Controller
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
+
                             if (intval($detailSale->mount) != intval($product['mount'])) {
                                 if (intval($detailSale->mount) > intval($product['mount'])) {
                                     $mount_dif = intval($detailSale->mount) - intval($product['mount']);
@@ -299,6 +304,8 @@ class SaleController extends Controller
                                     $stock->mount_new = $productJpa->mount;
                                 }
                             }
+
+                            
                             $stock->save();
                         }
                         $detailSale->mount = $product['mount'];
