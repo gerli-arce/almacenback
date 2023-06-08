@@ -98,7 +98,9 @@ class ParcelsCreatedController extends Controller
             $detailsParcelJpa = DetailsParcel::select(
                 'details_parcel.id as id',
                 'details_parcel._parcel as _parcel',
-                'details_parcel.mount as mount',
+                'details_parcel.mount_new as mount_new',
+                'details_parcel.mount_second as mount_second',
+                'details_parcel.mount_ill_fated as mount_ill_fated',
                 'products.id as product__id',
                 'products.type as product__type',
                 'products.mac as product__mac',
@@ -142,11 +144,21 @@ class ParcelsCreatedController extends Controller
                     $relativeId = $product['product']['model']['relative_id'];
                     $unity =  $product['product']['model']['unity']['name'];
                 }
-                $mount = $product['mount'];
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
                 if (isset($models[$model])) {
-                    $models[$model]['mount'] += $mount;
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
-                    $models[$model] = array('model' => $model, 'mount' => $mount, 'relative_id' => $relativeId, 'unity' => $unity);
+                    $models[$model] = array(
+                        'model' => $model, 
+                        'mount_new' => $mount_new, 
+                        'mount_second' => $mount_second, 
+                        'mount_ill_fated' => $mount_ill_fated, 
+                        'relative_id' => $relativeId, 
+                        'unity' => $unity);
                 }
             }
 
@@ -158,7 +170,13 @@ class ParcelsCreatedController extends Controller
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td>
+                        <center style='font-size:12px;'>
+                            Nu:<strong>{$detail['mount_new']}</strong> | 
+                            Se:<strong>{$detail['mount_second']}</strong> |
+                            Ma:<strong>{$detail['mount_ill_fated']}</strong>
+                        </center>
+                    </td>
                     <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
@@ -813,7 +831,9 @@ class ParcelsCreatedController extends Controller
                 $detailsParcelJpa = DetailsParcel::select(
                     'details_parcel.id',
                     'details_parcel._parcel',
-                    'details_parcel.mount',
+                    'details_parcel.mount_new',
+                    'details_parcel.mount_second',
+                    'details_parcel.mount_ill_fated',
                     'products.id as product__id',
                     'products.mac as product__mac',
                     'products.serie as product__serie',
