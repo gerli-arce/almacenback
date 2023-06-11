@@ -64,11 +64,11 @@ class ProductsController extends Controller
             $entryProduct->update_date = gTrace::getDate('mysql');
             $entryProduct->save();
             $message_error = '';
+            $exist_diplicates = false;
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
-               
                 foreach ($request->data as $product) {
                     $reppet_product = false;
 
@@ -83,10 +83,12 @@ class ProductsController extends Controller
                             if ($productValidation->mac == $product['mac']) {
                                 $message_error .= "|| Ya existe un produto con el número MAC: " . $product['mac'];
                                 $reppet_product = true;
+                                $exist_diplicates = true;
                             }
                             if ($productValidation->serie == $product['serie']) {
                                 $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
                                 $reppet_product = true;
+                                $exist_diplicates = true;
                             }
                         }
                     } else {
@@ -98,6 +100,7 @@ class ProductsController extends Controller
                             if ($productValidation) {
                                 $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
                                 $reppet_product = true;
+                                $exist_diplicates = true;
                             }
                         }
                         if (isset($product['serie'])) {
@@ -108,6 +111,7 @@ class ProductsController extends Controller
                             if ($productValidation) {
                                 $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
                                 $reppet_product = true;
+                                $exist_diplicates = true;
                             }
                         }
                     }
@@ -315,8 +319,13 @@ class ProductsController extends Controller
                 $stock->save();
             }
 
-            $response->setStatus(200);
-            $response->setMessage('Producto agregado correctamente');
+            if($exist_diplicates){
+                $response->setStatus(203);
+            }else{
+                $response->setStatus(200);
+            }
+
+            $response->setMessage('Producto agregado correctamente || '.$message_error);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -992,11 +1001,12 @@ class ProductsController extends Controller
                     $stock->save();
                 }
             } else {
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
-                $stock->mount_new = 0;
-                $stock->save();
+                // $stock = Stock::where('_model', $productJpa->_model)
+                //     ->where('_branch', $branch_->id)
+                //     ->first();
+                // $stock->mount_new = 0;
+                // $stock->save();
+                throw new Exception("Haga esta operación desde su STOCK.");
             }
 
             $response->setStatus(200);
