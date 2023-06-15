@@ -266,40 +266,38 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: No deje campos vaciós");
             }
 
-            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            // $salesProduct = new SalesProducts();
-            // $salesProduct->_branch = $branch_->id;
-            // $salesProduct->_plant = $request->id;
-            // $salesProduct->_type_operation = $request->_type_operation;
-            // $salesProduct->type_intallation = "";
-            // $salesProduct->date_sale = gTrace::getDate('mysql');
-            // $salesProduct->status_sale = "PENDIENTE";
-            // $salesProduct->type_pay = "GASTOS INTERNOS";
-            // $salesProduct->_creation_user = $userid;
-            // $salesProduct->creation_date = gTrace::getDate('mysql');
-            // $salesProduct->_update_user = $userid;
-            // $salesProduct->update_date = gTrace::getDate('mysql');
-            // $salesProduct->status = "1";
-            // $salesProduct->save();
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->id;
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->where('_product', $request->product['id'])->first();
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $mountNew = $productByTechnicalJpa->mount + $request->mount;
-            $productByTechnicalJpa->mount = $mountNew;
-
-            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-            $recordProductByTechnicalJpa->_user = $userid;
-            $recordProductByTechnicalJpa->_technical = $request->technical['id'];
-            $recordProductByTechnicalJpa->_product = $request->product['id'];
-            $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-            $recordProductByTechnicalJpa->mount = $request->mount;
-            $recordProductByTechnicalJpa->description = $request->description;
-            $recordProductByTechnicalJpa->save();
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
 
             $productJpa = Product::find($request->product['id']);
 
