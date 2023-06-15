@@ -260,8 +260,7 @@ class TechnicalsController extends Controller
 
             if (
                 !isset($request->product) ||
-                !isset($request->technical) ||
-                !isset($request->mount)
+                !isset($request->technical) 
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
@@ -270,7 +269,7 @@ class TechnicalsController extends Controller
 
             $salesProduct = new SalesProducts();
             $salesProduct->_branch = $branch_->id;
-            $salesProduct->_technical = $request->id;
+            $salesProduct->_technical = $request->technical['id'];
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
             $salesProduct->date_sale = gTrace::getDate('mysql');
