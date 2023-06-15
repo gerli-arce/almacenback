@@ -341,8 +341,7 @@ class TechnicalsController extends Controller
             if (
                 !isset($request->product) ||
                 !isset($request->technical) ||
-                !isset($request->reazon) ||
-                !isset($request->mount)
+                !isset($request->reazon) 
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
@@ -1087,6 +1086,39 @@ class TechnicalsController extends Controller
                 ->where('type_intallation', 'AGREGADO_A_STOCK')
                 ->where('type_operation__id', '10')->count());
             $response->setData($sales);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStockProductByModel(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar técnicos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            
+           
+            $response->setStatus(200);
+            $response->setMessage('Técnico se a eliminado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
