@@ -260,7 +260,7 @@ class TechnicalsController extends Controller
 
             if (
                 !isset($request->product) ||
-                !isset($request->technical) 
+                !isset($request->technical)
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
@@ -341,7 +341,7 @@ class TechnicalsController extends Controller
             if (
                 !isset($request->product) ||
                 !isset($request->technical) ||
-                !isset($request->reazon) 
+                !isset($request->reazon)
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
@@ -350,41 +350,53 @@ class TechnicalsController extends Controller
                 ->where('_product', $request->product['id'])
                 ->first();
 
-            $mountNew = $productByTechnicalJpa->mount - $request->mount;
-            if (intval($mountNew) < 0) {
-                throw new Exception("Error: no puede sacar una cantidad superior a la que tiene en el stock");
-            }
-            $productByTechnicalJpa->mount = $mountNew;
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $request->mount_ill_fated;
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $recordProductByTechnicalJpa = new RecordProductByTechnical();
-            $recordProductByTechnicalJpa->_user = $userid;
-            $recordProductByTechnicalJpa->_technical = $request->technical['id'];
-            $recordProductByTechnicalJpa->_product = $request->product['id'];
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "SACADO_DE_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
 
             if ($request->reazon == "ILLFATED") {
-                $recordProductByTechnicalJpa->type_operation = "MALOGRADO";
+                $salesProduct->status_sale = "MALOGRADO";
             } else if ($request->reazon == "STORE") {
-                $recordProductByTechnicalJpa->type_operation = "USO EN ALMACEN";
+                $salesProduct->status_sale = "USO EN ALMACEN";
             } else if ($request->reazon == "RETURN") {
-                $recordProductByTechnicalJpa->type_operation = "DEVOLUCION";
+                $salesProduct->status_sale = "DEVOLUCION";
                 $productJpa = Product::find($request->product['id']);
-                $mount = $productJpa->mount + $request->mount;
-                $productJpa->mount = $mount;
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount_new = $mount;
+                $stock->mount_new = $stock->mount_new +  $request->mount_new;
+                $stock->mount_second = $stock->mount_second +  $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated +  $request->mount_ill_fated;
                 $stock->save();
+                $productJpa->mount = $stock->mount_new + $stock->mount_second;
                 $productJpa->save();
             } else if ($request->reazon == "DISCOUNT") {
-                $recordProductByTechnicalJpa->type_operation = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
+                $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
             }
-            $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-            $recordProductByTechnicalJpa->mount = $request->mount;
-            $recordProductByTechnicalJpa->description = $request->description;
-            $recordProductByTechnicalJpa->save();
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
 
             $productByTechnicalJpa->save();
             $response->setStatus(200);
@@ -447,7 +459,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type','PRODUCTO')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'PRODUCTO')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -469,7 +481,8 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function getEpp(Request $request){
+    public function getEpp(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -483,7 +496,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type','EPP')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'EPP')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -1047,6 +1060,7 @@ class TechnicalsController extends Controller
                 ->where('branch__correlative', $branch)
                 ->where('technical_id', $request->search['technical'])
                 ->where('type_intallation', 'AGREGADO_A_STOCK')
+                ->orWhere('type_intallation', 'SACADO_DE_STOCK')
                 ->where('type_operation__id', '10');
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
@@ -1097,7 +1111,8 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function getStockProductByModel(Request $request){
+    public function getStockProductByModel(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -1115,10 +1130,11 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            
-           
+            $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])->where('_product', $request->product['id'])->first();
+
+            $response->setData([$ProductByTechnical]);
             $response->setStatus(200);
-            $response->setMessage('Técnico se a eliminado correctamente');
+            $response->setMessage('Operación correcta');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

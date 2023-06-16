@@ -140,6 +140,7 @@ Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProdu
 Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);
 Route::post('/technicals/records/paginate', [TechnicalsController::class, 'paginateRecords']);
 Route::post('/technicals/stock/paginate', [TechnicalsController::class, 'paginateRecords']);
+Route::post('/technicals/search/stock', [TechnicalsController::class, 'getStockProductByModel']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);
