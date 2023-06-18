@@ -293,22 +293,43 @@ class SaleController extends Controller
                                 ->where('_branch', $branch_->id)
                                 ->first();
 
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productJpa->mount = $productJpa->mount + $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productJpa->mount = $productJpa->mount - $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
+                            if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
+                                if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
+                                    $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
+                                    $stock->mount_new = $stock->mount_new + $mount_dif;
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
+                                    $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
+                                    $stock->mount_new = $stock->mount_new -  $mount_dif;
                                 }
                             }
 
-                            
+                            if (intval($detailSale->mount_second) != intval($product['mount_second'])) {
+                                if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
+                                    $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
+                                    $stock->mount_second = $stock->mount_second + $mount_dif;
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
+                                    $stock->mount_second = $stock->mount_second -  $mount_dif;
+                                }
+                            }
+
+                            if (intval($detailSale->mount_ill_fated) != intval($product['mount_ill_fated'])) {
+                                if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
+                                    $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
+                                    $stock->mount_ill_fated = $stock->mount_ill_fated -  $mount_dif;
+                                }
+                            }
+
+
+                            $productJpa->mount = $stock->mount_new + $stock->mount_second;
                             $stock->save();
                         }
-                        $detailSale->mount = $product['mount'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                         $productJpa->save();
                         $detailSale->save();
                     } else {
