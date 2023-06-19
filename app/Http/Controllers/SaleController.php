@@ -97,7 +97,7 @@ class SaleController extends Controller
                     $detailSale->_product = $productJpa->id;
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->mount_second = $product['mount_second'];
-                    $detailSale->mount_ill_fated= $product['mount_ill_fated'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     // $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
@@ -409,16 +409,23 @@ class SaleController extends Controller
                 ->where('_branch', $branch_->id)
                 ->first();
             if ($productJpa->type == "MATERIAL") {
-                $productJpa->mount = $productJpa->mount + $detailSale->mount;
-                $stock->mount_new = $productJpa->mount;
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
             } else if ($productJpa->type == "EQUIPO") {
                 $productJpa->disponibility = "DISPONIBLE";
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
                 if ($productJpa->product_status == "NUEVO") {
                     $stock->mount_new = intval($stock->mount_new) + 1;
                 } else if ($productJpa->product_status == "SEMINUEVO") {
                     $stock->mount_second = intval($stock->mount_second) + 1;
                 }
+                $productJpa->save();
             }
+
+            $productJpa->mount =  $stock->mount_new +  $stock->mount_second;
 
             $stock->save();
             $detailSale->save();
@@ -438,7 +445,8 @@ class SaleController extends Controller
         }
     }
 
-    public function delete(Request $request){
+    public function delete(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -465,11 +473,11 @@ class SaleController extends Controller
 
             $DetailSaleJpa = DetailSale::where('_sales_product', $salesProduct->id)->get();
 
-            foreach($DetailSaleJpa as $details){
+            foreach ($DetailSaleJpa as $details) {
                 $detailJpa = DetailSale::find($details['id']);
                 $productJpa = Product::find($detailJpa->_product);
-                if($productJpa->type){}
-
+                if ($productJpa->type) {
+                }
             }
 
             if (isset($request->data)) {
@@ -542,5 +550,4 @@ class SaleController extends Controller
             );
         }
     }
-
 }
