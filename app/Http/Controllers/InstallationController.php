@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\{Branch,
+use App\Models\{
+    Branch,
     DetailSale,
     Product,
     ProductByTechnical,
@@ -527,16 +528,16 @@ class InstallationController extends Controller
                     $productByTechnicalJpa = ProductByTechnical::select(
                         [
                             'id',
-                            '_technical', 
-                            '_product', 
-                            'mount_new', 
-                            'mount_second', 
-                            'mount_ill_fated', 
+                            '_technical',
+                            '_product',
+                            'mount_new',
+                            'mount_second',
+                            'mount_ill_fated',
                         ]
                     )
-                    ->where('_technical', $InstallationJpa->technical__id)
-                    ->where('_product', $detail['product']['id'])
-                    ->first();
+                        ->where('_technical', $InstallationJpa->technical__id)
+                        ->where('_product', $detail['product']['id'])
+                        ->first();
 
                     $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
                     $detail['max_second'] = $productByTechnicalJpa->mount_second + $detail['mount_second'];
@@ -553,7 +554,7 @@ class InstallationController extends Controller
             $response->setData($installJpa);
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -954,10 +955,18 @@ class InstallationController extends Controller
 
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
                 ->get();
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
                 $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
+
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+
                 $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
@@ -966,7 +975,14 @@ class InstallationController extends Controller
                     $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $detail['mount_second'];
                     $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
                     $productByTechnicalJpa->save();
+                } else {
+                    if ($productJpa->product_status == 'NUEVO') {
+                        $stock->mount_new = $stock->mount_new + 1;
+                    }else if($productJpa->product_status == 'SEMINUEVO'){
+                        $stock->mount_second = $stock->mount_second + 1;
+                    }
                 }
+                $stock->save();
                 $productJpa->save();
                 $detailSale->save();
             }

@@ -471,75 +471,37 @@ class SaleController extends Controller
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
-            $DetailSaleJpa = DetailSale::where('_sales_product', $salesProduct->id)->get();
-
-            foreach ($DetailSaleJpa as $details) {
-                $detailJpa = DetailSale::find($details['id']);
-                $productJpa = Product::find($detailJpa->_product);
-                if ($productJpa->type) {
-                }
-            }
-
-            if (isset($request->data)) {
-                foreach ($request->data as $product) {
-                    if (isset($product['id'])) {
-                        $productJpa = Product::find($product['product']['id']);
-                        $detailSale = DetailSale::find($product['id']);
-                        if ($product['product']['type'] == "MATERIAL") {
-
-                            $stock = Stock::where('_model', $productJpa->_model)
-                                ->where('_branch', $branch_->id)
-                                ->first();
-                            if (intval($detailSale->mount) != intval($product['mount'])) {
-                                if (intval($detailSale->mount) > intval($product['mount'])) {
-                                    $mount_dif = intval($detailSale->mount) - intval($product['mount']);
-                                    $productJpa->mount = $productJpa->mount + $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailSale->mount);
-                                    $productJpa->mount = $productJpa->mount - $mount_dif;
-                                    $stock->mount_new = $productJpa->mount;
-                                }
-                            }
-                            $stock->save();
-                        }
-                        $detailSale->mount = $product['mount'];
-                        $productJpa->save();
-                        $detailSale->save();
-                    } else {
-                        $productJpa = Product::find($product['product']['id']);
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
-
-                        if ($product['product']['type'] == "MATERIAL") {
-                            $productJpa->mount = $productJpa->mount -  $product['mount'];
-                            $stock->mount_new = $productJpa->mount;
-                        } else {
-                            $productJpa->disponibility = "VENDIENDO";
-
-                            if ($productJpa->product_status == "NUEVO") {
-                                $stock->mount_new = $stock->mount_new - 1;
-                            } else if ($productJpa->product_status == "SEMINUEVO") {
-                                $stock->mount_second = $stock->mount_second - 1;
-                            }
-                        }
-
-                        $stock->save();
-                        $productJpa->save();
-
-                        $detailSale = new DetailSale();
-                        $detailSale->_product = $productJpa->id;
-                        $detailSale->mount = $product['mount'];
-                        $detailSale->_sales_product = $salesProduct->id;
-                        $detailSale->status = '1';
-                        $detailSale->save();
+            $detailsSalesJpa = DetailSale::where('_sales_product', $salesProduct->id)
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $productJpa = Product::find($detail['_product']);
+                $productJpa->disponibility = "DISPONIBLE";
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                 if ($productJpa->type == "MATERIAL") {
+                    $stock->mount_new = $stock->mount_new + $detail['mount_new'];
+                    $stock->mount_second = $stock->mount_second + $detail['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated + $detail['mount_ill_fated'];
+                   
+                }else{
+                    if ($productJpa->product_status == 'NUEVO') {
+                        $stock->mount_new = $stock->mount_new + 1;
+                    }else if($productJpa->product_status == 'SEMINUEVO'){
+                        $stock->mount_second = $stock->mount_second + 1;
                     }
                 }
+                $stock->save();
+                $productJpa->save();
+                $detailSale->save();
             }
+
+          
             $salesProduct->save();
             $response->setStatus(200);
-            $response->setMessage('Instalación atualizada correctamente');
+            $response->setMessage('Venta eliminada correactamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
