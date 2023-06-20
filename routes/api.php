@@ -366,6 +366,7 @@ Route::post('/towers/search/product', [TowerController::class, 'searchProductsBy
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
 
+
 // SALE
 Route::post('/sale', [SaleController::class, 'store']);
 Route::patch('/sale', [SaleController::class, 'update']);

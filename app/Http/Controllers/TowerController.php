@@ -1128,6 +1128,7 @@ class TowerController extends Controller
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
+                    
                     $productJpa = Product::find($product['product']['id']);
                     $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
@@ -1136,9 +1137,13 @@ class TowerController extends Controller
                     $productByTowerJpa = ProductByTower::find($product['id']);
 
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productJpa->mount = intval($productJpa->mount) + $product['mount'];
-                        $stock->mount_new = $productJpa->mount;
-                        $productByTowerJpa->mount = $productByTowerJpa->mount - $product['mount'];
+                        $stock->mount_new = $stock->mount_new + $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second + $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTowerJpa->mount_new = $productByTowerJpa->mount_new - $product['mount_new'];
+                        $productByTowerJpa->mount_second = $productByTowerJpa->mount_second - $product['mount_second'];
+                        $productByTowerJpa->mount_ill_fated = $productByTowerJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        $productJpa->mount = $stock->mount_new + $stock->mount_second;
                     } else {
                         $productJpa->disponibility = "DISPONIBLE";
                         $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $towerJpa->name;
@@ -1156,14 +1161,18 @@ class TowerController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
 
                     $entryDetail = new EntryDetail();
                     $entryDetail->_product = $productJpa->id;
-                    $entryDetail->mount = $product['mount'];
+                    $entryDetail->mount_new = $product['mount_new'];
+                    $entryDetail->mount_second = $product['mount_second'];
+                    $entryDetail->mount_ill_fated = $product['mount_ill_fated'];
                     $entryDetail->_entry_product = $entryProductsJpa->id;
                     $entryDetail->status = "1";
                     $entryDetail->save();
@@ -1179,7 +1188,7 @@ class TowerController extends Controller
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
