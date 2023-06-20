@@ -364,8 +364,10 @@ class TowerController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $productJpa->mount = $productJpa->mount -  $product['mount'];
-                        $stock->mount_new = $productJpa->mount;
+                        $stock->mount_new = $stock->mount_new -  $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second -  $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated -  $product['mount_ill_fated'];
+                        $productJpa->mount = $stock->mount_new -   $stock->mount_second;
                     } else {
                         $productJpa->disponibility = "TORRE";
                         if ($productJpa->product_status == "NUEVO") {
@@ -1215,7 +1217,9 @@ class TowerController extends Controller
                     'branches.id AS sale_product__branch__id',
                     'branches.name AS sale_product__branch__name',
                     'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount as mount',
+                    'detail_sales.mount_new as mount_new',
+                    'detail_sales.mount_second as mount_second',
+                    'detail_sales.mount_ill_fated as mount_ill_fated',
                     'detail_sales.description as description',
                     'detail_sales._sales_product as _sales_product',
                     'detail_sales.status as status',
