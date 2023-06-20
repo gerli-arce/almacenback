@@ -382,7 +382,9 @@ class TowerController extends Controller
 
                     $detailSale = new DetailSale();
                     $detailSale->_product = $productJpa->id;
-                    $detailSale->mount = $product['mount'];
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -772,8 +774,10 @@ class TowerController extends Controller
                             ->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $productJpa->mount = $productJpa->mount - $product['mount'];
-                            $stock->mount_new = $productJpa->mount;
+                            $stock->mount_new =  $stock->mount_new - $product['mount_new'];
+                            $stock->mount_second =  $stock->mount_second - $product['mount_second'];
+                            $stock->mount_ill_fated =  $stock->mount_ill_fated - $product['mount_ill_fated'];
+                            $productJpa->mount = $stock->mount_new - $stock->mount_second;
                         } else {
                             $productJpa->disponibility = "TORRE";
                             if ($productJpa->product_status == "NUEVO") {
@@ -788,7 +792,9 @@ class TowerController extends Controller
 
                         $detailSale = new DetailSale();
                         $detailSale->_product = $productJpa->id;
-                        $detailSale->mount = $product['mount'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                         $detailSale->_sales_product = $request->id;
                         $detailSale->status = '1';
                         $detailSale->save();
@@ -840,7 +846,7 @@ class TowerController extends Controller
             }
 
             $response->setStatus(200);
-            $response->setMessage('La encomienda a sido eliminada correctamente');
+            $response->setMessage('La encomienda a sido actualizada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
