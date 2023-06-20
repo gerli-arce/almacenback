@@ -846,7 +846,7 @@ class TowerController extends Controller
             }
 
             $response->setStatus(200);
-            $response->setMessage('La encomienda a sido actualizada correctamente');
+            $response->setMessage('La encomienda ha sido actualizada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
@@ -998,9 +998,7 @@ class TowerController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-                if ($column == 'mount' || $column == '*') {
-                    $q->orWhere('mount', $type, $value);
-                }
+               
             })->where('tower__id', $request->search['tower']);
 
             $iTotalDisplayRecords = $query->count();
