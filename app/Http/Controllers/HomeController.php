@@ -213,8 +213,7 @@ class HomeController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewStock::orderBy('mount_new', 'asc')->where('star', '1')->take(7)->get();
-
+            $productsJpa = ViewStock::orderBy('mount_new', 'asc')->where('star', '1')->take(10)->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
