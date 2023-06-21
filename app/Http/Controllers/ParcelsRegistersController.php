@@ -7,17 +7,13 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\DetailsParcel;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Models;
 use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
-use App\Models\SalesProducts;
 use App\Models\Stock;
-use App\Models\ViewParcelsCreated;
 use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
@@ -78,6 +74,12 @@ class ParcelsRegistersController extends Controller
             if (isset($request->product_status)) {
                 $entryProductJpa->product_status = $request->product_status;
             }
+            $entryProductJpa->type_entry = "REGISTRO ENCOMIENDA";
+            $entryProductJpa->description = $request->description;
+            $entryProductJpa->_creation_user = $userid;
+            $entryProductJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductJpa->_update_user = $userid;
+            $entryProductJpa->update_date = gTrace::getDate('mysql');
             $entryProductJpa->status = "1";
             $entryProductJpa->save();
 
@@ -155,11 +157,14 @@ class ParcelsRegistersController extends Controller
             $parcelJpa->status = "1";
             $parcelJpa->save();
 
+            $message_error = "";
             if ($request->type == "EQUIPO") {
                 if (!isset($request->data)) {
                     throw new Exception("Error: No deje campos vacíos");
                 }
+
                 foreach ($request->data as $product) {
+                    $is_duplicate = false;
                     if (isset($product['mac']) && isset($product['serie'])) {
                         $productValidation = Product::select(['mac', 'serie'])
                             ->whereNotNull('mac')
@@ -169,10 +174,12 @@ class ParcelsRegistersController extends Controller
                             ->first();
                         if ($productValidation) {
                             if ($productValidation->mac == $product['mac']) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $is_duplicate = true;
+                                $message_error .=  "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                             if ($productValidation->serie == $product['serie']) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $is_duplicate = true;
+                                $message_error .= " || Ya existe un produto con el número de serie: " . $product['serie'];
                             }
                         }
                     } else {
@@ -182,7 +189,8 @@ class ParcelsRegistersController extends Controller
                                 ->where('mac', $product['mac'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número MAC: " . $product['mac']);
+                                $is_duplicate = true;
+                                $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                         }
                         if (isset($product['serie'])) {
@@ -191,7 +199,8 @@ class ParcelsRegistersController extends Controller
                                 ->Where('serie', $product['serie'])
                                 ->first();
                             if ($productValidation) {
-                                throw new Exception("Ya existe un produto con el número de serie: " . $product['serie']);
+                                $is_duplicate = true;
+                                $message_error .= "Ya existe un produto con el número de serie: " . $product['serie'];
                             }
                         }
                     }
@@ -231,6 +240,7 @@ class ParcelsRegistersController extends Controller
                         $productJpa->warranty = $request->warranty;
                     }
                     $productJpa->condition_product = $request->condition_product;
+                    $productJpa->_entry_product = $entryProductJpa->id;
                     $productJpa->date_entry = $request->date_entry;
                     if (isset($request->description)) {
                         $productJpa->description = $request->description;
@@ -243,17 +253,21 @@ class ParcelsRegistersController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    $productJpa->save();
+                    if(!$is_duplicate){
+                        $productJpa->save();
+                    }
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = "1";
+                    $entryDetailJpa->mount_new = "1";
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
                     }
                     $entryDetailJpa->status = "1";
-                    $entryDetailJpa->save();
+                    if(!$is_duplicate){
+                        $entryDetailJpa->save();
+                    }
                 }
             } else if ($request->type == "MATERIAL") {
                 $productJpa = Product::select([
@@ -318,7 +332,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -374,7 +388,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -391,8 +405,8 @@ class ParcelsRegistersController extends Controller
             $stock->save();
 
             $response->setStatus(200);
-            $response->setMessage('Producto agregado correctamente');
-        } catch (\Throwable$th) {
+            $response->setMessage('Producto agregado correctamente .'.$message_error);
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
         } finally {
@@ -401,7 +415,6 @@ class ParcelsRegistersController extends Controller
                 $response->getStatus()
             );
         }
-
     }
 
     public function paginate(Request $request)
@@ -438,6 +451,9 @@ class ParcelsRegistersController extends Controller
                 }
                 if ($column == 'date_entry' || $column == '*') {
                     $q->orWhere('date_entry', $type, $value);
+                }
+                if ($column == 'model__model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
                 }
                 if ($column == 'business_designed__name' || $column == '*') {
                     $q->orWhere('business_designed__name', $type, $value);
@@ -498,7 +514,7 @@ class ParcelsRegistersController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewParcelsRegisters::where('branch__correlative', $branch)->count());
             $response->setData($parcels);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -538,7 +554,7 @@ class ParcelsRegistersController extends Controller
             $content = $parcelJpa->image_content;
             $type = $parcelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/factura-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -578,7 +594,7 @@ class ParcelsRegistersController extends Controller
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
-            
+
             if (isset($request->_business_designed)) {
                 $parcelJpa->_business_designed = $request->_business_designed;
             }
@@ -642,6 +658,13 @@ class ParcelsRegistersController extends Controller
             }
             if (isset($request->amount)) {
                 $parcelJpa->amount = $request->amount;
+                // $EntryDetailJpa = EntryDetail::where('_entry_product', $parcelJpa->_entry_product)->first();
+                // $product = Product::find($EntryDetailJpa->_product);
+                // if($product->type == "MATERIAL"){
+                //     $EntryDetailJpa->mount = $request->amount;
+                //     $EntryDetailJpa->save();
+                // }
+
             }
             if (isset($request->value_unity)) {
                 $parcelJpa->value_unity = $request->value_unity;
@@ -654,12 +677,6 @@ class ParcelsRegistersController extends Controller
             }
             if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
-            }
-            if (isset($request->_entry_product)) {
-                $parcelJpa->_entry_product = $entryProductJpa->id;
-            }
-            if (isset($request->_branch)) {
-                $parcelJpa->_branch = $branch_->id;
             }
 
             $parcelJpa->update_date = gTrace::getDate('mysql');
@@ -675,7 +692,74 @@ class ParcelsRegistersController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getProductsByParcel(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para ver detalles de encomiendas');
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $parcelJpa = Parcel::find($id);
+
+            $entryDetailJpa = EntryDetail::select([
+                'entry_detail.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'entry_detail.mount as mount',
+                'entry_detail.description as description',
+                'entry_detail._entry_product as _entry_product',
+                'entry_detail.status as status',
+            ])
+                ->join('products', 'entry_detail._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('entry_detail._entry_product', $parcelJpa->_entry_product)->get();
+
+            $details = array();
+            foreach ($entryDetailJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $response->setStatus(200);
+            $response->setData($details);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -716,7 +800,7 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -745,7 +829,7 @@ class ParcelsRegistersController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-            
+
             $parcelJpa = Parcel::find($request->id);
             if (!$parcelJpa) {
                 throw new Exception('La encomienda que deseas restaurar no existe');
@@ -757,7 +841,7 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(200);
             $response->setMessage('La encomienda a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -767,5 +851,4 @@ class ParcelsRegistersController extends Controller
             );
         }
     }
-
 }

@@ -186,6 +186,10 @@ class ModelsController extends Controller
                 $query->whereNotNull('status');
             }
 
+            if($request->star){
+                $query->where('star', 1);
+            }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -473,4 +477,46 @@ class ModelsController extends Controller
             );
         }
     }
+
+    public function changeStar(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'models', 'update')) {
+                throw new Exception('No tienes permisos para restaurar modelos.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelsJpa = Models::find($request->id);
+            if (!$modelsJpa) {
+                throw new Exception('El modelo que deseas cambiar no existe');
+            }
+
+            $modelsJpa->star = $request->star;
+            $modelsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El modelo a sido cambiado correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
 }

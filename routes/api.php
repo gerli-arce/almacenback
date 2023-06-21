@@ -2,41 +2,19 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PDFController;
-use App\Http\Controllers\SessionController;
-use App\Http\Controllers\PeopleController;
-use App\Http\Controllers\PeoplesController;
-use App\Http\Controllers\ProvidersController;
-use App\Http\Controllers\TechnicalsController;
-use App\Http\Controllers\BranchController;
-use App\Http\Controllers\ViewController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\CategoriesController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\ModelsController;
-use App\Http\Controllers\UnityController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PermissionsController;
-use App\Http\Controllers\ProductsController;
-use App\Http\Controllers\StockController;
-use App\Http\Controllers\InstallationController;
-use App\Http\Controllers\OperationTypesController;
-use App\Http\Controllers\UserLoginController;
-use App\Http\Controllers\SalesProductsController;
-use App\Http\Controllers\FauldController;
-use App\Http\Controllers\TowerController;
-use App\Http\Controllers\KeysesController;
-use App\Http\Controllers\EjecutivesController;
-use App\Http\Controllers\RecordsController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\TransportsController;
-use App\Http\Controllers\BusinessController;
-use App\Http\Controllers\ClientsController;
-use App\Http\Controllers\ParcelsCreatedController;
-use App\Http\Controllers\ParcelsRegistersController;
-use App\Http\Controllers\PlantPendingController;
-use App\Http\Controllers\connect;
+
+use App\Http\Controllers\{
+    PDFController, SessionController, PeopleController, PeoplesController,
+    ProvidersController, TechnicalsController, BranchController, ViewController,
+    RoleController, UserController, CategoriesController, BrandController,
+    ModelsController, UnityController, ProfileController, PermissionsController,
+    ProductsController, StockController, InstallationController, OperationTypesController,
+    UserLoginController, SalesProductsController, FauldController, TowerController,
+    KeysesController, EjecutivesController, RecordsController, HomeController,
+    TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
+    ParcelsRegistersController, PlantPendingController, EntrysController, 
+    SalesController, connect, SaleController,
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -63,11 +41,19 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
 
+// PDF
+Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
+
+
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
+Route::get('/users/count', [HomeController::class, 'countUsers']);
+Route::get('/installations/count', [HomeController::class, 'countInstallations']);
+Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
+Route::get('/products/min', [HomeController::class, 'getProductsMin']);
 
 
 
@@ -143,16 +129,23 @@ Route::post('/client/paginate', [ClientsController::class, 'paginate']);
 Route::post('/technicals', [TechnicalsController::class, 'store']);
 Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
-Route::post('/technicals/add/products', [TechnicalsController::class, 'registerProductByTechnical']);
+Route::post('/technicals/add/products', [TechnicalsController::class, 'registersOperationByTechnicals']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
 Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
+Route::post('/technicals/products/stock', [TechnicalsController::class, 'getProductsByTechnicalStock']);
+Route::post('/technicals/epp/stock', [TechnicalsController::class, 'getEpp']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
+Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);
+Route::post('/technicals/records/paginate', [TechnicalsController::class, 'paginateRecords']);
+Route::post('/technicals/stock/paginate', [TechnicalsController::class, 'paginateRecords']);
+Route::post('/technicals/search/stock', [TechnicalsController::class, 'getStockProductByModel']);
 
 // EJECUTIVE
+Route::post('/ejecutives', [EjecutivesController::class, 'store']);
 Route::post('/ejecutives/search', [EjecutivesController::class, 'search']);
 Route::post('/ejecutives/paginate', [EjecutivesController::class, 'paginate']);
 
@@ -220,6 +213,7 @@ Route::post('/models/restore', [ModelsController::class, 'restore']);
 Route::post('/models/paginate', [ModelsController::class, 'paginate']);
 Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
 Route::post('/models/search', [ModelsController::class, 'search']);
+Route::post('/models/star', [ModelsController::class, 'changeStar']);
 
 // PRODUCTS
 Route::get('/products', [ProductsController::class, 'index']);
@@ -230,11 +224,18 @@ Route::post('/products/restore', [ProductsController::class, 'restore']);
 Route::post('/products/paginate', [ProductsController::class, 'paginate']);
 Route::post('/products/materials/paginate', [ProductsController::class, 'paginateMaterials']);
 Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
+Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
+Route::post('/products/epp/paginate', [ProductsController::class, 'paginateEPP']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::get('/stock/regularize', [StockController::class, 'regularizar']);
+Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
+Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
+Route::post('/stock/search', [StockController::class, 'getStockByModel']);
+Route::post('/stock/star', [StockController::class, 'changeStar']);
+
 
 
 // INTALLATIONS
@@ -243,9 +244,12 @@ Route::patch('/install', [InstallationController::class, 'update']);
 Route::delete('/install', [InstallationController::class, 'delete']);
 Route::post('/install/pending/paginate', [InstallationController::class, 'paginateInstallationsPending']);
 Route::get('/install/{id}', [InstallationController::class, 'getSale']);
+Route::get('/install/id/{id}', [InstallationController::class, 'getSales']);
 Route::get('/installation/{id}', [InstallationController::class, 'getSaleInstallation']);
 Route::post('/install/completed/paginate', [InstallationController::class, 'paginateInstallationsCompleted']);
-Route::post('/canseluse', [InstallationController::class, 'cancelUseProduct']);
+Route::post('/install/completed/pending', [InstallationController::class, 'returnToPendient']);
+Route::post('/install/canseluse', [InstallationController::class, 'cancelUseProduct']);
+Route::post('/install/generate/report', [InstallationController::class, 'generateReportByInstallation']);
 
 // FAULDS
 Route::post('/fauld', [FauldController::class, 'registerFauld']);
@@ -262,14 +266,18 @@ Route::patch('/parcels_created', [ParcelsCreatedController::class, 'update']);
 Route::post('/parcels_created/paginate', [ParcelsCreatedController::class, 'paginate']);
 Route::post('/parcels_created/searchentry', [ParcelsCreatedController::class, 'getParcelsByPerson']);
 Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getParcelByPerson']);
+Route::post('/parcels_created/guia', [ParcelsCreatedController::class, 'generateGuia']);
 Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
+Route::post('/parcels_created/save_products', [ParcelsCreatedController::class, 'updateProductsByParcel']);
+Route::post('/parcels_created/calseluse', [ParcelsCreatedController::class, 'cancelUseProduct']);
 
 
 // PARCELS REGISTER
 Route::post('/parcels_register', [ParcelsRegistersController::class, 'store']);
 Route::patch('/parcels_register', [ParcelsRegistersController::class, 'update']);
+Route::get('/parcels_register/{id}', [ParcelsRegistersController::class, 'getProductsByParcel']);
 Route::post('/parcels_register/paginate', [ParcelsRegistersController::class, 'paginate']);
 Route::delete('/parcels_register', [ParcelsRegistersController::class, 'delete']);
 Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image']);
@@ -287,14 +295,6 @@ Route::post('/keys/returnkey', [KeysesController::class, 'returnKey']);
 Route::get('/keys/record/{idkey}', [KeysesController::class, 'RecordKey']);
 Route::get('/keys/lend/{idkey}', [KeysesController::class, 'searchLendByKey']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
-
-// TOWER
-Route::post('/towers', [TowerController::class, 'store']);
-Route::patch('/towers', [TowerController::class, 'update']);
-Route::delete('/towers', [TowerController::class, 'destroy']);
-Route::post('/towers/restore', [TowerController::class, 'restore']);
-Route::post('/towers/paginate', [TowerController::class, 'paginate']);
-Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 
 
 // TRANSPORTS
@@ -318,14 +318,86 @@ Route::post('/business/search', [BusinessController::class, 'search']);
 
 // PLANT PENDING
 Route::post('/plant_pending', [PlantPendingController::class, 'store']);
+Route::patch('/plant_pending', [PlantPendingController::class, 'update']);
 Route::post('/plant_pending/paginate', [PlantPendingController::class, 'paginate']);
-Route::post('/plant_pending/register/liquidation', [PlantPendingController::class, 'registerLiquidations']);
+Route::post('/plant_pending/add/stock', [PlantPendingController::class, 'setStockProductsByPlant']);
+Route::get('/plant_pending/get/stock/{id}', [PlantPendingController::class, 'getStockProductsByPlant']);
+Route::post('/plant_pending/paginate/stock', [PlantPendingController::class, 'paginateStockPlant']);
+Route::post('/plant_pending/paginate/stock/products', [PlantPendingController::class, 'paginateStockProductsByPlant']);
+Route::post('/plant_pending/liquidation', [PlantPendingController::class, 'registerLiquidations']);
+Route::patch('/plant_pending/liquidation', [PlantPendingController::class, 'updateProductsByLiqidation']);
+Route::post('/plant_pending/liquidation/return', [PlantPendingController::class, 'returnProductsByPlant']);
+Route::post('/plant_pending/stock/return', [PlantPendingController::class, 'returnProductsStockByPlant']);
 Route::get('/plant_pending/{id}', [PlantPendingController::class, 'getSale']);
+Route::get('/plant_pending/records/{id}', [PlantPendingController::class, 'getRecords']);
+Route::get('/plant_pending/records/returns/{id}', [PlantPendingController::class, 'recordSales']);
+Route::post('/plant_pending/liquidation/canseluse/products', [PlantPendingController::class, 'cancelUseProduct']);
+Route::delete('/plant_pending/liquidation/delete', [PlantPendingController::class, 'delete_liquidation']);
+Route::post('/plant_pending/products', [PlantPendingController::class, 'getProductsPlant']);
+Route::post('/plant_pending/stock', [PlantPendingController::class, 'getProductsPlant']);
+Route::post('/plant_pending/report', [PlantPendingController::class, 'generateReportByLiquidation']);
+Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
+Route::post('/plant_pending/stock/plant', [PlantPendingController::class, 'generateReportByStockByPlant']);
+Route::post('/plant_pending/update/stock/product', [PlantPendingController::class, 'updateStokByProduct']);
+Route::post('/plant_pending/change/complet', [PlantPendingController::class, 'projectCompleted']);
+Route::post('/plant_pending/change/pending', [PlantPendingController::class, 'projectPending']);
+Route::post('/plant_pending/is/finished', [PlantPendingController::class, 'liquidationFinished']);
+Route::post('/plant_pending/completed/paginate', [PlantPendingController::class, 'paginatePlantFinished']);
+Route::post('/plant_pending/stock/records', [PlantPendingController::class, 'getRegistersStockByPlant']);
+Route::post('/plant_pending/search', [PlantPendingController::class, 'searchMountsStockByPlant']);
+Route::post('/plant_pending/products/search', [PlantPendingController::class, 'searchProductPlant']);
+
+
+// TOWER
+Route::post('/towers', [TowerController::class, 'store']);
+Route::patch('/towers', [TowerController::class, 'update']);
+Route::delete('/towers', [TowerController::class, 'destroy']);
+Route::post('/towers/restore', [TowerController::class, 'restore']);
+Route::post('/towers/paginate', [TowerController::class, 'paginate']);
+Route::post('/towers/paginate/stock', [TowerController::class, 'paginateStockTower']);
+Route::post('/towers/liquidation/create', [TowerController::class, 'registerLiquidations']);
+Route::patch('/towers/liquidation/create', [TowerController::class, 'updateProductsByLiqidation']);
+Route::post('/towers/liquidation/return', [TowerController::class, 'returnProductsByTower']);
+Route::get('/towers/{id}', [TowerController::class, 'getSale']);
+Route::get('/towers/records/{id}', [TowerController::class, 'getRecords']);
+Route::post('/towers/canseluse/product', [TowerController::class, 'cancelUseProduct']);
+Route::get('/towers/records/returns/{id}', [TowerController::class, 'recordSales']);
+Route::post('/towers/stock', [TowerController::class, 'getStockTower']);
+Route::delete('/towers/liquidation/delete', [TowerController::class, 'delete_liquidation']);
+Route::post('/towers/search/product', [TowerController::class, 'searchProductsByTowerByModel']);
+Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
+
+
+
+// SALE
+Route::post('/sale', [SaleController::class, 'store']);
+Route::patch('/sale', [SaleController::class, 'update']);
+Route::post('/sale/paginate', [SaleController::class, 'paginate']);
+Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
+Route::post('/sale/detail/canseluse', [SaleController::class, 'cancelUseProduct']);
+
 
 
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
 Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsByEquipment']);
+Route::post('/record/product/return', [RecordsController::class, 'returnEqipment']);
+
+
+// ENTRYS 
+
+Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
+Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
+Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
+Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
+
+// SALES
+
+Route::post('/sales/paginate', [SalesController::class, 'paginate']);
+Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
+
+
+
 
 // Route::get('/traslat', [connect::class, 'dats']);

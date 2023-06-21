@@ -259,15 +259,15 @@ class UserController extends Controller
                 $userJpa->_branch = $request->_branch;
             }
 
-            if (isset($request->_person)) {
-                $personValidation = User::select(['id', 'username', '_person'])
-                    ->where('_person', '=', $request->_person)
-                    ->where('id', '!=', $request->id)->first();
-                if ($personValidation) {
-                    throw new Exception("Error: Esta persona ya tiene un usuario");
-                }
-                $userJpa->_person = $request->_person;
-            }
+            // if (isset($request->_person)) {
+            //     $personValidation = User::select(['id', 'username', '_person'])
+            //         ->where('_person', '=', $request->_person)
+            //         ->where('id', '!=', $request->id)->first();
+            //     if ($personValidation) {
+            //         throw new Exception("Error: Esta persona ya tiene un usuario");
+            //     }
+            //     $userJpa->_person = $request->_person;
+            // }
 
             if ($request->_role) {
                 $userJpa->_role = $request->_role;
