@@ -1185,7 +1185,6 @@ class TowerController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
