@@ -50,6 +50,8 @@ Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
 Route::get('/ejecutives/count', [HomeController::class, 'countEjecutives']);
 Route::get('/clients/count', [HomeController::class, 'countClients']);
+Route::get('/users/count', [HomeController::class, 'countUsers']);
+Route::get('/installations/count', [HomeController::class, 'countInstallations']);
 Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
 Route::get('/products/min', [HomeController::class, 'getProductsMin']);
 
