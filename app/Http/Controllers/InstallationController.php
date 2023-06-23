@@ -961,7 +961,7 @@ class InstallationController extends Controller
             foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
+                $productJpa = Product::find($detail['_product']);
 
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
@@ -994,7 +994,7 @@ class InstallationController extends Controller
             $response->setMessage('La instalación se elimino correctamente.');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
