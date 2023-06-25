@@ -1123,18 +1123,6 @@ class ProductsController extends Controller
                 $query->whereNotNull('status');
             }
 
-            if (isset($request->search['brand'])) {
-                $query->where('brand__id', $request->search['brand']);
-            }
-            if (isset($request->search['category'])) {
-                $query->where('category__id', $request->search['category']);
-            }
-            if (isset($request->search['model'])) {
-                $query->where('model__id', $request->search['model']);
-            }
-            if (isset($request->search['branch'])) {
-                $query->where('branch__id', $request->search['branch']);
-            }
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -1171,7 +1159,8 @@ class ProductsController extends Controller
                 if ($column == 'num_bill' || $column == '*') {
                     $q->orWhere('num_bill', $type, $value);
                 }
-            })->where('type', 'MATERIAL');
+            })->where('type', 'MATERIAL')
+            ->where('branch__correlative', $branch);
 
             $iTotalDisplayRecords = $query->count();
             $productsJpa = $query
