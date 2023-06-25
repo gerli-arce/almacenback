@@ -161,11 +161,8 @@ Route::post('/users/media', [UserController::class, 'searchByMedia']);
 
 // PROFILE
 Route::get('/profile/{relative_id}/{zize}', [ProfileController::class, 'profile']);
-Route::put('/profile/account', [ProfileController::class, 'account']);
 Route::patch('/profile/account', [ProfileController::class, 'account']);
-Route::put('/profile/password', [ProfileController::class, 'password']);
 Route::patch('/profile/password', [ProfileController::class, 'password']);
-Route::put('/profile/personal', [ProfileController::class, 'personal']);
 Route::patch('/profile/personal', [ProfileController::class, 'personal']);
 
 // CATEGORIES
