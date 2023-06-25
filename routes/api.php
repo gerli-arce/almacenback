@@ -336,6 +336,7 @@ Route::post('/plant_pending/report', [PlantPendingController::class, 'generateRe
 Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
 Route::post('/plant_pending/stock/plant', [PlantPendingController::class, 'generateReportByStockByPlant']);
 Route::post('/plant_pending/update/stock/product', [PlantPendingController::class, 'updateStokByProduct']);
+Route::post('/plant_pending/update/product/product', [PlantPendingController::class, 'updateProductByProduct']);
 Route::post('/plant_pending/change/complet', [PlantPendingController::class, 'projectCompleted']);
 Route::post('/plant_pending/change/pending', [PlantPendingController::class, 'projectPending']);
 Route::post('/plant_pending/is/finished', [PlantPendingController::class, 'liquidationFinished']);

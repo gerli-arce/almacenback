@@ -6,7 +6,22 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\{
-    Branch, DetailSale, EntryDetail, EntryProducts, Plant, Product, ProductByPlant, ViewSales, Response, SalesProducts, Stock, StockPlant, Parcel, ViewPlant, ViewProductsByPlant, ViewDetailsSales, ViewStockPlant, ViewStockProductsByPlant
+    Branch, 
+    DetailSale, 
+    EntryDetail, 
+    EntryProducts, 
+    Plant, 
+    Product, 
+    ProductByPlant, 
+    ViewSales, 
+    Response, 
+    SalesProducts, 
+    Stock, 
+    StockPlant, 
+    Parcel, 
+    ViewPlant, 
+    ViewProductsByPlant, 
+    ViewDetailsSales, ViewStockPlant, ViewStockProductsByPlant
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -2148,6 +2163,47 @@ class PlantPendingController extends Controller
             );
         }
     }
+
+    public function updateProductByProduct(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $productPlantJpa = ProductByPlant::find($request->id);
+            if (!$productPlantJpa) {
+                throw new Exception('El producto no existe');
+            }
+
+            $productPlantJpa->mount_new = $request->mount_new;
+            $productPlantJpa->mount_second = $request->mount_second;
+            $productPlantJpa->mount_ill_fated = $request->mount_ill_fated;
+            $productPlantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El producto se actualizo correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    } 
 
     public function projectCompleted(Request $request)
     {
