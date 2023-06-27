@@ -119,7 +119,6 @@ class TowerController extends Controller
                 'description',
                 'latitude',
                 'longitude',
-                'address',
                 'relative_id',
                 'status',
             ])
@@ -142,9 +141,6 @@ class TowerController extends Controller
                 }
                 if ($column == 'longitude' || $column == '*') {
                     $q->orWhere('longitude', $type, $value);
-                }
-                if ($column == 'address' || $column == '*') {
-                    $q->orWhere('address', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
