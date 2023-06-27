@@ -54,7 +54,8 @@ class TowerController extends Controller
             $towerJpa = new Tower();
             $towerJpa->name = $request->name;
             $towerJpa->description = $request->description;
-            $towerJpa->coordenates = $request->coordenates;
+            $towerJpa->longitude = $request->longitude;
+            $towerJpa->latitude = $request->latitude;
             $towerJpa->address = $request->address;
             $towerJpa->relative_id = guid::short();
 
@@ -116,7 +117,8 @@ class TowerController extends Controller
                 'id',
                 'name',
                 'description',
-                'coordenates',
+                'latitude',
+                'longitude',
                 'address',
                 'relative_id',
                 'status',
@@ -135,8 +137,11 @@ class TowerController extends Controller
                 if ($column == 'name' || $column == '*') {
                     $q->orWhere('name', $type, $value);
                 }
-                if ($column == 'coordenates' || $column == '*') {
-                    $q->orWhere('coordenates', $type, $value);
+                if ($column == 'latitude' || $column == '*') {
+                    $q->orWhere('latitude', $type, $value);
+                }
+                if ($column == 'longitude' || $column == '*') {
+                    $q->orWhere('longitude', $type, $value);
                 }
                 if ($column == 'address' || $column == '*') {
                     $q->orWhere('address', $type, $value);
@@ -255,8 +260,12 @@ class TowerController extends Controller
                 $towerJpa->name = $request->name;
             }
 
-            if (isset($request->coordenates)) {
-                $towerJpa->coordenates = $request->coordenates;
+            if (isset($request->latitude)) {
+                $towerJpa->latitude = $request->latitude;
+            }
+
+            if (isset($request->longitude)) {
+                $towerJpa->longitude = $request->longitude;
             }
 
             if (isset($request->address)) {
