@@ -364,6 +364,7 @@ Route::post('/towers/stock', [TowerController::class, 'getStockTower']);
 Route::delete('/towers/liquidation/delete', [TowerController::class, 'delete_liquidation']);
 Route::post('/towers/search/product', [TowerController::class, 'searchProductsByTowerByModel']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
+Route::post('/towers/image', [TowerController::class, 'setImage']);
 
 
 

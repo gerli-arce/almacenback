@@ -17,6 +17,7 @@ use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\Tower;
 use App\Models\ViewProductsByTower;
+use App\Models\PhotographsByTower;
 use App\Models\ViewStockTower;
 use Exception;
 use Illuminate\Http\Request;
@@ -1374,6 +1375,70 @@ class TowerController extends Controller
             $response->setStatus(200);
             $response->setMessage('La torre a sido restaurada correctamente');
             $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = new PhotographsByTower();
+            $PhotographsByTowerJpa->_tower = $request->id;
+            $PhotographsByTowerJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByTowerJpa->image_type = $request->image_type;
+                    $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            }else{
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByTowerJpa->_creation_user = $userid;
+            $PhotographsByTowerJpa->creation_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->_update_user = $userid;
+            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->status = "1";
+            $PhotographsByTowerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
