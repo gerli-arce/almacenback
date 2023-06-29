@@ -158,6 +158,7 @@ Route::post('/users/restore', [UserController::class, 'restore']);
 Route::get('/users/get/{username}', [UserController::class, 'getUser']);
 Route::post('/users/paginate', [UserController::class, 'paginate']);
 Route::post('/users/media', [UserController::class, 'searchByMedia']);
+Route::get('/users/{id}', [UserController::class, 'getUserById']);
 
 // PROFILE
 Route::get('/profile/{relative_id}/{zize}', [ProfileController::class, 'profile']);
@@ -366,6 +367,9 @@ Route::post('/towers/search/product', [TowerController::class, 'searchProductsBy
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
 Route::get('/towerimgs/{id}/{zize}', [TowerController::class, 'images']);
 Route::post('/towers/image', [TowerController::class, 'setImage']);
+Route::patch('/towers/image', [TowerController::class, 'updateImage']);
+Route::delete('/towers/image/{id}', [TowerController::class, 'deleteImage']);
+Route::get('/towers/image/{id}', [TowerController::class, 'getImages']);
 
 
 

@@ -401,5 +401,35 @@ class UserController extends Controller
             );
         }
     }
+
+    public function getUserById($id){
+        $response = new Response();
+        try {
+
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $userJpa = User::find($id);
+            if (!$userJpa) {
+                throw new Exception("Este usuario no existe");
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData(['username'=>$userJpa->username]);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
     
 }

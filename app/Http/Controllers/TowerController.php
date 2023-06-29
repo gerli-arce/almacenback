@@ -1004,7 +1004,6 @@ class TowerController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-               
             })->where('tower__id', $request->search['tower']);
 
             $iTotalDisplayRecords = $query->count();
@@ -1036,7 +1035,8 @@ class TowerController extends Controller
         }
     }
 
-    public function searchProductsByTowerByModel(Request $request){
+    public function searchProductsByTowerByModel(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1134,7 +1134,7 @@ class TowerController extends Controller
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
-                    
+
                     $productJpa = Product::find($product['product']['id']);
                     $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
@@ -1193,7 +1193,7 @@ class TowerController extends Controller
             $response->setMessage('Operación correcta');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -1426,7 +1426,7 @@ class TowerController extends Controller
                 } else {
                     throw new Exception("Una imagen debe ser cargada.");
                 }
-            }else{
+            } else {
                 throw new Exception("Una imagen debe ser cargada.");
             }
 
@@ -1450,7 +1450,8 @@ class TowerController extends Controller
         }
     }
 
-    public function getImages(Request $request){
+    public function updateImage(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1468,9 +1469,7 @@ class TowerController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
-            $PhotographsByTowerJpa = new PhotographsByTower();
-            $PhotographsByTowerJpa->_tower = $request->id;
+            $PhotographsByTowerJpa = PhotographsByTower::find($request->id);
             $PhotographsByTowerJpa->description = $request->description;
 
             if (
@@ -1489,19 +1488,56 @@ class TowerController extends Controller
                 } else {
                     throw new Exception("Una imagen debe ser cargada.");
                 }
-            }else{
+            } else {
                 throw new Exception("Una imagen debe ser cargada.");
             }
-
-            $PhotographsByTowerJpa->_creation_user = $userid;
-            $PhotographsByTowerJpa->creation_date = gTrace::getDate('mysql');
+           
             $PhotographsByTowerJpa->_update_user = $userid;
             $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
-            $PhotographsByTowerJpa->status = "1";
             $PhotographsByTowerJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('');
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_tower', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByTowerJpa->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -1561,6 +1597,44 @@ class TowerController extends Controller
                 $content,
                 $response->getStatus()
             )->header('Content-Type', $type);
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = PhotographsByTower::find($id);
+            $PhotographsByTowerJpa->_update_user = $userid;
+            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->status = null;
+            $PhotographsByTowerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
         }
     }
 }
