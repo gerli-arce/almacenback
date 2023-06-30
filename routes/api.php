@@ -405,5 +405,6 @@ Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate
 // ROOM
 
 Route::post('/room', [RoomController::class, 'store']);
+Route::post('/room/paginate', [RoomController::class, 'paginate']);
 
 // Route::get('/traslat', [connect::class, 'dats']);

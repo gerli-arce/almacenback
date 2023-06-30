@@ -28,8 +28,7 @@ class RoomController extends Controller
             }
 
             if (
-                !isset($request->role) ||
-                !isset($request->priority)
+                !isset($request->name)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -73,6 +72,81 @@ class RoomController extends Controller
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginate(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'users', 'read')) {
+                throw new Exception('No tienes permisos para listar usuarios');
+            }
+
+            $dat = gValidate::check($role->permissions, $branch, 'users', 'read');
+
+            $query = Room::select([
+                'id',
+                'name',
+                'description',
+                'relative_id',
+                '_creation_user',
+                'creation_date',
+                '_update_user',
+                'update_date',
+                'status',
+            ])
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
+            // }
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'name' || $column == '*') {
+                    $q->where('name', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->where('description', $type, $value);
+                }
+               
+            });
+            $iTotalDisplayRecords = $query->count();
+
+            $roomsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+          
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(Room::count());
+            $response->setData($roomsJpa->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
