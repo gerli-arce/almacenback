@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect, SaleController,
+    SalesController, connect, SaleController, RoomController,
 };
 
 /*
@@ -402,6 +402,8 @@ Route::post('/sales/paginate', [SalesController::class, 'paginate']);
 Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
 
 
+// ROOM
 
+Route::post('/room', [RoomController::class, 'store']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
