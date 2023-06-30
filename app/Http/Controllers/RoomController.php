@@ -155,4 +155,58 @@ class RoomController extends Controller
         }
     }
 
+    public function image($relative_id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($relative_id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $roomJpa = Room::select([
+                "room.image_$size as image_content",
+                'room.image_type',
+
+            ])
+                ->where('relative_id', $relative_id)
+                ->first();
+
+            if (!$roomJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$roomJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $roomJpa->image_content;
+            $type = $roomJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/room-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+
 }
+
+
