@@ -69,7 +69,7 @@ class RoomController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El rol se a agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -99,11 +99,9 @@ class RoomController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $roomJpa = new Room();
+            $roomJpa = Room::find($request->id);
             $roomJpa->name = $request->name;
-            if ($request->description) {
-                $roomJpa->description = $request->description;
-            }
+            $roomJpa->description = $request->description;
 
             if (
                 isset($request->image_type) &&
@@ -125,17 +123,13 @@ class RoomController extends Controller
                 }
             }
 
-            $roomJpa->relative_id = guid::short();
-            $roomJpa->creation_date = gTrace::getDate('mysql');
-            $roomJpa->_creation_user = $userid;
             $roomJpa->update_date = gTrace::getDate('mysql');
             $roomJpa->_update_user = $userid;
-            $roomJpa->status = "1";
             $roomJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El rol se a agregado correctamente');
-        } catch (\Throwable$th) {
+            $response->setMessage('');
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -193,7 +187,6 @@ class RoomController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->where('description', $type, $value);
                 }
-               
             });
             $iTotalDisplayRecords = $query->count();
 
@@ -202,7 +195,7 @@ class RoomController extends Controller
                 ->take($request->length)
                 ->get();
 
-          
+
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -210,7 +203,7 @@ class RoomController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Room::count());
             $response->setData($roomsJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
@@ -271,8 +264,4 @@ class RoomController extends Controller
             )->header('Content-Type', $type);
         }
     }
-
-
 }
-
-
