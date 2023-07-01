@@ -405,6 +405,7 @@ Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate
 // ROOM
 
 Route::post('/room', [RoomController::class, 'store']);
+Route::patch('/room', [RoomController::class, 'update']);
 Route::post('/room/paginate', [RoomController::class, 'paginate']);
 Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
 
