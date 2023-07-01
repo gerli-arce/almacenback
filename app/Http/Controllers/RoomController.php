@@ -128,7 +128,7 @@ class RoomController extends Controller
             $roomJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('');
+            $response->setMessage('Operación correcta, datos de cuarto actualizados correctamente.');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
