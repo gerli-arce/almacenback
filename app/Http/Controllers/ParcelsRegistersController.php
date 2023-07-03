@@ -980,7 +980,7 @@ class ParcelsRegistersController extends Controller
             );
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Instlación.pdf');
+            return $pdf->stream('Reporte de registro de encomiendas.pdf');
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
