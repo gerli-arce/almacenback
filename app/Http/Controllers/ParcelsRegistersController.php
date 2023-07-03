@@ -867,6 +867,7 @@ class ParcelsRegistersController extends Controller
             }
             $options = new Options();
             $options->set('isRemoteEnabled', true);
+            $options->set('enable_html5_parser', true);
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportParcelRegister.html');
 
@@ -894,6 +895,8 @@ class ParcelsRegistersController extends Controller
                 $parcels[] = $parcel;
             }
             $sumary = '';
+            $bills = '';
+            $count = 1;
 
             foreach ($parcels as $parcel) {
                 $model = "
@@ -949,7 +952,7 @@ class ParcelsRegistersController extends Controller
 
                 $sumary .= "
                 <tr>
-                    <td><center >{$parcel['id']}</center></td>
+                    <td><center >{$count}</center></td>
                     <td><center >{$model}</center></td>
                     <td><center >{$reception}</center></td>
                     <td><center >{$trasport}</center></td>
@@ -957,6 +960,21 @@ class ParcelsRegistersController extends Controller
                     <td><center >{$price}</center></td>
                 </tr>
                 ";
+
+
+                $bills .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
+                    <center>
+                        <img 
+                            src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='no se encontro la factura' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
+                    
+                    </center>
+                </div>
+                ";
+
+
+                $count += 1;
             }
 
             $template = str_replace(
@@ -967,6 +985,7 @@ class ParcelsRegistersController extends Controller
                     '{date_start_str}',
                     '{date_end_str}',
                     '{summary}',
+                    '{bills}',
                 ],
                 [
                     $branch_->name,
@@ -975,6 +994,7 @@ class ParcelsRegistersController extends Controller
                     $request->date_start_str,
                     $request->date_end_str,
                     $sumary,
+                    $bills,
                 ],
                 $template
             );
