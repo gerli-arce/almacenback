@@ -14,6 +14,7 @@ use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
+use App\Models\ViewUsers;
 use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
@@ -255,7 +256,7 @@ class ParcelsRegistersController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    if(!$is_duplicate){
+                    if (!$is_duplicate) {
                         $productJpa->save();
                     }
 
@@ -267,7 +268,7 @@ class ParcelsRegistersController extends Controller
                         $entryDetailJpa->description = $product['description'];
                     }
                     $entryDetailJpa->status = "1";
-                    if(!$is_duplicate){
+                    if (!$is_duplicate) {
                         $entryDetailJpa->save();
                     }
                 }
@@ -407,7 +408,7 @@ class ParcelsRegistersController extends Controller
             $stock->save();
 
             $response->setStatus(200);
-            $response->setMessage('Producto agregado correctamente .'.$message_error);
+            $response->setMessage('Producto agregado correctamente .' . $message_error);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
@@ -854,7 +855,8 @@ class ParcelsRegistersController extends Controller
         }
     }
 
-    public function generateReport(Request $request){
+    public function generateReport(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -870,87 +872,110 @@ class ParcelsRegistersController extends Controller
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname'
+            ])->where('id', $userid)->first();
 
-            $type_operation = '';
 
+            $parcelsJpa = ViewParcelsRegisters::select(['*'])
+                ->orderBy('id', 'desc')
+                ->whereNotNull('status')
+                ->where('branch__correlative', $branch)
+                ->get();;
 
-
+            $parcels = array();
+            foreach ($parcelsJpa as $parcelJpa) {
+                $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+                $parcels[] = $parcel;
+            }
             $sumary = '';
 
+            foreach ($parcels as $parcel) {
+                $model = "
+                <div>
+                    <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
+                    <img class='img-fluid img-thumbnail' 
+                        src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+                </div>
+                ";
 
-            // foreach ($details as $detail) {
+                $reception = "
+                <div style='font-size: 9px;'>
+                    <p><center><strong>{$parcel['business_designed']['name']}</strong></center></p>
+                    <hr>
+                    <p>Envio: <strong>{$parcel['date_send']}</strong></p>
+                    <p>Recojo: <strong>{$parcel['date_entry']}</strong></p>
+                </div>
+                ";
 
-            //     $model = "
-            //     <div>
-            //         <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
-            //         <img class='img-fluid img-thumbnail' 
-            //             src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
-            //     </div>
-            //     ";
+                $trasport = "
+                <div style='font-size: 9px;'>
+                    <p><center><strong>{$parcel['business_transport']['name']}</strong></center></p>
+                    <p>DOC: <strong>{$parcel['business_transport']['doc_number']}</strong></p>
+                    <p>Nº Comprobante: <strong>{$parcel['num_voucher']}</strong></p>
+                    <p>Precio: <strong>S/.{$parcel['price_transport']}</strong></p>
+                </div>
+                ";
 
-            //     $medida = "
-            //     <div>
-            //         <p>{$detail['product']['model']['unity']['name']}</p>
-            //         <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
-            //     </div>
-            //     ";
+                $provider = "
+                <div style='font-size: 9px;'>
+                    <p><center><strong>{$parcel['provider']['name']}</strong></center></p>
+                    <p>DOC: <strong>{$parcel['provider']['doc_number']}</strong></p>
+                    <p>Nº GUIA: <strong>{$parcel['num_guia']}</strong></p>
+                    <p>Nº Factura: <strong>{$parcel['num_bill']}</strong></p>
+                    <hr>
+                    <center>
+                        <p><strong>{$parcel['model']['unity']['name']}</strong></p>
+                        <p><strong>{$parcel['mount_product']}</strong></p>
+                    </center>
+                </div>
+                ";
 
-            //     $mac_serie = "
-            //         <div>
-            //             <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
-            //             <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
-            //         </div>
-            //     ";
+                $price = "
+                <div style='font-size: 9px;'>
+                    <p>Total: <strong>{$parcel['total']}</strong></p>
+                    <p>Importe: <strong>{$parcel['amount']}</strong></p>
+                    <p>IGV: <strong>{$parcel['igv']}</strong></p>
+                    <p>V. Unitario: <strong>{$parcel['value_unity']}</strong></p>
+                    <p>P. Unitario: <strong>{$parcel['price_unity']}</strong></p>
+                </div>
+                ";
 
 
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center >{$detail['id']}</center></td>
-            //         <td><center >{$model}</center></td>
-            //         <td><center >{$medida}</center></td>
-            //         <td><center >{$mac_serie}</center></td>
-            //     </tr>
-            //     ";
-            // }
+                $sumary .= "
+                <tr>
+                    <td><center >{$parcel['id']}</center></td>
+                    <td><center >{$model}</center></td>
+                    <td><center >{$reception}</center></td>
+                    <td><center >{$trasport}</center></td>
+                    <td><center >{$provider}</center></td>
+                    <td><center >{$price}</center></td>
+                </tr>
+                ";
+            }
 
-            // $fecha_hora = $installJpa['issue_date'];
-            // $parts_date = explode(" ", $fecha_hora);
-            // $fecha = $parts_date[0];
-            // $hora = $parts_date[1];
-
-            // $template = str_replace(
-            //     [
-            //         '{num_operation}',
-            //         '{type_operation}',
-            //         '{client}',
-            //         '{issue_date}',
-            //         '{technical}',
-            //         '{issue_hour}',
-            //         '{date_sale}',
-            //         '{ejecutive}',
-            //         '{price}',
-            //         '{type}',
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
-            //         $installJpa['type_operation']['operation'],
-            //         $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
-            //         $fecha,
-            //         $installJpa['technical']['name'] . ' ' . $installJpa['technical']['lastname'],
-            //         $hora,
-            //         $installJpa['date_sale'],
-            //         $installJpa['user_issue']['people']['name'] . ' ' . $installJpa['user_issue']['people']['lastname'],
-            //         'S/.' . $installJpa['price_installation'],
-            //         $installJpa['type_intallation'],
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $sumary,
-            //     ],
-            //     $template
-            // );
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{date_start_str}',
+                    '{date_end_str}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $request->date_start_str,
+                    $request->date_end_str,
+                    $sumary,
+                ],
+                $template
+            );
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Instlación.pdf');
