@@ -18,6 +18,8 @@ use App\Models\ViewParcelsRegisters;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class ParcelsRegistersController extends Controller
 {
@@ -820,7 +822,7 @@ class ParcelsRegistersController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'parcles', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'delete_restore')) {
                 throw new Exception('No tienes permisos para encomiendas.');
             }
 
@@ -845,6 +847,117 @@ class ParcelsRegistersController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReport(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas registradas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportParcelRegister.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+
+            $type_operation = '';
+
+
+
+            $sumary = '';
+
+
+            // foreach ($details as $detail) {
+
+            //     $model = "
+            //     <div>
+            //         <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
+            //         <img class='img-fluid img-thumbnail' 
+            //             src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+            //     </div>
+            //     ";
+
+            //     $medida = "
+            //     <div>
+            //         <p>{$detail['product']['model']['unity']['name']}</p>
+            //         <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
+            //     </div>
+            //     ";
+
+            //     $mac_serie = "
+            //         <div>
+            //             <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
+            //             <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
+            //         </div>
+            //     ";
+
+
+            //     $sumary .= "
+            //     <tr>
+            //         <td><center >{$detail['id']}</center></td>
+            //         <td><center >{$model}</center></td>
+            //         <td><center >{$medida}</center></td>
+            //         <td><center >{$mac_serie}</center></td>
+            //     </tr>
+            //     ";
+            // }
+
+            // $fecha_hora = $installJpa['issue_date'];
+            // $parts_date = explode(" ", $fecha_hora);
+            // $fecha = $parts_date[0];
+            // $hora = $parts_date[1];
+
+            // $template = str_replace(
+            //     [
+            //         '{num_operation}',
+            //         '{type_operation}',
+            //         '{client}',
+            //         '{issue_date}',
+            //         '{technical}',
+            //         '{issue_hour}',
+            //         '{date_sale}',
+            //         '{ejecutive}',
+            //         '{price}',
+            //         '{type}',
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
+            //         $installJpa['type_operation']['operation'],
+            //         $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
+            //         $fecha,
+            //         $installJpa['technical']['name'] . ' ' . $installJpa['technical']['lastname'],
+            //         $hora,
+            //         $installJpa['date_sale'],
+            //         $installJpa['user_issue']['people']['name'] . ' ' . $installJpa['user_issue']['people']['lastname'],
+            //         'S/.' . $installJpa['price_installation'],
+            //         $installJpa['type_intallation'],
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $sumary,
+            //     ],
+            //     $template
+            // );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
