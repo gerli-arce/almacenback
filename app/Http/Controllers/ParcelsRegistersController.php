@@ -884,6 +884,8 @@ class ParcelsRegistersController extends Controller
                 ->orderBy('id', 'desc')
                 ->whereNotNull('status')
                 ->where('branch__correlative', $branch)
+                ->where('creation_date', '<=' ,$request->date_end)
+                ->where('creation_date', '>=' ,$request->date_start)
                 ->get();;
 
             $parcels = array();
