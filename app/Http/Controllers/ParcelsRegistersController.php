@@ -440,6 +440,11 @@ class ParcelsRegistersController extends Controller
                 $query->whereNotNull('status');
             }
 
+            if (isset($request->search['date_end']) && isset($request->search['date_start'])) {
+                $query->where('creation_date', '<=', $request->search['date_end'])
+                    ->where('creation_date', '>=', $request->search['date_start']);
+            }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
@@ -885,8 +890,8 @@ class ParcelsRegistersController extends Controller
                 ->orderBy('id', 'desc')
                 ->whereNotNull('status')
                 ->where('branch__correlative', $branch)
-                ->where('creation_date', '<=' ,$request->date_end)
-                ->where('creation_date', '>=' ,$request->date_start)
+                ->where('creation_date', '<=', $request->date_end)
+                ->where('creation_date', '>=', $request->date_start)
                 ->get();;
 
             $parcels = array();
@@ -967,7 +972,7 @@ class ParcelsRegistersController extends Controller
                     <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
                     <center>
                         <img 
-                            src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='no se encontro la factura' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
+                            src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
                     
                     </center>
                 </div>
