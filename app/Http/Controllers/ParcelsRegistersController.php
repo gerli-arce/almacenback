@@ -441,8 +441,8 @@ class ParcelsRegistersController extends Controller
             }
 
             if (isset($request->search['date_end']) && isset($request->search['date_start'])) {
-                $query->where('creation_date', '<=', $request->search['date_end'])
-                    ->where('creation_date', '>=', $request->search['date_start']);
+                $query->where('date_entry', '<=', $request->search['date_end'])
+                    ->where('date_entry', '>=', $request->search['date_start']);
             }
 
             $query->where(function ($q) use ($request) {
@@ -890,8 +890,8 @@ class ParcelsRegistersController extends Controller
                 ->orderBy('id', 'desc')
                 ->whereNotNull('status')
                 ->where('branch__correlative', $branch)
-                ->where('creation_date', '<=', $request->date_end)
-                ->where('creation_date', '>=', $request->date_start)
+                ->where('date_entry', '<=', $request->date_end)
+                ->where('date_entry', '>=', $request->date_start)
                 ->get();;
 
             $parcels = array();
