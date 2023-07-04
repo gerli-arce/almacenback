@@ -408,6 +408,8 @@ Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate
 Route::post('/room', [RoomController::class, 'store']);
 Route::patch('/room', [RoomController::class, 'update']);
 Route::post('/room/paginate', [RoomController::class, 'paginate']);
+Route::post('/room/products', [RoomController::class, 'setProductsByRoom']);
+Route::get('/room/get/products/{id}', [RoomController::class, 'getProductsByRoom']);
 Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
