@@ -272,7 +272,6 @@ class RoomController extends Controller
         }
     }
 
-
     public function setProductsByRoom(Request $request)
     {
         $response = new Response();
