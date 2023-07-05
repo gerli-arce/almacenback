@@ -16,6 +16,7 @@ use App\Models\ViewDetailsSales;
 use App\Models\ViewSales;
 use App\Models\Product;
 use App\Models\ViewProductByRoom;
+use App\Models\ViewStockRoom;
 use App\Models\Stock;
 use Exception;
 use Illuminate\Http\Request;
@@ -484,6 +485,67 @@ class RoomController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateProductsByRoom(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+                throw new Exception('No tienes permisos para listar modelos');
+            }
+
+            $query = ViewStockRoom::select(['*'])->orderBy($request->order['column'], $request->order['dir'])
+                ->whereNotNull('status');
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+                if ($column == 'product__mac' || $column == '*') {
+                    $q->orWhere('product__mac', $type, $value);
+                }
+                if ($column == 'product__serie' || $column == '*') {
+                    $q->orWhere('product__serie', $type, $value);
+                }
+            })->where('room__id', $request->search['room']);
+
+            $iTotalDisplayRecords = $query->count();
+            $towerJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $stock = array();
+            foreach ($towerJpa as $productJpa) {
+                $product = gJSON::restore($productJpa->toArray(), '__');
+                $stock[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewStockRoom::where('room__id', $request->search['room'])->count());
+            $response->setData($stock);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().' Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
