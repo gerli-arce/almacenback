@@ -423,7 +423,7 @@ class RoomController extends Controller
         }
     }
 
-    public function getRecordsByRoom(Request $request, $id){
+    public function getRecordsByRoom(Request $request){
        
         $response = new Response();
         try {

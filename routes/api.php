@@ -410,6 +410,7 @@ Route::patch('/room', [RoomController::class, 'update']);
 Route::post('/room/paginate', [RoomController::class, 'paginate']);
 Route::post('/room/products', [RoomController::class, 'setProductsByRoom']);
 Route::get('/room/get/products/{id}', [RoomController::class, 'getProductsByRoom']);
+Route::post('/room/products/paginate', [RoomController::class, 'getRecordsByRoom']);
 Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
