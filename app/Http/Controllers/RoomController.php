@@ -12,6 +12,8 @@ use App\Models\ProductsByRoom;
 use App\Models\SalesProducts;
 use App\Models\DetailSale;
 use App\Models\Branch;
+use App\Models\ViewDetailsSales;
+use App\Models\ViewSales;
 use App\Models\Product;
 use App\Models\ViewProductByRoom;
 use App\Models\Stock;
@@ -394,7 +396,7 @@ class RoomController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'room', 'read')) {
                 throw new Exception('No tienes permisos para listar');
             }
 
@@ -410,6 +412,75 @@ class RoomController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($products_room);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getRecordsByRoom(Request $request, $id){
+       
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
+                throw new Exception('No tienes permisos para listar las salidas');
+            }
+
+            $query = ViewSales::select([
+                '*',
+            ])
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->whereNotNUll('status')
+                ->where('type_intallation', 'ROOM')
+                ->where('room_id', $request->search['room_id'])
+                ->where('type_operation__id', '11');
+
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $query->where('date_sale', '>=', $request->search['date_start'])
+                    ->where('date_sale', '<=', $request->search['date_end']);
+            }
+
+            $iTotalDisplayRecords = $query->count();
+
+            $salesJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->whereNotNUll('status')
+                ->where('branch__correlative', $branch)
+                ->where('technical_id', $request->id)
+                ->where('type_intallation', 'AGREGADO_A_STOCK')
+                ->where('type_operation__id', '10')->count());
+            $response->setData($sales);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
