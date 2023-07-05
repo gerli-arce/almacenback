@@ -409,12 +409,7 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-                ->where('disponibility', '!=', 'VENDIDO')
-                ->where('disponibility', '!=', 'VENDIENDO')
-                ->where('disponibility', '!=', 'EN ENCOMIENDA')
-                ->where('disponibility', '!=', 'PLANTA')
-                ->where('disponibility', '!=', 'TORRE')
-                ->where('disponibility', '!=', 'LIQUIDACION DE PLANTA');
+                ->where('disponibility', '=', 'DISPONIBLE');
             $iTotalDisplayRecords = $query->count();
 
             $productsJpa = $query

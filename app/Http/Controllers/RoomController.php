@@ -13,6 +13,7 @@ use App\Models\SalesProducts;
 use App\Models\DetailSale;
 use App\Models\Branch;
 use App\Models\Product;
+use App\Models\ViewProductByRoom;
 use App\Models\Stock;
 use Exception;
 use Illuminate\Http\Request;
@@ -272,7 +273,8 @@ class RoomController extends Controller
     }
 
 
-    public function setProductsByRoom(Request $request){
+    public function setProductsByRoom(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -293,7 +295,7 @@ class RoomController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = new SalesProducts();
-           
+
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_room = $request->id;
             $salesProduct->_type_operation = $request->_type_operation;
@@ -322,13 +324,38 @@ class RoomController extends Controller
                         $stock->mount_second = $stock->mount_second -  $product['mount_second'];
                         $stock->mount_ill_fated = $stock->mount_ill_fated -  $product['mount_ill_fated'];
                         $productJpa->mount = $stock->mount_new -   $stock->mount_second;
+                        $productsByRoomJpa = ProductsByRoom::where('_product', $productJpa->id)->where('_room', $request->id)->first();
+                        if ($productsByRoomJpa) {
+                            $productsByRoomJpa->mount_new +=  $product['mount_new'];
+                            $productsByRoomJpa->mount_second += $product['mount_second'];
+                            $productsByRoomJpa->mount_ill_fated += $product['mount_ill_fated'];
+                            $productsByRoomJpa->save();
+                        } else {
+                            $productsByRoomJpa = new ProductsByRoom();
+                            $productsByRoomJpa->_product = $productJpa->id;
+                            $productsByRoomJpa->_room = $request->id;
+                            $productsByRoomJpa->mount_new = $product['mount_new'];
+                            $productsByRoomJpa->mount_second = $product['mount_second'];
+                            $productsByRoomJpa->mount_ill_fated = $product['mount_ill_fated'];
+                            $productsByRoomJpa->status = '1';
+                            $productsByRoomJpa->save();
+                        }
                     } else {
-                        $productJpa->disponibility = "CUARTO ".$roomJpa->name;
+                        $productJpa->disponibility = "CUARTO " . $roomJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = $stock->mount_second - 1;
                         }
+
+                        $productsByRoomJpa = new ProductsByRoom();
+                        $productsByRoomJpa->_product = $productJpa->id;
+                        $productsByRoomJpa->_room = $request->id;
+                        $productsByRoomJpa->mount_new = $product['mount_new'];
+                        $productsByRoomJpa->mount_second = $product['mount_second'];
+                        $productsByRoomJpa->mount_ill_fated = $product['mount_ill_fated'];
+                        $productsByRoomJpa->status = '1';
+                        $productsByRoomJpa->save();
                     }
 
                     $stock->save();
@@ -342,15 +369,6 @@ class RoomController extends Controller
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
-
-                    $productsByRoomJpa = new ProductsByRoom();
-                    $productsByRoomJpa->_product = $productJpa->id;
-                    $productsByRoomJpa->_room = $request->id;
-                    $productsByRoomJpa->mount_new = $product['mount_new'];
-                    $productsByRoomJpa->mount_second = $product['mount_second'];
-                    $productsByRoomJpa->mount_ill_fated = $product['mount_ill_fated'];
-                    $productsByRoomJpa->status = '1';
-                    $productsByRoomJpa->save();
                 }
             }
 
@@ -367,7 +385,8 @@ class RoomController extends Controller
         }
     }
 
-    public function getProductsByRoom(Request $request, $id){
+    public function getProductsByRoom(Request $request, $id)
+    {
         $response = new Response();
         try {
 
@@ -376,86 +395,22 @@ class RoomController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'room', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'read')) {
                 throw new Exception('No tienes permisos para listar');
             }
 
-            $saleProductJpa = SalesProducts::select([
-                'sales_products.id as id',
-                'tech.id as technical__id',
-                'tech.name as technical__name',
-                'tech.lastname as technical__lastname',
-                'branches.id as branch__id',
-                'branches.name as branch__name',
-                'branches.correlative as branch__correlative',
-                'sales_products.date_sale as date_sale',
-                'sales_products.status_sale as status_sale',
-                'sales_products.description as description',
-                'sales_products.status as status',
-            ])
-                ->join('people as tech', 'sales_products._technical', 'tech.id')
-                ->join('branches', 'sales_products._branch', 'branches.id')
-                ->whereNotNull('sales_products.status')
-                ->where('sales_products._room', $id)
-                ->orderBy('id', 'desc')
-                ->get();
+            $productByRoomJpa = ViewProductByRoom::where('room__id', $id)->whereNotNull('status')->get();
 
-            if (!$saleProductJpa) {
-                throw new Exception('No ay registros');
-            }
+            $products_room = [];
 
-            $salesProducts = array();
-            foreach ($saleProductJpa as $saleProduct) {
-                $sale = gJSON::restore($saleProduct->toArray(), '__');
-
-                $detailSaleJpa = DetailSale::select([
-                    'detail_sales.id as id',
-                    'products.id AS product__id',
-                    'products.type AS product__type',
-                    'models.id AS product__model__id',
-                    'models.model AS product__model__model',
-                    'models.relative_id AS product__model__relative_id',
-                    'products.relative_id AS product__relative_id',
-                    'products.mac AS product__mac',
-                    'products.serie AS product__serie',
-                    'products.price_sale AS product__price_sale',
-                    'products.currency AS product__currency',
-                    'products.num_guia AS product__num_guia',
-                    'products.condition_product AS product__condition_product',
-                    'products.disponibility AS product__disponibility',
-                    'products.product_status AS product__product_status',
-                    'branches.id AS sale_product__branch__id',
-                    'branches.name AS sale_product__branch__name',
-                    'branches.correlative AS sale_product__branch__correlative',
-                    'detail_sales.mount_new as mount_new',
-                    'detail_sales.mount_second as mount_second',
-                    'detail_sales.mount_ill_fated as mount_ill_fated',
-                    'detail_sales.description as description',
-                    'detail_sales._sales_product as _sales_product',
-                    'detail_sales.status as status',
-                ])
-                    ->join('products', 'detail_sales._product', 'products.id')
-                    ->join('models', 'products._model', 'models.id')
-                    ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
-                    ->join('branches', 'sales_products._branch', 'branches.id')
-                    ->whereNotNull('detail_sales.status')
-                    ->where('_sales_product', $sale['id'])
-                    ->get();
-
-                $details = array();
-                foreach ($detailSaleJpa as $detailJpa) {
-                    $detail = gJSON::restore($detailJpa->toArray(), '__');
-                    $details[] = $detail;
-                }
-
-                $sale['details'] = $details;
-
-                $salesProducts[] = $sale;
+            foreach ($productByRoomJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $products_room[] = $product;
             }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($salesProducts);
+            $response->setData($products_room);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -466,5 +421,4 @@ class RoomController extends Controller
             );
         }
     }
-
 }
