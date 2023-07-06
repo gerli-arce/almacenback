@@ -412,6 +412,7 @@ Route::post('/room/products', [RoomController::class, 'setProductsByRoom']);
 Route::get('/room/get/products/{id}', [RoomController::class, 'getProductsByRoom']);
 Route::post('/room/products/paginate', [RoomController::class, 'getRecordsByRoom']);
 Route::post('/room/stock/paginate', [RoomController::class, 'paginateProductsByRoom']);
+Route::post('/room/search/products', [RoomController::class, 'searchProductsByRoom']);
 Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
 
 // Route::get('/traslat', [connect::class, 'dats']);

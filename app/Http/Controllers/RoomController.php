@@ -553,4 +553,32 @@ class RoomController extends Controller
             );
         }
     }
+
+    public function searchProductsByRoom(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            $ProductByRoomJpa = ProductsByRoom::where('_product', $request->product['id'])->where('_room', $request->room['id'])->first();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData([$ProductByRoomJpa]);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
