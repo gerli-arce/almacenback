@@ -16,6 +16,8 @@ use App\Models\ViewDetailsSales;
 use App\Models\ViewSales;
 use App\Models\Product;
 use App\Models\ViewProductByRoom;
+use App\Models\EntryProducts;
+use App\Models\EntryDetail;
 use App\Models\ViewStockRoom;
 use App\Models\Stock;
 use Exception;
@@ -302,7 +304,7 @@ class RoomController extends Controller
             $salesProduct->_room = $request->id;
             $salesProduct->_type_operation = $request->_type_operation;
             $salesProduct->type_intallation = "ROOM";
-            $salesProduct->status_sale = "CULMINADA";
+            $salesProduct->status_sale = "ENTRADA";
             $salesProduct->_issue_user = $userid;
             $salesProduct->type_pay = "GASTOS INTERNOS";
 
@@ -581,4 +583,124 @@ class RoomController extends Controller
             );
         }
     }
+
+    public function retunProductsByRoom(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            $roomJpa = Room::find($request->id);
+
+            if(!$roomJpa){
+                throw new Exception('El cuarto no existe');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_room = $request->id;
+            $salesProduct->_type_operation = $request->_type_operation;
+            $salesProduct->type_intallation = "ROOM";
+            $salesProduct->status_sale = "SALIDA";
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->type_pay = "GASTOS INTERNOS";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "0";
+            $salesProduct->save();
+
+            $entryProductsJpa = new EntryProducts();
+            $entryProductsJpa->_user = $userid;
+            $entryProductsJpa->_branch = $branch_->id;
+            $entryProductsJpa->_type_operation = $request->_type_operation;
+            $entryProductsJpa->_room = $request->id;
+            $entryProductsJpa->type_entry = "DEVOLUCION DE CENTRAL";
+            $entryProductsJpa->entry_date = gTrace::getDate('mysql');
+            $entryProductsJpa->_creation_user = $userid;
+            $entryProductsJpa->creation_date = gTrace::getDate('mysql');
+            $entryProductsJpa->_update_user = $userid;
+            $entryProductsJpa->update_date = gTrace::getDate('mysql');
+            $entryProductsJpa->status = "1";
+            $entryProductsJpa->save();
+
+            if (isset($request->data)) {
+                foreach ($request->data as $product) {
+
+                    $productJpa = Product::find($product['product']['id']);
+                    $stock = Stock::where('_model', $productJpa->_model)
+                        ->where('_branch', $branch_->id)
+                        ->first();
+
+                    $productByRoomJpa = ProductsByRoom::find($product['id']);
+
+                    if ($product['product']['type'] == "MATERIAL") {
+                        $stock->mount_new = $stock->mount_new + $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second + $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByRoomJpa->mount_new = $productByRoomJpa->mount_new - $product['mount_new'];
+                        $productByRoomJpa->mount_second = $productByRoomJpa->mount_second - $product['mount_second'];
+                        $productByRoomJpa->mount_ill_fated = $productByRoomJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                    } else {
+                        $productJpa->disponibility = "DISPONIBLE";
+                        $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $roomJpa->name;
+                        if ($productJpa->product_status == "NUEVO") {
+                            $stock->mount_new = $stock->mount_new + 1;
+                        } else if ($productJpa->product_status == "SEMINUEVO") {
+                            $stock->mount_second = $stock->mount_second + 1;
+                        }
+                        $productByRoomJpa->status = null;
+                    }
+
+                    $productByRoomJpa->save();
+                    $stock->save();
+                    $productJpa->save();
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount_new = $product['mount_new'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+
+                    $entryDetail = new EntryDetail();
+                    $entryDetail->_product = $productJpa->id;
+                    $entryDetail->mount_new = $product['mount_new'];
+                    $entryDetail->mount_second = $product['mount_second'];
+                    $entryDetail->mount_ill_fated = $product['mount_ill_fated'];
+                    $entryDetail->_entry_product = $entryProductsJpa->id;
+                    $entryDetail->status = "1";
+                    $entryDetail->save();
+                }
+            }
+
+            $roomJpa->update_date = gTrace::getDate('mysql');
+            $roomJpa->_update_user = $userid;
+            $roomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 }

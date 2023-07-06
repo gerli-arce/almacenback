@@ -1085,7 +1085,7 @@ class TowerController extends Controller
 
             $towerJpa = Tower::find($request->_tower);
             if (!$towerJpa) {
-                throw new Exception('La torre que deseas eliminar no existe');
+                throw new Exception('La torre no existe');
             }
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
