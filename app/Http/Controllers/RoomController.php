@@ -345,7 +345,7 @@ class RoomController extends Controller
                             $productsByRoomJpa->save();
                         }
                     } else {
-                        $productJpa->disponibility = "CUARTO " . $roomJpa->name;
+                        $productJpa->disponibility = "CENTRAL: " . $roomJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -653,7 +653,7 @@ class RoomController extends Controller
                         $productJpa->mount = $stock->mount_new + $stock->mount_second;
                     } else {
                         $productJpa->disponibility = "DISPONIBLE";
-                        $productJpa->condition_product = "DEVUELTO DE LA TORRE: " . $roomJpa->name;
+                        $productJpa->condition_product = "DEVUELTO DE LA CENTRAL: " . $roomJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new + 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
