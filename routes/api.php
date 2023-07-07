@@ -224,6 +224,7 @@ Route::post('/products/materials/paginate', [ProductsController::class, 'paginat
 Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
 Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
 Route::post('/products/epp/paginate', [ProductsController::class, 'paginateEPP']);
+Route::post('/products/search/guia', [ProductsController::class, 'getProductsByNumberGuia']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);

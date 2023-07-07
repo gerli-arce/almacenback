@@ -1185,4 +1185,32 @@ class ProductsController extends Controller
             );
         }
     }
+
+    public function getProductsByNumberGuia(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'all_equipment', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
+            $productJpa = Product::select(['*'])
+                ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('_model', $request->model['id'])->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($productJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
