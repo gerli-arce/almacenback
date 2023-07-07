@@ -150,10 +150,10 @@ class ProductsController extends Controller
                     $productJpa->update_date = gTrace::getDate('mysql');
                     $productJpa->_update_user = $userid;
                     $productJpa->status = "1";
-                    if(!$reppet_product){
+                    if (!$reppet_product) {
                         $productJpa->save();
                     }
-                    
+
                     $entryDetail = new EntryDetail();
                     $stock = Stock::where('_model', $request->_model)
                         ->where('_branch', $branch_->id)
@@ -169,14 +169,14 @@ class ProductsController extends Controller
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                     }
 
-                    if(!$reppet_product){
+                    if (!$reppet_product) {
                         $stock->save();
                     }
-                   
+
                     $entryDetail->_product = $productJpa->id;
                     $entryDetail->_entry_product = $entryProduct->id;
                     $entryDetail->status = "1";
-                    if(!$reppet_product){
+                    if (!$reppet_product) {
                         $entryDetail->save();
                     }
                 }
@@ -246,9 +246,9 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $entryDetail = new EntryDetail();
-                    if($request->product_status== 'NUEVO'){
+                    if ($request->product_status == 'NUEVO') {
                         $entryDetail->mount_new = $request->mount;
-                    }else if($request->product_status== 'SEMINUEVO'){
+                    } else if ($request->product_status == 'SEMINUEVO') {
                         $entryDetail->mount_second = $request->mount;
                     }
                     $entryDetail->_product = $productJpa->id;
@@ -306,9 +306,9 @@ class ProductsController extends Controller
                     $productJpa->save();
 
                     $entryDetail = new EntryDetail();
-                    if($request->product_status== 'NUEVO'){
+                    if ($request->product_status == 'NUEVO') {
                         $entryDetail->mount_new = $request->mount;
-                    }else if($request->product_status== 'SEMINUEVO'){
+                    } else if ($request->product_status == 'SEMINUEVO') {
                         $entryDetail->mount_second = $request->mount;
                     }
                     $entryDetail->_product = $productJpa->id;
@@ -319,13 +319,13 @@ class ProductsController extends Controller
                 $stock->save();
             }
 
-            if($exist_diplicates){
+            if ($exist_diplicates) {
                 $response->setStatus(203);
-            }else{
+            } else {
                 $response->setStatus(200);
             }
 
-            $response->setMessage('Producto agregado correctamente || '.$message_error);
+            $response->setMessage('Producto agregado correctamente || ' . $message_error);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -1155,7 +1155,7 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('type', 'MATERIAL')
-            ->where('branch__correlative', $branch);
+                ->where('branch__correlative', $branch);
 
             $iTotalDisplayRecords = $query->count();
             $productsJpa = $query
@@ -1186,7 +1186,8 @@ class ProductsController extends Controller
         }
     }
 
-    public function getProductsByNumberGuia(Request $request){
+    public function getProductsByNumberGuia(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -1197,12 +1198,18 @@ class ProductsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productJpa = Product::select(['*'])
-                ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('_model', $request->model['id'])->get();
+            $productJpa = ViewProducts::select(['*'])
+                ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
+
+            $products = array();
+            foreach ($productJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
+            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($productJpa->toArray());
+            $response->setData($products);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
