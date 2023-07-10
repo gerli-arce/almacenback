@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ViewDetailsSales;
 use App\Models\Sale;
 use App\Models\Response;
+use App\Models\People;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\viewInstallations;
@@ -71,6 +72,8 @@ class SaleController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
+            $PeopleJpa = People::where('id', $request->_client)->first();
+
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['id']);
@@ -88,7 +91,7 @@ class SaleController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
-                        $productJpa->disponibility = "VENDIDO";
+                        $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
                     }
                     $stock->save();
                     $productJpa->save();

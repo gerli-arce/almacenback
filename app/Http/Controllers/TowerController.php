@@ -337,6 +337,8 @@ class TowerController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $towerJpa = Tower::select(['id','name'])->where('id', $request->_tower)->first();
+
             $salesProduct = new SalesProducts();
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -375,7 +377,7 @@ class TowerController extends Controller
                         $stock->mount_ill_fated = $stock->mount_ill_fated -  $product['mount_ill_fated'];
                         $productJpa->mount = $stock->mount_new -   $stock->mount_second;
                     } else {
-                        $productJpa->disponibility = "TORRE";
+                        $productJpa->disponibility = "TORRE: ".$towerJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -703,6 +705,8 @@ class TowerController extends Controller
 
             $salesProduct = SalesProducts::find($request->id);
 
+            $towerJpa = Tower::select(['id','name'])->where('id', $salesProduct->_tower)->first();
+
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
             }
@@ -785,7 +789,7 @@ class TowerController extends Controller
                             $stock->mount_ill_fated =  $stock->mount_ill_fated - $product['mount_ill_fated'];
                             $productJpa->mount = $stock->mount_new - $stock->mount_second;
                         } else {
-                            $productJpa->disponibility = "TORRE";
+                            $productJpa->disponibility = "TORRE: ".$towerJpa->name;
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {

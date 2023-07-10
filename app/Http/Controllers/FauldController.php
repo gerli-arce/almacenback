@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
+use App\Models\People;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
 use App\Models\RecordProductByTechnical;
@@ -418,8 +419,11 @@ class FauldController extends Controller
 
                         if (isset($request->status_sale)) {
                             if ($request->status_sale == 'CULMINADA') {
+
+                                $PeopleJpa = People::where('id', $detailSale->_technical)->first();
+
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'VENDIDO';
+                                    $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
                                 }
                                 if (
                                     isset($request->image_qr)

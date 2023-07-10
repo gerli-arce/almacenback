@@ -10,6 +10,7 @@ use App\Models\{
     DetailSale,
     Product,
     ProductByTechnical,
+    People,
     RecordProductByTechnical,
     Response,
     SalesProducts,
@@ -667,9 +668,12 @@ class InstallationController extends Controller
                         $detailSale->save();
 
                         if (isset($request->status_sale)) {
+
+                            $PeopleJpa = People::where('id', $detailSale->_technical)->first();
+
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'VENDIDO';
+                                    $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
                                 }
                                 if (
                                     isset($request->image_qr)

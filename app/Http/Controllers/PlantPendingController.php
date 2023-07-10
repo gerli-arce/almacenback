@@ -11,6 +11,7 @@ use App\Models\{
     EntryDetail, 
     EntryProducts, 
     Plant, 
+    People,
     Product, 
     ProductByPlant, 
     ViewSales, 
@@ -276,6 +277,8 @@ class PlantPendingController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
+            $plantJpa = Plant::find($request->id);
+
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['product']['id']);
@@ -323,7 +326,7 @@ class PlantPendingController extends Controller
                         }
                         $stockPlantJpa->status = "1";
                         $stockPlantJpa->save();
-                        $productJpa->disponibility = "PLANTA";
+                        $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
                     }
 
                     $stock->save();
@@ -541,6 +544,8 @@ class PlantPendingController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $plantJpa = Plant::find($request->_plant);
+
             $salesProduct = new SalesProducts();
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -578,7 +583,7 @@ class PlantPendingController extends Controller
                         $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $stockPlantJpa->status = null;
-                        $productJpa->disponibility = "LIQUIDACION DE PLANTA";
+                        $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
                     }
 
                     $productJpa->save();
@@ -833,9 +838,10 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = SalesProducts::find($request->id);
+
+            $plantJpa = Plant::find($request->_plant);
 
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -916,7 +922,7 @@ class PlantPendingController extends Controller
                             $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                         } else {
                             $stockPlantJpa->status = null;
-                            $productJpa->disponibility = "LIQUIDACION DE PLANTA";
+                            $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
                         }
 
                         $stockPlantJpa->save();
@@ -935,41 +941,6 @@ class PlantPendingController extends Controller
             }
 
             $salesProduct->save();
-
-            // if (isset($request->status_sale)) {
-            //     if ($request->status_sale == 'CULMINADA') {
-            //         $saleProductJpa = SalesProducts::find($request->id);
-            //         $saleProductJpa->status_sale = 'CULMINADA';
-            //         $saleProductJpa->save();
-            //         $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
-            //             ->get();
-            //         foreach ($detailsSalesJpa as $detail) {
-            //             $productJpa = Product::find($detail['_product']);
-            //             if ($productJpa->type == "MATERIAL") {
-            //                 $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
-            //                     ->where('_plant', $saleProductJpa->_plant)->first();
-            //                 if ($productByPlantJpa) {
-            //                     $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
-            //                     $productByPlantJpa->save();
-            //                 } else {
-            //                     $productByPlantJpa_new = new ProductByPlant();
-            //                     $productByPlantJpa_new->_product = $productJpa->id;
-            //                     $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-            //                     $productByPlantJpa_new->mount = $detail['mount'];
-            //                     $productByPlantJpa_new->status = '1';
-            //                     $productByPlantJpa_new->save();
-            //                 }
-            //             } else {
-            //                 $productByPlantJpa_new = new ProductByPlant();
-            //                 $productByPlantJpa_new->_product = $productJpa->id;
-            //                 $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-            //                 $productByPlantJpa_new->mount = $detail['mount'];
-            //                 $productByPlantJpa_new->status = '1';
-            //                 $productByPlantJpa_new->save();
-            //             }
-            //         }
-            //     }
-            // }
 
             $response->setStatus(200);
             $response->setMessage('Actualización correcta.');
