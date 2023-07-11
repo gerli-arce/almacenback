@@ -669,7 +669,7 @@ class InstallationController extends Controller
 
                         if (isset($request->status_sale)) {
 
-                            $PeopleJpa = People::where('id', $salesProduct->_technical)->first();
+                            $PeopleJpa = People::where('id', $salesProduct->_client)->first();
 
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
