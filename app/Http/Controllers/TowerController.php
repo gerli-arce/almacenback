@@ -57,7 +57,6 @@ class TowerController extends Controller
             $towerJpa->description = $request->description;
             $towerJpa->longitude = $request->longitude;
             $towerJpa->latitude = $request->latitude;
-            $towerJpa->address = $request->address;
             $towerJpa->relative_id = guid::short();
 
             if (
@@ -265,9 +264,6 @@ class TowerController extends Controller
                 $towerJpa->longitude = $request->longitude;
             }
 
-            if (isset($request->address)) {
-                $towerJpa->address = $request->address;
-            }
 
             if (
                 isset($request->image_type) &&
@@ -1489,12 +1485,8 @@ class TowerController extends Controller
                     $PhotographsByTowerJpa->image_type = $request->image_type;
                     $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
                     $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
-                } else {
-                    throw new Exception("Una imagen debe ser cargada.");
-                }
-            } else {
-                throw new Exception("Una imagen debe ser cargada.");
-            }
+                } 
+            } 
            
             $PhotographsByTowerJpa->_update_user = $userid;
             $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
