@@ -420,7 +420,7 @@ class FauldController extends Controller
                         if (isset($request->status_sale)) {
                             if ($request->status_sale == 'CULMINADA') {
 
-                                $PeopleJpa = People::where('id', $detailSale->_client)->first();
+                                $PeopleJpa = People::where('id', $salesProduct->_client)->first();
 
                                 if ($product['product']['type'] == "EQUIPO") {
                                     $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;

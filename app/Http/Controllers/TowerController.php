@@ -55,6 +55,7 @@ class TowerController extends Controller
             $towerJpa = new Tower();
             $towerJpa->name = $request->name;
             $towerJpa->description = $request->description;
+            $towerJpa->camera = $request->camera;
             $towerJpa->longitude = $request->longitude;
             $towerJpa->latitude = $request->latitude;
             $towerJpa->relative_id = guid::short();
@@ -120,6 +121,7 @@ class TowerController extends Controller
                 'latitude',
                 'longitude',
                 'relative_id',
+                'camera',
                 'status',
             ])
                 ->orderBy($request->order['column'], $request->order['dir']);
@@ -286,6 +288,7 @@ class TowerController extends Controller
             }
 
             $towerJpa->description = $request->description;
+            $towerJpa->camera = $request->camera;
 
             if (gValidate::check($role->permissions, $branch, 'towers', 'change_status')) {
                 if (isset($request->status)) {
