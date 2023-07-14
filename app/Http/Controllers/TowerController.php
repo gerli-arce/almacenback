@@ -16,12 +16,15 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\Tower;
+use App\Models\User;
 use App\Models\ViewProductsByTower;
 use App\Models\PhotographsByTower;
 use App\Models\ViewStockTower;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class TowerController extends Controller
 {
@@ -1630,6 +1633,97 @@ class TowerController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function reportDetailsByTower(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByTower.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+          
+
+            $TowerJpa = Tower::find($request->id);
+
+            // foreach ($products as $detail) {
+            //     $sumary .= "
+            //     <tr>
+            //         <td><center style='font-size:12px;'>{$count}</center></td>
+            //         <td>
+            //             <center style='font-size:12px;color:green;'>
+            //                 Nu:{$detail['mount_new']} | 
+            //                 Se:{$detail['mount_second']} | 
+            //                 Ma:{$detail['mount_ill_fated']}
+            //             </center>
+            //         </td>
+            //         <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+            //         <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+            //     </tr>
+            //     ";
+            //     $count = $count + 1;
+            // }
+
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{tower_name}',
+                    '{description}',
+                    '{relative_id}',
+                    '{latitude}',
+                    '{longitude}',
+                    '{ejecutive}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $TowerJpa->name,
+                    $TowerJpa->description,
+                    $TowerJpa->relative_id,
+                    $TowerJpa->latitude,
+                    $TowerJpa->longitude,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
