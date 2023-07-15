@@ -1673,24 +1673,41 @@ class TowerController extends Controller
 
             $TowerJpa = Tower::find($request->id);
 
-            // foreach ($products as $detail) {
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center style='font-size:12px;'>{$count}</center></td>
-            //         <td>
-            //             <center style='font-size:12px;color:green;'>
-            //                 Nu:{$detail['mount_new']} | 
-            //                 Se:{$detail['mount_second']} | 
-            //                 Ma:{$detail['mount_ill_fated']}
-            //             </center>
-            //         </td>
-            //         <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-            //     </tr>
-            //     ";
-            //     $count = $count + 1;
-            // }
 
+
+            
+            $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_tower', $TowerJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByTowerJpa as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img 
+                            src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; width:600px;'>
+                    
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
 
             $template = str_replace(
                 [
@@ -1702,6 +1719,7 @@ class TowerController extends Controller
                     '{latitude}',
                     '{longitude}',
                     '{ejecutive}',
+                    '{images}',
                     '{summary}',
                 ],
                 [
@@ -1713,13 +1731,14 @@ class TowerController extends Controller
                     $TowerJpa->latitude,
                     $TowerJpa->longitude,
                     $user->person__name . ' ' . $user->person__lastname,
+                    $images,
                     $sumary,
                 ],
                 $template
             );
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Guia.pdf');
+            return $pdf->stream('Torre.pdf');
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
