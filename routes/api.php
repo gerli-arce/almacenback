@@ -373,6 +373,7 @@ Route::patch('/towers/image', [TowerController::class, 'updateImage']);
 Route::delete('/towers/image/{id}', [TowerController::class, 'deleteImage']);
 Route::get('/towers/image/{id}', [TowerController::class, 'getImages']);
 Route::post('/towers/generate/report/details', [TowerController::class, 'reportDetailsByTower']);
+Route::post('/towers/generate/report/liquidation', [TowerController::class, 'generateReportByLiquidation']);
 
 
 
