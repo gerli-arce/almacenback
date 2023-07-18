@@ -58,14 +58,22 @@ class SalesController extends Controller
                     ->where('date_sale', '<=', $dateEnd);
             }
 
+            if(isset($request->search['search'])){
+                $query->join('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->join('products', 'view_details_sales.product__id', '=', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->where('models.model', 'LIKE', '%'.$request->search['search'].'%' );
+            }
+
+
             if ($request->search['column'] != '*') {
-                if($request->search['column'] == 'INSTALLATION'){
+                if ($request->search['column'] == 'INSTALLATION') {
                     $query->where('type_operation__operation', 'INSTALACIÓN');
-                }else if($request->search['column'] == 'FAULD'){
+                } else if ($request->search['column'] == 'FAULD') {
                     $query->where('type_operation__operation', 'AVERIA');
-                }else if($request->search['column'] == 'TOWER'){
+                } else if ($request->search['column'] == 'TOWER') {
                     $query->where('type_operation__operation', 'TORRE');
-                }else if($request->search['column'] == 'PLANT'){
+                } else if ($request->search['column'] == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
                 }
             }
@@ -153,13 +161,13 @@ class SalesController extends Controller
                 ->where('date_sale', '<=', $dateEnd);
 
             if ($request->filter != '*') {
-                if($request->filter == 'INSTALLATION'){
+                if ($request->filter == 'INSTALLATION') {
                     $query->where('type_operation__operation', 'INSTALACIÓN');
-                }else if($request->filter == 'FAULD'){
+                } else if ($request->filter == 'FAULD') {
                     $query->where('type_operation__operation', 'AVERIA');
-                }else if($request->filter == 'TOWER'){
+                } else if ($request->filter == 'TOWER') {
                     $query->where('type_operation__operation', 'TORRE');
-                }else if($request->filter == 'PLANT'){
+                } else if ($request->filter == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
                 }
             }
