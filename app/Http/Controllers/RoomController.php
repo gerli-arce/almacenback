@@ -436,7 +436,7 @@ class RoomController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'room', 'read')) {
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
