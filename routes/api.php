@@ -44,7 +44,6 @@ Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR'])
 // PDF
 Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
 
-
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
 Route::get('/providers/count', [HomeController::class, 'countProviders']);
@@ -54,8 +53,6 @@ Route::get('/users/count', [HomeController::class, 'countUsers']);
 Route::get('/installations/count', [HomeController::class, 'countInstallations']);
 Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
 Route::get('/products/min', [HomeController::class, 'getProductsMin']);
-
-
 
 // SESSION
 Route::post('/session/login', [SessionController::class, 'login']);
@@ -375,16 +372,12 @@ Route::get('/towers/image/{id}', [TowerController::class, 'getImages']);
 Route::post('/towers/generate/report/details', [TowerController::class, 'reportDetailsByTower']);
 Route::post('/towers/generate/report/liquidation', [TowerController::class, 'generateReportByLiquidation']);
 
-
-
 // SALE
 Route::post('/sale', [SaleController::class, 'store']);
 Route::patch('/sale', [SaleController::class, 'update']);
 Route::post('/sale/paginate', [SaleController::class, 'paginate']);
 Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
 Route::post('/sale/detail/canseluse', [SaleController::class, 'cancelUseProduct']);
-
-
 
 
 // RECORDS
@@ -394,20 +387,16 @@ Route::post('/record/product/return', [RecordsController::class, 'returnEqipment
 
 
 // ENTRYS 
-
 Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
 Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
 Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
 Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 
 // SALES
-
 Route::post('/sales/paginate', [SalesController::class, 'paginate']);
 Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
 
-
 // ROOM
-
 Route::post('/room', [RoomController::class, 'store']);
 Route::patch('/room', [RoomController::class, 'update']);
 Route::post('/room/paginate', [RoomController::class, 'paginate']);

@@ -107,6 +107,8 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->search['column'] == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
+                } else if($request->search['column'] == 'TECHNICAL'){
+                    $query->where('type_operation__operation', 'PARA TECNICO');
                 }
             }
 
@@ -233,12 +235,12 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->filter == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
+                } else if($request->filter == 'TECHNICAL'){
+                    $query->where('type_operation__operation', 'PARA TECNICO');
                 }
             }
 
-
             $salesJpa = $query->get();
-
 
             $sales = array();
             foreach ($salesJpa as $saleJpa) {
@@ -324,6 +326,26 @@ class SalesController extends Controller
                     <div>
                         <p>Torre: <strong>{$saleProductJpa->tower__name}</strong></p>
                         <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+                }else if ($sale['type_operation']['operation'] == 'PARA TECNICO'){
+                    $saleProductJpa = SalesProducts::select([
+                        'sales_products.id as id',
+                        'tech.id as technical__id',
+                        'tech.name as technical__name',
+                        'tech.lastname as technical__lastname',
+                        'sales_products.date_sale as date_sale',
+                        'sales_products.status_sale as status_sale',
+                        'sales_products.description as description',
+                        'sales_products.status as status',
+                    ])
+                        ->join('people as tech', 'sales_products._technical', 'tech.id')
+                        ->where('sales_products.id', $sale['id'])->first();
+
+                    $tower_details = "
+                    <div>
+                        <p>Persona: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
                         <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
                     </div>
                     ";

@@ -1075,15 +1075,47 @@ class TechnicalsController extends Controller
             }
 
             $query = ViewSales::select([
-                '*',
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
             ])
-                ->orderBy($request->order['column'], $request->order['dir'])
-                ->whereNotNUll('status')
+            ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.'.$request->order['column'], $request->order['dir'])
+                ->whereNotNUll('view_sales.status')
                 ->where('branch__correlative', $branch)
                 ->where('technical_id', $request->search['technical'])
                 ->where('type_intallation', 'AGREGADO_A_STOCK')
                 ->orWhere('type_intallation', 'SACADO_DE_STOCK')
                 ->where('type_operation__id', '10');
+
+                if (isset($request->search['model'])) {
+                    $query
+                        ->where('view_details_sales.product__model__id', $request->search['model']);
+                }
+    
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
