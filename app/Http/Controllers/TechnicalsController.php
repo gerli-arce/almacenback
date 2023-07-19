@@ -1106,15 +1106,17 @@ class TechnicalsController extends Controller
                 ->orderBy('view_sales.'.$request->order['column'], $request->order['dir'])
                 ->whereNotNUll('view_sales.status')
                 ->where('branch__correlative', $branch)
-                ->where('technical_id', $request->search['technical'])
-                ->where('type_intallation', 'AGREGADO_A_STOCK')
-                ->orWhere('type_intallation', 'SACADO_DE_STOCK')
-                ->where('type_operation__id', '10');
+                ->where('technical_id', $request->search['technical']);
+                
 
                 if (isset($request->search['model'])) {
                     $query
                         ->where('view_details_sales.product__model__id', $request->search['model']);
                 }
+
+                $query->where('type_intallation', 'AGREGADO_A_STOCK')
+                ->orWhere('type_intallation', 'SACADO_DE_STOCK')
+                ->where('type_operation__id', '10');
     
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
