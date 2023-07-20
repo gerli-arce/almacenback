@@ -208,6 +208,7 @@ Route::post('/models/restore', [ModelsController::class, 'restore']);
 Route::post('/models/paginate', [ModelsController::class, 'paginate']);
 Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
 Route::post('/models/search', [ModelsController::class, 'search']);
+Route::post('/models/search/id', [ModelsController::class, 'searchModelById']);
 Route::post('/models/star', [ModelsController::class, 'changeStar']);
 
 // PRODUCTS
@@ -254,6 +255,7 @@ Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateB
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldsPending']);
 Route::get('/fauld/{id}', [FauldController::class, 'getSale']);
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
+Route::post('/fauld/return/product', [FauldController::class, 'returnProduct']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
 
