@@ -246,6 +246,7 @@ Route::post('/install/completed/paginate', [InstallationController::class, 'pagi
 Route::post('/install/completed/pending', [InstallationController::class, 'returnToPendient']);
 Route::post('/install/canseluse', [InstallationController::class, 'cancelUseProduct']);
 Route::post('/install/generate/report', [InstallationController::class, 'generateReportByInstallation']);
+Route::post('/install/client', [InstallationController::class, 'getInstallationByClient']);
 
 // FAULDS
 Route::post('/fauld', [FauldController::class, 'registerFauld']);

@@ -833,6 +833,89 @@ class InstallationController extends Controller
         }
     }
 
+    public function getInstallationByClient(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
+
+            if (!isset($request->id)) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $viewInstallationsJpa = viewInstallations::where('client__id', $request->id)->first();
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $viewInstallationsJpa->id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $install = gJSON::restore($viewInstallationsJpa->toArray(), '__');
+            $install['details'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Instalación atualizada correctamente');
+            $response->setData(['data'=>$install]);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function cancelUseProduct(Request $request)
     {
         $response = new Response();

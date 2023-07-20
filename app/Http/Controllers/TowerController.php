@@ -118,19 +118,26 @@ class TowerController extends Controller
             }
 
             $query = Tower::select([
-                'id',
-                'name',
-                'description',
-                'latitude',
-                'longitude',
-                'relative_id',
-                'camera',
-                'status',
+                'towers.id as id',
+                'towers.name as name',
+                'towers.description as description',
+                'towers.latitude as latitude',
+                'towers.longitude as longitude',
+                'towers.relative_id as relative_id',
+                'towers.camera as camera',
+                'towers._creation_user as _creation_user',
+                'towers.creation_date as creation_date',
+                'towers.status as status',
+                'people.name as people__name',
+                'people.lastname as people__lastname',
+
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+            ->join('users', 'towers._creation_user', 'users.id')
+            ->join('people', 'users._person', 'people.id')
+                ->orderBy('towers.'.$request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
-                $query->whereNotNull('status');
+                $query->whereNotNull('towers.status');
             }
 
             $query->where(function ($q) use ($request) {
@@ -139,16 +146,16 @@ class TowerController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'name' || $column == '*') {
-                    $q->orWhere('name', $type, $value);
+                    $q->orWhere('towers.name', $type, $value);
                 }
                 if ($column == 'latitude' || $column == '*') {
-                    $q->orWhere('latitude', $type, $value);
+                    $q->orWhere('towers.latitude', $type, $value);
                 }
                 if ($column == 'longitude' || $column == '*') {
-                    $q->orWhere('longitude', $type, $value);
+                    $q->orWhere('towers.longitude', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
-                    $q->orWhere('description', $type, $value);
+                    $q->orWhere('towers.description', $type, $value);
                 }
             });
 
