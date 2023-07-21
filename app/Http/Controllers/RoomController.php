@@ -21,9 +21,13 @@ use App\Models\EntryProducts;
 use App\Models\EntryDetail;
 use App\Models\ViewStockRoom;
 use App\Models\Stock;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class RoomController extends Controller
 {
@@ -169,23 +173,27 @@ class RoomController extends Controller
             $dat = gValidate::check($role->permissions, $branch, 'users', 'read');
 
             $query = Room::select([
-                'id',
-                'name',
-                'description',
-                'relative_id',
-                '_creation_user',
-                'creation_date',
-                '_update_user',
-                'update_date',
-                'status',
+                'room.id as id',
+                'room.name as name',
+                'room.description as description',
+                'room.relative_id as relative_id',
+                'room._creation_user as _creation_user',
+                'room.creation_date as creation_date',
+                'room._update_user as _update_user',
+                'room.update_date as update_date',
+                'room.status as status',
+                'people.name as people__name',
+                'people.lastname as people__lastname',
             ])
+            ->join('users', 'room._creation_user', 'users.id')
+            ->join('people', 'users._person', 'people.id')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
 
             if (!$request->all) {
-                $query->whereNotNull('status');
+                $query->whereNotNull('room.status');
             }
 
             $query->where(function ($q) use ($request) {
@@ -195,10 +203,10 @@ class RoomController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'name' || $column == '*') {
-                    $q->where('name', $type, $value);
+                    $q->where('room.name', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
-                    $q->where('description', $type, $value);
+                    $q->where('room.description', $type, $value);
                 }
             });
             $iTotalDisplayRecords = $query->count();
@@ -906,6 +914,115 @@ class RoomController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function reportDetailsByTower(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByRoom.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+          
+
+            $RoomJpa = Room::find($request->id);
+
+
+
+            
+            $PhotographsByRoomJpa = PhotographsByRoom::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_room', $RoomJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByRoomJpa as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img 
+                        <img src='https://almacen.fastnetperu.com.pe/api/roomimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{tower_name}',
+                    '{description}',
+                    '{relative_id}',
+                    '{latitude}',
+                    '{longitude}',
+                    '{ejecutive}',
+                    '{images}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $RoomJpa->name,
+                    $RoomJpa->description,
+                    $RoomJpa->relative_id,
+                    $RoomJpa->latitude,
+                    $RoomJpa->longitude,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $images,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Torre.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()

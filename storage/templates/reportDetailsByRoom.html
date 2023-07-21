@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Liquidacion.pdf</title>
+        <style>
+            * {
+                font-family: "Poppins", sans-serif;
+                box-sizing: border-box;
+                line-height: 1.5;
+                /* font-size: 10pt; */
+                color: #343a40;
+            }
+
+            @page {
+                margin-top: 1.5cm;
+                margin-bottom: 3cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
+            }
+
+            /* header {
+                position: fixed;
+                top: -2.25cm;
+                width: 100%;
+                padding: 10px 0;
+                border-bottom: 1px solid #6c757d;
+            } */
+
+            footer {
+                position: fixed;
+                bottom: -2.25cm;
+                width: 100%;
+                padding: 10px 0;
+                border-top: 1px solid #6c757d;
+            }
+
+            footer .issue-detail {
+                position: absolute;
+                float: right;
+                top: 10px;
+            }
+
+            a {
+                text-decoration: none;
+                color: unset;
+            }
+
+            #softwareintegration {
+                height: 1.38cm;
+            }
+
+            #num_guia {
+                height: 2cm;
+                position: absolute;
+                right: 0;
+                font-size: 13px;
+                margin-top: -18px;
+            }
+
+            #date {
+                font-weight: bolder;
+                text-align: right;
+            }
+
+            #recipient {
+                font-weight: bolder;
+            }
+
+            #description {
+                text-indent: 1.25cm;
+                text-align: justify;
+                text-justify: inter-word;
+            }
+
+            #signature {
+                text-align: center;
+            }
+
+            #signature img {
+                height: 2.41cm;
+            }
+
+            table {
+                width: 100%;
+                border-spacing: 0;
+            }
+
+            table td {
+                vertical-align: middle;
+            }
+
+            table tbody td {
+                border-bottom: 1px solid #222222;
+            }
+
+            table thead td {
+                text-align: center;
+                font-weight: bold;
+                background-color: #323a46;
+                color: #ffffff !important;
+            }
+
+            table td {
+                vertical-align: middle;
+                padding: 5px 10px;
+            }
+
+            #total_hours {
+                position: relative;
+                background-color: #323a46;
+                color: #ffffff;
+                text-align: center;
+            }
+
+            #total_hours::before {
+                content: "Total: ";
+                font-weight: bolder;
+                background-color: #ffffff;
+                position: absolute;
+                left: -100%;
+            }
+
+            .text-bold {
+                font-weight: bold;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .text-start {
+                text-align: left;
+            }
+
+            .text-end {
+                text-align: right;
+            }
+
+            .text-red {
+                color: rgba(253, 64, 81, 255);
+            }
+
+            .text-grey {
+                color: #6c757d;
+            }
+
+            .fs-small {
+                font-size: 8pt;
+            }
+
+            .evidence {
+                max-width: 100%;
+            }
+
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            .col-4 {
+                flex: 0 0 33.33%;
+                max-width: 33.33%;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+
+            .sucursal-envio,
+            .sucursal-recepcion,
+            .responsable-recepcion {
+                margin: 0;
+            }
+
+            p {
+                margin: 0px;
+                padding: 0px;
+            }
+            @media all {
+                div.page-break {
+                    display: block;
+                    page-break-before: always;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <footer>
+            <div>
+                FASTNETPERU E.I.R.L<br />
+                Jr. 1 de Mayo 1085 PICHANAQUI<br />
+            </div>
+            <div class="issue-detail">
+                T: <a href="tel:51941415879">51 941 415 879</a>
+            </div>
+        </footer>
+        <main>
+            <div style="display: inline; font-size: 13px">
+                <div style="max-width: 50%; display: inline-block">
+                    <img
+                        style="width: 240px"
+                        src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
+                        alt="Logo fastnet"
+                    />
+                    <div>
+                        <strong>FASTNETPERU R.I.R.L</strong>
+                        <p>Jr. 1 de Mayo 1085 PICHANAQUI</p>
+                        <p>
+                            Telef. (51) 941415879 -
+                            Email:fastnetperu.eirl@gmail.com -
+                            www.fastnetperu.com.pe
+                        </p>
+                    </div>
+                </div>
+                <div
+                    style="
+                        max-width: 50%;
+                        display: inline-block;
+                        margin-left: 90px;
+                    "
+                >
+                    <div
+                        style="
+                            height: 140px;
+                            width: 250px;
+                            background-color: rgb(234, 234, 234);
+                            font-size: 24px;
+                            font-weight: 600;
+                            text-align: center;
+                            border-radius: 12px;
+                            font-family: sans-serif;
+                            border: solid 2px #000;
+                        "
+                    >
+                        <span>RUC 20602791816</span>
+                        <span>DETALLES DE</span>
+                        <span>CENTRAL</span>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <div style="margin-top: 12px">
+                <p>Nombre: <strong>{tower_name}</strong></p>
+                <p>Descripción: <strong>{description}</strong></p>
+                <p>Ejecutivo: <strong>{ejecutive}</strong></p>
+            </div>
+            <center style="margin-top: 12px">
+                <img
+                    style="width: 500px"
+                    src="https://almacen.fastnetperu.com.pe/api/roomimg/{relative_id}/full"
+                    alt="Imagen Torre"
+                />
+            </center>
+            {images}
+        </main>
+    </body>
+</html>
