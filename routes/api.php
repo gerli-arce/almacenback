@@ -410,5 +410,10 @@ Route::post('/room/stock/paginate', [RoomController::class, 'paginateProductsByR
 Route::post('/room/search/products', [RoomController::class, 'searchProductsByRoom']);
 Route::post('/room/return/products', [RoomController::class, 'retunProductsByRoom']);
 Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
+Route::post('/room/image', [RoomController::class, 'setImage']);
+Route::patch('/room/image', [RoomController::class, 'updateImage']);
+Route::get('/room/image/{id}', [RoomController::class, 'getImages']);
+Route::get('/roomimgs/{id}/{zize}', [RoomController::class, 'images']);
+
 
 // Route::get('/traslat', [connect::class, 'dats']);

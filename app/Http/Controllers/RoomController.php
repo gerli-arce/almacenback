@@ -16,6 +16,7 @@ use App\Models\ViewDetailsSales;
 use App\Models\ViewSales;
 use App\Models\Product;
 use App\Models\ViewProductByRoom;
+use App\Models\PhotographsByRoom;
 use App\Models\EntryProducts;
 use App\Models\EntryDetail;
 use App\Models\ViewStockRoom;
@@ -386,6 +387,215 @@ class RoomController extends Controller
                 $response->toArray(),
                 $response->getStatus()
             );
+        }
+    }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'room', 'update')) {
+                throw new Exception("No tienes permisos para crear imagenes");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByRoomJpa = new PhotographsByRoom();
+            $PhotographsByRoomJpa->_room = $request->id;
+            $PhotographsByRoomJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByRoomJpa->image_type = $request->image_type;
+                    $PhotographsByRoomJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByRoomJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByRoomJpa->_creation_user = $userid;
+            $PhotographsByRoomJpa->creation_date = gTrace::getDate('mysql');
+            $PhotographsByRoomJpa->_update_user = $userid;
+            $PhotographsByRoomJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByRoomJpa->status = "1";
+            $PhotographsByRoomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Operacion correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'room', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByRoomJpa = PhotographsByRoom::find($request->id);
+            $PhotographsByRoomJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByRoomJpa->image_type = $request->image_type;
+                    $PhotographsByRoomJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByRoomJpa->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $PhotographsByRoomJpa->_update_user = $userid;
+            $PhotographsByRoomJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByRoomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByRoomJpa = PhotographsByRoom::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_room', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByRoomJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = PhotographsByRoom::select([
+                "photographs_by_room.image_$size as image_content",
+                'photographs_by_room.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/room-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
         }
     }
 
