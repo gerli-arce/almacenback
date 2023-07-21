@@ -6,23 +6,25 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\{
-    Branch, 
-    DetailSale, 
-    EntryDetail, 
-    EntryProducts, 
-    Plant, 
+    Branch,
+    DetailSale,
+    EntryDetail,
+    EntryProducts,
+    Plant,
     People,
-    Product, 
-    ProductByPlant, 
-    ViewSales, 
-    Response, 
-    SalesProducts, 
-    Stock, 
-    StockPlant, 
-    Parcel, 
-    ViewPlant, 
-    ViewProductsByPlant, 
-    ViewDetailsSales, ViewStockPlant, ViewStockProductsByPlant
+    Product,
+    ProductByPlant,
+    ViewSales,
+    Response,
+    SalesProducts,
+    Stock,
+    StockPlant,
+    Parcel,
+    ViewPlant,
+    ViewProductsByPlant,
+    ViewDetailsSales,
+    ViewStockPlant,
+    ViewStockProductsByPlant
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -321,12 +323,12 @@ class PlantPendingController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stockPlantJpa->mount_second = 1;
                             $stock->mount_second = $stock->mount_second - 1;
-                        }else{
+                        } else {
                             $stockPlantJpa->mount_ill_fated = 1;
                         }
                         $stockPlantJpa->status = "1";
                         $stockPlantJpa->save();
-                        $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
+                        $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                     }
 
                     $stock->save();
@@ -387,7 +389,6 @@ class PlantPendingController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-               
             })->where('plant__id', $request->search['plant'])
                 ->where('product__disponibility', '!=', 'LIQUIDACION DE PLANTA');
 
@@ -486,7 +487,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function searchMountsStockByPlant(Request $request){
+    public function searchMountsStockByPlant(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -580,10 +582,10 @@ class PlantPendingController extends Controller
                     if ($product['product']['type'] == "MATERIAL") {
                         $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
                         $stockPlantJpa->mount_second = $stockPlantJpa->mount_second - $product['mount_second'];
-                        $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $stockPlantJpa->status = null;
-                        $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
+                        $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                     }
 
                     $productJpa->save();
@@ -919,10 +921,10 @@ class PlantPendingController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
                             $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
                             $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_second'];
-                            $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
+                            $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                         } else {
                             $stockPlantJpa->status = null;
-                            $productJpa->disponibility = "PLANTA: ".$plantJpa->name;
+                            $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                         }
 
                         $stockPlantJpa->save();
@@ -979,6 +981,43 @@ class PlantPendingController extends Controller
             $saleProductJpa = SalesProducts::find($request->id);
             $saleProductJpa->status_sale = 'CULMINADA';
             $saleProductJpa->save();
+
+            $saleProductJpa = SalesProducts::find($request->id);
+            $saleProductJpa->status_sale = 'CULMINADA';
+            $saleProductJpa->save();
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
+                $productJpa = Product::find($detail['_product']);
+                if ($productJpa->type == "MATERIAL") {
+                    $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
+                        ->where('_plant', $saleProductJpa->_plant)->first();
+                    if ($productByPlantJpa) {
+                        $productByPlantJpa->mount_new = $productByPlantJpa->mount_new + $detail['mount_new'];
+                        $productByPlantJpa->mount_second = $productByPlantJpa->mount_second + $detail['mount_second'];
+                        $productByPlantJpa->mount_ill_fated = $productByPlantJpa->mount_ill_fated + $detail['mount_ill_fated'];
+                        $productByPlantJpa->save();
+                    } else {
+                        $productByPlantJpa_new = new ProductByPlant();
+                        $productByPlantJpa_new->_product = $productJpa->id;
+                        $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                        $productByPlantJpa_new->mount_new = $detail['mount_new'];
+                        $productByPlantJpa_new->mount_second = $detail['mount_second'];
+                        $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
+                        $productByPlantJpa_new->status = '1';
+                        $productByPlantJpa_new->save();
+                    }
+                } else {
+                    $productByPlantJpa_new = new ProductByPlant();
+                    $productByPlantJpa_new->_product = $productJpa->id;
+                    $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                    $productByPlantJpa_new->mount_new = $detail['mount_new'];
+                    $productByPlantJpa_new->mount_second = $detail['mount_second'];
+                    $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
+                    $productByPlantJpa_new->status = '1';
+                    $productByPlantJpa_new->save();
+                }
+            }
 
             $response->setStatus(200);
             $response->setMessage('Liquidacion culminada.');
@@ -1157,7 +1196,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function searchProductPlant(Request $request){
+    public function searchProductPlant(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1784,12 +1824,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -1927,12 +1968,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -2033,12 +2075,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -2135,7 +2178,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function updateProductByProduct(Request $request){
+    public function updateProductByProduct(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -2174,7 +2218,7 @@ class PlantPendingController extends Controller
                 $response->getStatus()
             );
         }
-    } 
+    }
 
     public function projectCompleted(Request $request)
     {
@@ -2377,10 +2421,10 @@ class PlantPendingController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status'
             ])->where('view_sales.type_intallation', 'AGREGADO_A_STOCK')
-            ->where('view_sales.branch__correlative',$branch)
-            ->where('view_sales.type_operation__operation', 'PLANTA')
-            ->where('view_sales.plant_id', $request->id)
-            ->join('plant', 'view_sales.plant_id', 'plant.id');
+                ->where('view_sales.branch__correlative', $branch)
+                ->where('view_sales.type_operation__operation', 'PLANTA')
+                ->where('view_sales.plant_id', $request->id)
+                ->join('plant', 'view_sales.plant_id', 'plant.id');
 
             $query = $query->orderBy('id', 'desc');
             if (isset($request->date_start) && isset($request->date_end)) {
@@ -2395,7 +2439,7 @@ class PlantPendingController extends Controller
                 $record = gJSON::restore($recordJpa->toArray(), '__');
                 $ViewDetailsSales = ViewDetailsSales::where('sale_product_id', $recordJpa['id'])->get();
                 $details = [];
-                foreach ($ViewDetailsSales as $detailJpa){
+                foreach ($ViewDetailsSales as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
