@@ -415,6 +415,7 @@ Route::patch('/room/image', [RoomController::class, 'updateImage']);
 Route::get('/room/image/{id}', [RoomController::class, 'getImages']);
 Route::get('/roomimgs/{id}/{zize}', [RoomController::class, 'images']);
 Route::post('/room/generate/report/details', [RoomController::class, 'reportDetailsByTower']);
+Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);

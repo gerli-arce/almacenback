@@ -285,6 +285,42 @@ class RoomController extends Controller
             )->header('Content-Type', $type);
         }
     }
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByRoomJpa = PhotographsByRoom::find($id);
+            $PhotographsByRoomJpa->_update_user = $userid;
+            $PhotographsByRoomJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByRoomJpa->status = null;
+            $PhotographsByRoomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
     public function setProductsByRoom(Request $request)
     {
