@@ -1111,12 +1111,23 @@ class TechnicalsController extends Controller
 
                 if (isset($request->search['model'])) {
                     $query
-                        ->where('view_details_sales.product__model__id', $request->search['model']);
+                        ->where('view_details_sales.product__model__id', $request->search['model'])
+                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere(function ($q) use ($request){
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                        ->where('type_intallation', 'AGREGADO_A_STOCK');
+                    })
+                    ->orWhere(function ($q) use ($request){
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                        ->where('type_intallation', 'SACADO_DE_STOCK');
+                    });
+                }else{
+                    $query->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere('type_intallation', 'SACADO_DE_STOCK');
                 }
 
-                $query->where('type_intallation', 'AGREGADO_A_STOCK')
-                ->orWhere('type_intallation', 'SACADO_DE_STOCK')
-                ->where('type_operation__id', '10');
+                
+                $query->where('type_operation__id', '10');
     
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {

@@ -5,24 +5,20 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\{
-    Branch,
-    DetailSale,
-    Product,
-    ProductByTechnical,
-    People,
-    RecordProductByTechnical,
-    Response,
-    SalesProducts,
-    Stock,
-    viewInstallations,
-};
-
+use App\Models\Branch;
+use App\Models\DetailSale;
+use App\Models\People;
+use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\Response;
+use App\Models\SalesProducts;
+use App\Models\Stock;
+use App\Models\viewInstallations;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class InstallationController extends Controller
 {
@@ -103,17 +99,14 @@ class InstallationController extends Controller
 
             $type_operation = '';
 
-
-
             $sumary = '';
-
 
             foreach ($details as $detail) {
 
                 $model = "
                 <div>
                     <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
-                    <img class='img-fluid img-thumbnail' 
+                    <img class='img-fluid img-thumbnail'
                         src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
                 </div>
                 ";
@@ -132,7 +125,6 @@ class InstallationController extends Controller
                     </div>
                 ";
 
-
                 $sumary .= "
                 <tr>
                     <td><center >{$detail['id']}</center></td>
@@ -148,6 +140,12 @@ class InstallationController extends Controller
             $fecha = $parts_date[0];
             $hora = $parts_date[1];
 
+            $mounts_durability = '';
+
+            if ($installJpa['type_intallation'] == 'POR_CONVENIO' || $installJpa['type_intallation'] == 'POR_CONTRATO') {
+                $mounts_durability = ' POR '.$installJpa['mount_dues'].' MESES';
+            }
+
             $template = str_replace(
                 [
                     '{num_operation}',
@@ -162,6 +160,7 @@ class InstallationController extends Controller
                     '{type}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
+                    '{mounts_durability}',
                     '{summary}',
                 ],
                 [
@@ -177,6 +176,7 @@ class InstallationController extends Controller
                     $installJpa['type_intallation'],
                     $branch_->name,
                     gTrace::getDate('long'),
+                    $mounts_durability,
                     $sumary,
                 ],
                 $template
@@ -235,8 +235,18 @@ class InstallationController extends Controller
             // $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
-            $salesProduct->type_pay = $request->type_pay;
-            $salesProduct->mount_dues = $request->mount_dues;
+
+            if (
+                $request->type_intallation == 'POR_CONVENIO' ||
+                $request->type_intallation == "POR_CONTRATO"
+            ) {
+                $salesProduct->type_pay = $request->type_intallation;
+                $salesProduct->mount_dues = $request->mount_dues;
+            } else {
+                $salesProduct->type_pay = $request->type_pay;
+                $salesProduct->mount_dues = $request->mount_dues;
+            }
+
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -673,7 +683,7 @@ class InstallationController extends Controller
 
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
+                                    $productJpa->disponibility = 'INSTALACION: ' . $PeopleJpa->name . ' ' . $PeopleJpa->lastname;
                                 }
                                 if (
                                     isset($request->image_qr)
@@ -833,7 +843,8 @@ class InstallationController extends Controller
         }
     }
 
-    public function getInstallationByClient(Request $request){
+    public function getInstallationByClient(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -842,7 +853,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
                 throw new Exception('No tienes permisos para listar');
             }
 
@@ -904,7 +915,7 @@ class InstallationController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
-            $response->setData(['data'=>$install]);
+            $response->setData(['data' => $install]);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
@@ -926,7 +937,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -1065,7 +1076,7 @@ class InstallationController extends Controller
                 } else {
                     if ($productJpa->product_status == 'NUEVO') {
                         $stock->mount_new = $stock->mount_new + 1;
-                    }else if($productJpa->product_status == 'SEMINUEVO'){
+                    } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second = $stock->mount_second + 1;
                     }
                 }
@@ -1081,7 +1092,7 @@ class InstallationController extends Controller
             $response->setMessage('La instalación se elimino correctamente.');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
