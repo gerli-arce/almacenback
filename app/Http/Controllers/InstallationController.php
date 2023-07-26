@@ -142,7 +142,12 @@ class InstallationController extends Controller
 
             $mounts_durability = '';
 
-            if ($installJpa['type_intallation'] == 'POR_CONVENIO' || $installJpa['type_intallation'] == 'POR_CONTRATO') {
+            if (
+                $installJpa['type_intallation'] == 'FIBRA_OPTICA_(CONVENIO)' || 
+                $installJpa['type_intallation'] == 'ANTENA_(CONVENIO)' ||
+                $installJpa['type_intallation'] == 'FIBRA_OPTICA_(CONTRATO)' ||
+                $installJpa['type_intallation'] == 'ANTENA_(CONTRATO)'
+                ) {
                 $mounts_durability = ' POR '.$installJpa['mount_dues'].' MESES';
             }
 
@@ -237,8 +242,10 @@ class InstallationController extends Controller
             $salesProduct->price_installation = $request->price_installation;
 
             if (
-                $request->type_intallation == 'POR_CONVENIO' ||
-                $request->type_intallation == "POR_CONTRATO"
+                $request->type_intallation == 'FIBRA_OPTICA_(CONVENIO)' ||
+                $request->type_intallation == "ANTENA_(CONVENIO)" ||
+                $request->type_intallation == "FIBRA_OPTICA_(CONTRATO)" ||
+                $request->type_intallation == "ANTENA_(CONTRATO)" 
             ) {
                 $salesProduct->type_pay = $request->type_intallation;
                 $salesProduct->mount_dues = $request->mount_dues;
