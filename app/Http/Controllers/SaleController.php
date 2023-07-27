@@ -33,7 +33,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'sale', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'create')) {
                 throw new Exception('No tienes permisos para agregar ventas');
             }
 
@@ -130,7 +130,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'sale', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'read')) {
                 throw new Exception('No tienes permisos para listar las ventas');
             }
 
@@ -200,7 +200,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'sale', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'read')) {
                 throw new Exception('No tienes permisos para ver detalles de venta');
             }
 
@@ -245,7 +245,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'sale', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'update')) {
                 throw new Exception('No tienes permisos para actualizar ventas');
             }
 
@@ -389,7 +389,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'tower_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -458,7 +458,7 @@ class SaleController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'sale', 'delete')) {
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'delete')) {
                 throw new Exception('No tienes permisos para eliminar ventas');
             }
 

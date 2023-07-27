@@ -60,6 +60,9 @@ class ModelsController extends Controller
             if (isset($request->price_sale_second)) {
                 $modelJpa->price_sale_second = $request->price_sale_second;
             }
+            if (isset($request->price_sale_public)) {
+                $modelJpa->price_sale_public = $request->price_sale_public;
+            }
 
             if (
                 isset($request->image_type) &&
@@ -88,8 +91,6 @@ class ModelsController extends Controller
             $modelJpa->status = "1";
             $modelJpa->save();
 
-            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
             $branchesJpa = Branch::select('id')->get();
 
             foreach ($branchesJpa as $branch) {
@@ -102,14 +103,6 @@ class ModelsController extends Controller
                 $stockJpa->status = '1';
                 $stockJpa->save();
             }
-
-            // $stockJpa = new Stock();
-            // $stockJpa->_model = $modelJpa->id;
-            // $stockJpa->mount = '0';
-            // $stockJpa->stock_min = '5';
-            // $stockJpa->_branch = $branch_->id;
-            // $stockJpa->status = '1';
-            // $stockJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El modelo se a agregado correctamente en todas las sucursales');
@@ -379,6 +372,10 @@ class ModelsController extends Controller
 
             if (isset($request->price_sale_second)) {
                 $modelJpa->price_sale_second = $request->price_sale_second;
+            }
+
+            if (isset($request->price_sale_public)) {
+                $modelJpa->price_sale_public = $request->price_sale_public;
             }
 
             if (isset($request->mr_revenue)) {
