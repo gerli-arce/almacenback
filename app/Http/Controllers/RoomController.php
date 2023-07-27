@@ -818,7 +818,7 @@ class RoomController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'room', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -846,7 +846,7 @@ class RoomController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'room', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -878,7 +878,7 @@ class RoomController extends Controller
             $entryProductsJpa->_branch = $branch_->id;
             $entryProductsJpa->_type_operation = $request->_type_operation;
             $entryProductsJpa->_room = $request->id;
-            $entryProductsJpa->type_entry = "DEVOLUCION DE CENTRAL";
+            $entryProductsJpa->type_entry = "DEVOLUCION DE CENTRAL: ".$roomJpa->name;
             $entryProductsJpa->entry_date = gTrace::getDate('mysql');
             $entryProductsJpa->_creation_user = $userid;
             $entryProductsJpa->creation_date = gTrace::getDate('mysql');
