@@ -60,8 +60,8 @@ class ModelsController extends Controller
             if (isset($request->price_sale_second)) {
                 $modelJpa->price_sale_second = $request->price_sale_second;
             }
-            if (isset($request->price_sale_public)) {
-                $modelJpa->price_sale_public = $request->price_sale_public;
+            if (isset($request->price_sale_client)) {
+                $modelJpa->price_sale_client = $request->price_sale_client;
             }
 
             if (
@@ -374,8 +374,8 @@ class ModelsController extends Controller
                 $modelJpa->price_sale_second = $request->price_sale_second;
             }
 
-            if (isset($request->price_sale_public)) {
-                $modelJpa->price_sale_public = $request->price_sale_public;
+            if (isset($request->price_sale_client)) {
+                $modelJpa->price_sale_client = $request->price_sale_client;
             }
 
             if (isset($request->mr_revenue)) {

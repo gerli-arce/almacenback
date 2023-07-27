@@ -78,6 +78,7 @@ class SalesController extends Controller
                 'view_sales.status as status',
 
             ])
+            ->distinct()
             ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
                 ->where('view_sales.branch__correlative', $branch)
@@ -214,6 +215,7 @@ class SalesController extends Controller
                     'view_sales.status as status',
     
                 ])
+                ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                     ->whereNotNull('view_sales.status')
                     ->where('view_sales.branch__correlative', $branch)
