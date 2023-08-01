@@ -1104,9 +1104,9 @@ class TechnicalsController extends Controller
             ])
             ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.'.$request->order['column'], $request->order['dir'])
+                ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
-                ->where('branch__correlative', $branch)
-                ->where('technical_id', $request->search['technical']);
+                ->where('branch__correlative', $branch);
                 
 
                 if (isset($request->search['model'])) {
@@ -1114,11 +1114,14 @@ class TechnicalsController extends Controller
                         ->where('view_details_sales.product__model__id', $request->search['model'])
                     ->where('type_intallation', 'AGREGADO_A_STOCK')
                     ->orWhere(function ($q) use ($request){
+                        
                         $q->where('view_details_sales.product__model__id', $request->search['model'])
+                        ->where('technical_id', $request->search['technical'])
                         ->where('type_intallation', 'AGREGADO_A_STOCK');
                     })
                     ->orWhere(function ($q) use ($request){
                         $q->where('view_details_sales.product__model__id', $request->search['model'])
+                        ->where('technical_id', $request->search['technical'])
                         ->where('type_intallation', 'SACADO_DE_STOCK');
                     });
                 }else{
