@@ -1649,7 +1649,7 @@ class TowerController extends Controller
 
     public function generateReportByLiquidation(Request $request)
     {
-        set_time_limit(240);
+        set_time_limit(120);
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
