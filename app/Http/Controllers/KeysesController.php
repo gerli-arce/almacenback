@@ -306,7 +306,7 @@ class KeysesController extends Controller
             }
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $query = ViewKeys::orderBy($request->order['column'], $request->order['dir']);
+            $query = ViewKeys::select('*');
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -318,6 +318,20 @@ class KeysesController extends Controller
             
             if($request->available){
                 $query->where('status_key','DISPONIBLE');
+            }
+
+            if(isset($request->search['position_x'])){
+                $query->where('position_x', $request->search['position_x'])
+                ->orderBy('position_y','asc');
+            }else{
+                $query->orderBy($request->order['column'], $request->order['dir']);
+            }
+
+            if(isset($request->search['position_y'])){
+                $query->where('position_y', $request->search['position_y'])
+                ->orderBy('position_x','asc');
+            }else{
+                $query->orderBy($request->order['column'], $request->order['dir']);
             }
 
             $query->where(function ($q) use ($request) {

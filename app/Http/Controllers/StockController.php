@@ -22,6 +22,7 @@ class StockController extends Controller
 
     public function generateReportByStockByProducts(Request $request)
     {
+        set_time_limit(120);
         try {
 
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -135,6 +136,7 @@ class StockController extends Controller
 
     public function generateReportByProductsSelected(Request $request)
     {
+        set_time_limit(120);
         try {
 
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
