@@ -887,9 +887,7 @@ class ProductsController extends Controller
             if (isset($request->product_status)) {
                 $productJpa->product_status = $request->product_status;
             }
-            if (isset($request->description)) {
-                $productJpa->description = $request->description;
-            }
+            $productJpa->description = $request->description;
             if (isset($request->currency)) {
                 $productJpa->currency = $request->currency;
             }
