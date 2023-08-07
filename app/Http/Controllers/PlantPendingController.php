@@ -339,6 +339,7 @@ class PlantPendingController extends Controller
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->mount_second = $product['mount_second'];
                     $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -596,6 +597,7 @@ class PlantPendingController extends Controller
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->mount_second = $product['mount_second'];
                     $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -905,6 +907,7 @@ class PlantPendingController extends Controller
                             $detailSale->mount_new = $product['mount_new'];
                             $detailSale->mount_second = $product['mount_second'];
                             $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                            $detailSale->description = $product['description'];
                             $stockPlantJpa->save();
                         }
 
@@ -935,6 +938,7 @@ class PlantPendingController extends Controller
                         $detailSale->mount_new = $product['mount_new'];
                         $detailSale->mount_second = $product['mount_second'];
                         $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                        $detailSale->description = $product['description'];
                         $detailSale->_sales_product = $request->id;
                         $detailSale->status = '1';
                         $detailSale->save();
