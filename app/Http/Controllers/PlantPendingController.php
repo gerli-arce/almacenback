@@ -73,6 +73,27 @@ class PlantPendingController extends Controller
             if (isset($request->description)) {
                 $plantJpa->description = $request->description;
             }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $plantJpa->image_type = $request->image_type;
+                    $plantJpa->image_mini = base64_decode($request->image_mini);
+                    $plantJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $plantJpa->image_type = null;
+                    $plantJpa->image_mini = null;
+                    $plantJpa->image_full = null;
+                }
+            }
+            
             $plantJpa->plant_status = "EN EJECUCION";
             $plantJpa->_branch = $branch_->id;
             $plantJpa->creation_date = gTrace::getDate('mysql');
@@ -92,6 +113,52 @@ class PlantPendingController extends Controller
                 $response->toArray(),
                 $response->getStatus()
             );
+        }
+    }
+
+    public function image($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $plantJpa = Plant::select([
+                "plant.image_$size as image_content",
+                'plant.image_type',
+            ])->find($id);
+
+            if (!$plantJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+            if (!$plantJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+            $content = $plantJpa->image_content;
+            $type = $plantJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/png';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
         }
     }
 
@@ -138,6 +205,26 @@ class PlantPendingController extends Controller
 
             if (isset($request->description)) {
                 $plantJpa->description = $request->description;
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $plantJpa->image_type = $request->image_type;
+                    $plantJpa->image_mini = base64_decode($request->image_mini);
+                    $plantJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $plantJpa->image_type = null;
+                    $plantJpa->image_mini = null;
+                    $plantJpa->image_full = null;
+                }
             }
 
             $plantJpa->update_date = gTrace::getDate('mysql');

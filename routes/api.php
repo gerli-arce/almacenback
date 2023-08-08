@@ -348,6 +348,7 @@ Route::post('/plant_pending/completed/paginate', [PlantPendingController::class,
 Route::post('/plant_pending/stock/records', [PlantPendingController::class, 'getRegistersStockByPlant']);
 Route::post('/plant_pending/search', [PlantPendingController::class, 'searchMountsStockByPlant']);
 Route::post('/plant_pending/products/search', [PlantPendingController::class, 'searchProductPlant']);
+Route::get('/plant_pendingimg/{id}/{zize}', [PlantPendingController::class, 'image']);
 
 
 // TOWER
