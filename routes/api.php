@@ -349,7 +349,11 @@ Route::post('/plant_pending/stock/records', [PlantPendingController::class, 'get
 Route::post('/plant_pending/search', [PlantPendingController::class, 'searchMountsStockByPlant']);
 Route::post('/plant_pending/products/search', [PlantPendingController::class, 'searchProductPlant']);
 Route::get('/plant_pendingimg/{id}/{zize}', [PlantPendingController::class, 'image']);
-
+Route::get('/plant_pendingimgs/{id}/{zize}', [PlantPendingController::class, 'images']);
+Route::post('/plant_pending/image', [PlantPendingController::class, 'setImage']);
+Route::patch('/plant_pending/image', [PlantPendingController::class, 'updateImage']);
+Route::delete('/plant_pending/image/{id}', [PlantPendingController::class, 'deleteImage']);
+Route::get('/plant_pending/image/{id}', [PlantPendingController::class, 'getImages']);
 
 // TOWER
 Route::post('/towers', [TowerController::class, 'store']);

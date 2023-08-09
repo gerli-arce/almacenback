@@ -105,9 +105,13 @@ class InstallationController extends Controller
 
                 $model = "
                 <div>
-                    <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
-                    <img class='img-fluid img-thumbnail'
-                        src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+                    <center>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['model']}</strong></p>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['category']['category']}</strong></p>
+                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' 
+                        style='background-color: #38414a; height:50px;'>
+                        <p> <strong style='font-size:10px; margin:0px;'>{$detail['description']}</strong></p>
+                    </center>
                 </div>
                 ";
 
@@ -163,6 +167,7 @@ class InstallationController extends Controller
                     '{ejecutive}',
                     '{price}',
                     '{type}',
+                    '{description}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{mounts_durability}',
@@ -179,6 +184,7 @@ class InstallationController extends Controller
                     $installJpa['user_issue']['people']['name'] . ' ' . $installJpa['user_issue']['people']['lastname'],
                     'S/.' . $installJpa['price_installation'],
                     $installJpa['type_intallation'],
+                    $installJpa['description'],
                     $branch_->name,
                     gTrace::getDate('long'),
                     $mounts_durability,
