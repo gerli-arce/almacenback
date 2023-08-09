@@ -2636,8 +2636,8 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $PhotographsByTowerJpa = PhotographsByTower::find($request->id);
-            $PhotographsByTowerJpa->description = $request->description;
+            $PhotographsByPlant = PhotographsByPlant::find($request->id);
+            $PhotographsByPlant->description = $request->description;
 
             if (
                 isset($request->image_type) &&
@@ -2649,15 +2649,15 @@ class PlantPendingController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $PhotographsByTowerJpa->image_type = $request->image_type;
-                    $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
-                    $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
+                    $PhotographsByPlant->image_type = $request->image_type;
+                    $PhotographsByPlant->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByPlant->image_full = base64_decode($request->image_full);
                 } 
             } 
            
-            $PhotographsByTowerJpa->_update_user = $userid;
-            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
-            $PhotographsByTowerJpa->save();
+            $PhotographsByPlant->_update_user = $userid;
+            $PhotographsByPlant->update_date = gTrace::getDate('mysql');
+            $PhotographsByPlant->save();
 
             $response->setStatus(200);
             $response->setMessage('Imagen guardada correctamente');
@@ -2691,16 +2691,14 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
-            $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            ->where('_tower', $id)->whereNotNUll('status')
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $id)->whereNotNUll('status')
             ->orderBy('id', 'desc')
             ->get();
 
-
             $response->setStatus(200);
             $response->setMessage('Operación correcta.');
-            $response->setData($PhotographsByTowerJpa->toArray());
+            $response->setData($PhotographsByPlant->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -2727,9 +2725,9 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $modelJpa = PhotographsByTower::select([
-                "photographs_by_tower.image_$size as image_content",
-                'photographs_by_tower.image_type',
+            $modelJpa = PhotographsByPlant::select([
+                "photographs_by_plant.image_$size as image_content",
+                'photographs_by_plant.image_type',
 
             ])
                 ->where('id', $id)
@@ -2782,11 +2780,11 @@ class PlantPendingController extends Controller
             }
 
 
-            $PhotographsByTowerJpa = PhotographsByTower::find($id);
-            $PhotographsByTowerJpa->_update_user = $userid;
-            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
-            $PhotographsByTowerJpa->status = null;
-            $PhotographsByTowerJpa->save();
+            $PhotographsByPlant = PhotographsByPlant::find($id);
+            $PhotographsByPlant->_update_user = $userid;
+            $PhotographsByPlant->update_date = gTrace::getDate('mysql');
+            $PhotographsByPlant->status = null;
+            $PhotographsByPlant->save();
 
             $response->setStatus(200);
             $response->setMessage('Imagen eliminada correctamente');
