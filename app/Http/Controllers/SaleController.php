@@ -342,8 +342,10 @@ class SaleController extends Controller
                             ->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $productJpa->mount = $productJpa->mount -  $product['mount'];
-                            $stock->mount_new = $productJpa->mount;
+                            $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                            $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                            $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+                            $productJpa->mount = $stock->mount_new+$stock->mount_second;
                         } else {
                             $productJpa->disponibility = "VENDIDO";
                             if ($productJpa->product_status == "NUEVO") {
