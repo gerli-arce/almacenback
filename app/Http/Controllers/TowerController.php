@@ -224,7 +224,7 @@ class TowerController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -1600,7 +1600,7 @@ class TowerController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -1721,7 +1721,7 @@ class TowerController extends Controller
                     <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                         <center>
                             <p><strong>{$product['product']['model']['model']}</strong></p>
-                            <img src='https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
+                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:5px;border:solid 2px #000;'></img>
                             <div style='{$details_equipment}'>
                                 <p>Mac: <strong>{$product['product']['mac']}</strong><p>
                                 <p>Serie: <strong>{$product['product']['serie']}</strong></p>                                 

@@ -2753,7 +2753,7 @@ class PlantPendingController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
