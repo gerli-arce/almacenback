@@ -354,6 +354,7 @@ Route::post('/plant_pending/image', [PlantPendingController::class, 'setImage'])
 Route::patch('/plant_pending/image', [PlantPendingController::class, 'updateImage']);
 Route::delete('/plant_pending/image/{id}', [PlantPendingController::class, 'deleteImage']);
 Route::get('/plant_pending/image/{id}', [PlantPendingController::class, 'getImages']);
+Route::post('/plant_pending/generate/report/details', [PlantPendingController::class, 'reportDetailsByPlant']);
 
 // TOWER
 Route::post('/towers', [TowerController::class, 'store']);

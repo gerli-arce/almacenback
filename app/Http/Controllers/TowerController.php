@@ -1879,8 +1879,7 @@ class TowerController extends Controller
                     <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
                     <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                     <center>
-                        <img 
-                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;'>
+                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px #000;'>
                     </center>
                 </div>
                 ";

@@ -25,7 +25,8 @@ use App\Models\{
     ViewDetailsSales,
     ViewStockPlant,
     ViewStockProductsByPlant,
-    PhotographsByPlant
+    PhotographsByPlant,
+    User
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -154,7 +155,7 @@ class PlantPendingController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/png';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -2792,6 +2793,108 @@ class PlantPendingController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    
+    public function reportDetailsByPlant(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByPlant.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+          
+
+            $PlantJpa = Plant::find($request->id);
+            
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $PlantJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByPlant as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='https://almacen.fastnetperu.com.pe/api/plant_pendingimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto; margin-top:5px;border:solid 2px #000;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{tower_name}',
+                    '{id}',
+                    '{description}',
+                    '{ejecutive}',
+                    '{images}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $PlantJpa->name,
+                    $PlantJpa->id,
+                    $PlantJpa->description,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $images,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Torre.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
