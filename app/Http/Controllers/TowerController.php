@@ -1852,9 +1852,6 @@ class TowerController extends Controller
 
             $TowerJpa = Tower::find($request->id);
 
-
-
-            
             $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
             ->where('_tower', $TowerJpa->id)->whereNotNUll('status')
             ->orderBy('id', 'desc')
