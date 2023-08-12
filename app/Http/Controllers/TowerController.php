@@ -83,6 +83,26 @@ class TowerController extends Controller
                 }
             }
 
+            if (
+                isset($request->image_contract_type) &&
+                isset($request->image_contract_mini) &&
+                isset($request->image_contract_full)
+            ) {
+                if (
+                    $request->image_contract_type != "none" &&
+                    $request->image_contract_mini != "none" &&
+                    $request->image_contract_full != "none"
+                ) {
+                    $towerJpa->contract_img_type = $request->image_contract_type;
+                    $towerJpa->contract_img_mini = base64_decode($request->image_contract_mini);
+                    $towerJpa->contract_img_full = base64_decode($request->image_contract_full);
+                } else {
+                    $towerJpa->contract_img_type = null;
+                    $towerJpa->contract_img_mini = null;
+                    $towerJpa->contract_img_full = null;
+                }
+            }
+
             $towerJpa->_creation_user = $userid;
             $towerJpa->creation_date = gTrace::getDate('mysql');
             $towerJpa->_update_user = $userid;
@@ -233,6 +253,57 @@ class TowerController extends Controller
         }
     }
 
+    public function contract($relative_id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($relative_id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = Tower::select([
+                "towers.contract_img_$size as image_content",
+                'towers.contract_img_type',
+
+            ])
+                ->where('relative_id', $relative_id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -294,6 +365,27 @@ class TowerController extends Controller
                     $towerJpa->image_type = null;
                     $towerJpa->image_mini = null;
                     $towerJpa->image_full = null;
+                }
+            }
+
+            
+            if (
+                isset($request->image_contract_type) &&
+                isset($request->image_contract_mini) &&
+                isset($request->image_contract_full)
+            ) {
+                if (
+                    $request->image_contract_type != "none" &&
+                    $request->image_contract_mini != "none" &&
+                    $request->image_contract_full != "none"
+                ) {
+                    $towerJpa->contract_img_type = $request->image_contract_type;
+                    $towerJpa->contract_img_mini = base64_decode($request->image_contract_mini);
+                    $towerJpa->contract_img_full = base64_decode($request->image_contract_full);
+                } else {
+                    $towerJpa->contract_img_type = null;
+                    $towerJpa->contract_img_mini = null;
+                    $towerJpa->contract_img_full = null;
                 }
             }
 
