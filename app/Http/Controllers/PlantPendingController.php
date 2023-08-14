@@ -1185,6 +1185,8 @@ class PlantPendingController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
+            $plantJpa = Plant::find($saleProductJpa->_plant);
+
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
                 ->get();
 
@@ -1197,12 +1199,14 @@ class PlantPendingController extends Controller
 
                 if ($productJpa->type == "MATERIAL") {
                     $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $saleProductJpa->_plant)->first();
-                    $stockPlantJpa->mount = $stockPlantJpa->mount + $detail['mount'];
+                    $stockPlantJpa->mount_new = $stockPlantJpa->mount_new + $detail['mount_new'];
+                    $stockPlantJpa->mount_second = $stockPlantJpa->mount_second + $detail['mount_second'];
+                    $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated + $detail['mount_ill_fated'];
                     $stockPlantJpa->save();
                 } else {
                     $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $saleProductJpa->_plant)->first();
                     $stockPlantJpa->status = "1";
-                    $productJpa->disponibility = "PLANTA";
+                    $productJpa->disponibility = "DEVUELTO DE PLANTA: ".$plantJpa->name;
                     $stockPlantJpa->save();
                 }
 
