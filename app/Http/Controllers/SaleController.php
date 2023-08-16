@@ -24,6 +24,183 @@ use Dompdf\Options;
 class SaleController extends Controller
 {
 
+    public function generateReportBySale(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'sales', 'read')) {
+                throw new Exception('No tienes permisos para generar informe');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportSale.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $host = '';
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $request->id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $saleJpa = Sale::find($request->id);
+
+            // $user = User::select([
+            //     'users.id as id',
+            //     'users.username as username',
+            //     'people.name as person__name',
+            //     'people.lastname as person__lastname'
+            // ])
+            //     ->join('people', 'users._person', 'people.id')
+            //     ->where('users.id', $saleJpa->)->first();
+
+            $installJpa = gJSON::restore($saleJpa->toArray(), '__');
+            $installJpa['products'] = $details;
+
+            $type_operation = '';
+
+            $sumary = '';
+
+            foreach ($details as $detail) {
+
+                $model = "
+                <div>
+                    <center>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['model']}</strong></p>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['category']['category']}</strong></p>
+                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' 
+                        style='background-color: #38414a; height:50px;'>
+                        <p> <strong style='font-size:10px; margin:0px;'>{$detail['description']}</strong></p>
+                    </center>
+                </div>
+                ";
+
+                $medida = "
+                <div>
+                    <p>{$detail['product']['model']['unity']['name']}</p>
+                    <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
+                </div>
+                ";
+
+                $mac_serie = "
+                    <div>
+                        <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
+                        <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
+                    </div>
+                ";
+
+                $sumary .= "
+                <tr>
+                    <td><center >{$detail['id']}</center></td>
+                    <td><center >{$model}</center></td>
+                    <td><center >{$medida}</center></td>
+                    <td><center >{$mac_serie}</center></td>
+                </tr>
+                ";
+            }
+
+            $fecha_hora = $installJpa['issue_date'];
+            $parts_date = explode(" ", $fecha_hora);
+            $fecha = $parts_date[0];
+            $hora = $parts_date[1];
+
+            $mounts_durability = '';
+          
+            $template = str_replace(
+                [
+                    '{num_operation}',
+                    '{client}',
+                    '{issue_date}',
+                    '{issue_hour}',
+                    '{date_sale}',
+                    '{ejecutive}',
+                    '{price}',
+                    '{description}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{mounts_durability}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
+                    $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
+                    $fecha,
+                    $hora,
+                    $installJpa['date_sale'],
+                    $installJpa['creation_user']['person']['name'] . ' ' . $installJpa['creation_user']['person']['lastname'],
+                    'S/.' . $installJpa['price_installation'],
+                    $installJpa['description'],
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $mounts_durability,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();

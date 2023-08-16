@@ -389,6 +389,7 @@ Route::patch('/sale', [SaleController::class, 'update']);
 Route::post('/sale/paginate', [SaleController::class, 'paginate']);
 Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
 Route::post('/sale/detail/canseluse', [SaleController::class, 'cancelUseProduct']);
+Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySale']);
 
 
 // RECORDS
