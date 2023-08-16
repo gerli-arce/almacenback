@@ -60,7 +60,7 @@ class SaleController extends Controller
             $salesProduct->price_installation = $request->price_sale;
             $salesProduct->discount = $request->discount;
             $salesProduct->type_pay = "CONTADO";
-            $salesProduct->mount_dues = 1;
+            $salesProduct->mount_dues = $request->mount_dues;
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -277,6 +277,11 @@ class SaleController extends Controller
             if (isset($request->price_installation)) {
                 $salesProduct->price_installation = $request->price_installation;
             }
+            if (isset($request->mount_dues)) {
+                $salesProduct->mount_dues = $request->mount_dues;
+            }
+
+            
             if (isset($request->type_intallation)) {
                 $salesProduct->type_intallation = $request->type_intallation;
             }
