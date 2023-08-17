@@ -58,6 +58,9 @@ class TowerController extends Controller
             $towerJpa = new Tower();
             $towerJpa->name = $request->name;
             $towerJpa->description = $request->description;
+            $towerJpa->contract_date_start = $request->contract_date_start;
+            $towerJpa->contract_date_end = $request->contract_date_end;
+            $towerJpa->price_month = $request->price_month;
             $towerJpa->camera = $request->camera;
             $towerJpa->longitude = $request->longitude;
             $towerJpa->latitude = $request->latitude;
@@ -145,6 +148,9 @@ class TowerController extends Controller
                 'towers.longitude as longitude',
                 'towers.relative_id as relative_id',
                 'towers.camera as camera',
+                'towers.contract_date_start as contract_date_start',
+                'towers.contract_date_end as contract_date_end',
+                'towers.price_month as price_month',
                 'towers._creation_user as _creation_user',
                 'towers.creation_date as creation_date',
                 'towers.status as status',
@@ -390,6 +396,9 @@ class TowerController extends Controller
             }
 
             $towerJpa->description = $request->description;
+            $towerJpa->contract_date_start = $request->contract_date_start;
+            $towerJpa->contract_date_end = $request->contract_date_end;
+            $towerJpa->price_month = $request->price_month;
             $towerJpa->camera = $request->camera;
 
             if (gValidate::check($role->permissions, $branch, 'towers', 'change_status')) {
