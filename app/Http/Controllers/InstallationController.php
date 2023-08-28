@@ -293,7 +293,6 @@ class InstallationController extends Controller
 
                         $productByTechnicalJpa->save();
                     } else {
-
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
