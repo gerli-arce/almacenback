@@ -180,71 +180,71 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function registerProductByTechnical(Request $request)
-    {
-        $response = new Response();
-        try {
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
+    // public function registerProductByTechnical(Request $request)
+    // {
+    //     $response = new Response();
+    //     try {
+    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+    //         if ($status != 200) {
+    //             throw new Exception($message);
+    //         }
 
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
-                throw new Exception('No tienes permisos para crear productos');
-            }
+    //         if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+    //             throw new Exception('No tienes permisos para crear productos');
+    //         }
 
-            if (
-                !isset($request->id) ||
-                !isset($request->details)
-            ) {
-                throw new Exception("Error: No deje campos vaciós");
-            }
+    //         if (
+    //             !isset($request->id) ||
+    //             !isset($request->details)
+    //         ) {
+    //             throw new Exception("Error: No deje campos vaciós");
+    //         }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+    //         $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            foreach ($request->details as $product) {
+    //         foreach ($request->details as $product) {
 
-                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                $recordProductByTechnicalJpa->_user = $userid;
-                $recordProductByTechnicalJpa->_technical = $request->id;
-                $recordProductByTechnicalJpa->_product = $product['product']['id'];
-                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                $recordProductByTechnicalJpa->mount = $product['mount'];
-                $recordProductByTechnicalJpa->description = $product['description'];
-                $recordProductByTechnicalJpa->save();
+    //             $recordProductByTechnicalJpa = new RecordProductByTechnical();
+    //             $recordProductByTechnicalJpa->_user = $userid;
+    //             $recordProductByTechnicalJpa->_technical = $request->id;
+    //             $recordProductByTechnicalJpa->_product = $product['product']['id'];
+    //             $recordProductByTechnicalJpa->type_operation = "AGREGADO";
+    //             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+    //             $recordProductByTechnicalJpa->mount = $product['mount'];
+    //             $recordProductByTechnicalJpa->description = $product['description'];
+    //             $recordProductByTechnicalJpa->save();
 
-                $productJpa = Product::find($product['product']['id']);
+    //             $productJpa = Product::find($product['product']['id']);
 
-                $mount = $productJpa->mount - $product['mount'];
-                $productJpa->mount = $mount;
+    //             $mount = $productJpa->mount - $product['mount'];
+    //             $productJpa->mount = $mount;
 
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
-                $stock->mount_new = $mount;
-                $stock->save();
-                $productJpa->save();
+    //             $stock = Stock::where('_model', $productJpa->_model)
+    //                 ->where('_branch', $branch_->id)
+    //                 ->first();
+    //             $stock->mount_new = $mount;
+    //             $stock->save();
+    //             $productJpa->save();
 
-                $productByTechnicalJpa = new ProductByTechnical();
-                $productByTechnicalJpa->_technical = $request->id;
-                $productByTechnicalJpa->_product = $product['product']['id'];
-                $productByTechnicalJpa->mount = $product['mount'];
-                $productByTechnicalJpa->description = $product['description'];
-                $productByTechnicalJpa->save();
-            }
-            $response->setStatus(200);
-            $response->setMessage('Productos agregados correctamente al stock del técnico');
-        } catch (\Throwable $th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
+    //             $productByTechnicalJpa = new ProductByTechnical();
+    //             $productByTechnicalJpa->_technical = $request->id;
+    //             $productByTechnicalJpa->_product = $product['product']['id'];
+    //             $productByTechnicalJpa->mount = $product['mount'];
+    //             $productByTechnicalJpa->description = $product['description'];
+    //             $productByTechnicalJpa->save();
+    //         }
+    //         $response->setStatus(200);
+    //         $response->setMessage('Productos agregados correctamente al stock del técnico');
+    //     } catch (\Throwable $th) {
+    //         $response->setStatus(400);
+    //         $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+    //     } finally {
+    //         return response(
+    //             $response->toArray(),
+    //             $response->getStatus()
+    //         );
+    //     }
+    // }
 
     public function addStockTechnicalByProduct(Request $request)
     {
@@ -297,17 +297,102 @@ class TechnicalsController extends Controller
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
             $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
             $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
-
+            
             $productJpa = Product::find($request->product['id']);
-
-            $mount = $productJpa->mount - $request->mount;
-            $productJpa->mount = $mount;
 
             $stock = Stock::where('_model', $productJpa->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount_new = $mount;
+                
+            $stock->mount_new = $stock->mount_new -  $request->mount_new;
+            $stock->mount_second = $stock->mount_second -  $request->mount_second;
+            $stock->mount_ill_fated = $stock->mount_ill_fated -  $request->mount_ill_fated;
             $stock->save();
+
+            $productJpa->mount = $stock->mount_new +$stock->mount_second;
+
+            $productJpa->save();
+
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function addEPPTechnicalByProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (
+                !isset($request->product) ||
+                !isset($request->technical)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('_product', $request->product['id'])->first();
+
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
+
+            $productJpa = Product::find($request->product['id']);
+
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
+            $stock->mount_new = $stock->mount_new -  $request->mount_new;
+            $stock->mount_second = $stock->mount_second -  $request->mount_second;
+            $stock->mount_ill_fated = $stock->mount_ill_fated -  $request->mount_ill_fated;
+            $stock->save();
+
+            $productJpa->mount = $stock->mount_new +$stock->mount_second;
 
             $productJpa->save();
 
@@ -942,7 +1027,7 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function registersOperationByTechnicals(Request $request)
+    public function registersPrductsByTechnicals(Request $request)
     {
         $response = new Response();
         try {
@@ -1052,6 +1137,119 @@ class TechnicalsController extends Controller
             );
         }
     }
+
+    public function registersEPPsByTechnicals(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear agregar productos a stock de técnicos');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->details)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->id;
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            foreach ($request->details as $product) {
+                $productJpa = Product::find($product['product']['id']);
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+
+                if ($productJpa->type == 'MATERIAL') {
+                    $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                    $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                    $stock->save();
+                    $productJpa->save();
+
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
+                    if ($productByTechnicalJpa) {
+                        $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
+                        $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
+                        $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->save();
+                    } else {
+                        $productByTechnicalJpaNew = new ProductByTechnical();
+                        $productByTechnicalJpaNew->_technical = $request->id;
+                        $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->type = $request->type;
+                        $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                        $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                        $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->save();
+                    }
+                } else {
+                    $productJpa->disponibility = "En stok de: " . $request->name . ' ' . $request->lastname;
+                    $productJpa->save();
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new - 1;
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second - 1;
+                    }
+                    $stock->save();
+                    $productByTechnicalJpaNew = new ProductByTechnical();
+                    $productByTechnicalJpaNew->_technical = $request->id;
+                    $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->type = $request->type;
+                    $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                    $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                    $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                    $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->save();
+                }
+
+                $detailSale = new DetailSale();
+                $detailSale->_product = $productJpa->id;
+                $detailSale->mount_new = $product['mount_new'];
+                $detailSale->mount_second = $product['mount_second'];
+                $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->description = $product['description'];
+                $detailSale->_sales_product = $salesProduct->id;
+                $detailSale->status = '1';
+                $detailSale->save();
+            }
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 
     public function paginateRecords(Request $request)
     {
