@@ -129,6 +129,7 @@ Route::delete('/technicals', [TechnicalsController::class, 'delete']);
 Route::post('/technicals/add/products', [TechnicalsController::class, 'registersPrductsByTechnicals']);
 Route::post('/technicals/add/epp', [TechnicalsController::class, 'registersEPPsByTechnicals']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
+Route::post('/technicals/takeout/epp', [TechnicalsController::class, 'recordTakeOutEPPByTechnical']);
 Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/epp/add', [TechnicalsController::class, 'addEPPTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);

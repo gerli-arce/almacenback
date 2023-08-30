@@ -495,6 +495,94 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function recordTakeOutEPPByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para actualizar productos de técnico');
+            }
+
+            if (
+                !isset($request->product) ||
+                !isset($request->technical) ||
+                !isset($request->reazon)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('_product', $request->product['id'])
+                ->first();
+
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $request->mount_ill_fated;
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "SACADO_DE_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+
+            if ($request->reazon == "ILLFATED") {
+                $salesProduct->status_sale = "MALOGRADO";
+            } else if ($request->reazon == "STORE") {
+                $salesProduct->status_sale = "USO EN ALMACEN";
+            } else if ($request->reazon == "RETURN") {
+                $salesProduct->status_sale = "DEVOLUCION";
+                $productJpa = Product::find($request->product['id']);
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
+                $stock->save();
+                $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                $productJpa->save();
+            } else if ($request->reazon == "DISCOUNT") {
+                $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
+            }
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Salida de productos registrados correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getProductsByTechnical(Request $request)
     {
         $response = new Response();
