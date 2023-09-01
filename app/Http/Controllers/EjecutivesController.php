@@ -126,7 +126,6 @@ class EjecutivesController extends Controller
         }
     }
 
-
     public function search(Request $request)
     {
         $response = new Response();
