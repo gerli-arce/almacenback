@@ -1164,7 +1164,10 @@ class TechnicalsController extends Controller
                     $stock->save();
                     $productJpa->save();
 
-                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
+                    $productByTechnicalJpa = ProductByTechnical::select(['*'])
+                        ->leftJoin('products', 'product_by_technical._product', '=', 'products.id')
+                        ->leftJoin('models', 'products.model', '=', 'models.id')
+                        ->where('_technical', $request->id)->where('models.id', $productJpa->_model)->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
@@ -1809,7 +1812,6 @@ class TechnicalsController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportRecordsTechnicals.html');
 
-          
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $user = ViewUsers::select([
                 'id',
@@ -1856,13 +1858,11 @@ class TechnicalsController extends Controller
 
             $query->where('type_operation__id', '10');
 
-          
             if (isset($request->date_start) || isset($request->date_end)) {
                 $dateStart = date('Y-m-d', strtotime($request->date_start));
                 $dateEnd = date('Y-m-d', strtotime($request->date_end));
                 $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd]);
             }
-
 
             $salesJpa = $query->get();
 

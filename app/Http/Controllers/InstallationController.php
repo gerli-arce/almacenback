@@ -547,25 +547,25 @@ class InstallationController extends Controller
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
-                if ($detail['product']['type'] == "MATERIAL") {
-                    $productByTechnicalJpa = ProductByTechnical::select(
-                        [
-                            'id',
-                            '_technical',
-                            '_product',
-                            'mount_new',
-                            'mount_second',
-                            'mount_ill_fated',
-                        ]
-                    )
-                        ->where('_technical', $InstallationJpa->technical__id)
-                        ->where('_product', $detail['product']['id'])
-                        ->first();
+                // if ($detail['product']['type'] == "MATERIAL") {
+                //     $productByTechnicalJpa = ProductByTechnical::select(
+                //         [
+                //             'id',
+                //             '_technical',
+                //             '_product',
+                //             'mount_new',
+                //             'mount_second',
+                //             'mount_ill_fated',
+                //         ]
+                //     )
+                //         ->where('_technical', $InstallationJpa->technical__id)
+                //         ->where('_product', $detail['product']['id'])
+                //         ->first();
 
-                    $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
-                    $detail['max_second'] = $productByTechnicalJpa->mount_second + $detail['mount_second'];
-                    $detail['max_ill_fated'] = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
-                }
+                //     $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
+                //     $detail['max_second'] = $productByTechnicalJpa->mount_second + $detail['mount_second'];
+                //     $detail['max_ill_fated'] = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
+                // }
                 $details[] = $detail;
             }
 
