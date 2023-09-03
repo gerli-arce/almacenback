@@ -433,3 +433,4 @@ Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
+Route::get('/excel', [connect::class, 'exportDataToExcel']);

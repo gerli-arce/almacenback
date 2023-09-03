@@ -42,4 +42,35 @@ class connect extends Controller
             );
         }
     }
+
+    public function exportDataToExcel(Request $request)
+    {
+        $data = [
+            [
+                "Nombre" => "Juan",
+                "Apellido" => "Pérez",
+                "Edad" => 30,
+                "Email" => "juan@example.com"
+            ],
+            [
+                "Nombre" => "María",
+                "Apellido" => "Gómez",
+                "Edad" => 25,
+                "Email" => "maria@example.com"
+            ],
+            [
+                "Nombre" => "Carlos",
+                "Apellido" => "López",
+                "Edad" => 35,
+                "Email" => "carlos@example.com"
+            ]
+        ];
+
+       return Excel::create('archivo_excel', function($excel) use ($data) {
+            $excel->sheet('Sheet 1', function($sheet) use ($data) {
+                $sheet->fromArray($data);
+            });
+        })->download('xlsx'); 
+    }
+    
 }
