@@ -276,7 +276,7 @@ class InstallationController extends Controller
                     $productJpa = Product::find($product['product']['id']);
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                        ->where('_product', $productJpa->id)->first();
+                        ->where('_model', $product['product']['model']['id'])->first();
 
                     if ($product['product']['type'] == "MATERIAL") {
                         if ($product['mount_new'] > 0) {
@@ -650,7 +650,7 @@ class InstallationController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $detailSale->_product)->first();
+                                ->where('_model', $product['product']['model']['id'])->first();
                             if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
@@ -714,7 +714,7 @@ class InstallationController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $productJpa->id)->first();
+                                ->where('_model', $product['product']['model']['id'])->first();
 
                             if ($product['mount_new'] > 0) {
                                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
@@ -968,8 +968,8 @@ class InstallationController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
-                    ->where('_product', $detailSale->_product)->first();
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                        ->where('_model', $request->product['model']['id'])->first();
                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
                 $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
                 $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
@@ -1080,7 +1080,7 @@ class InstallationController extends Controller
                 $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
-                        ->where('_product', $detail['_product'])->first();
+                        ->where('_model', $productJpa->_model)->first();
                     $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $detail['mount_new'];
                     $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $detail['mount_second'];
                     $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];

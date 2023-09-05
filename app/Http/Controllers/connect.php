@@ -9,6 +9,8 @@ use App\Models\Stock;
 use App\Models\Models;
 use App\gLibraries\gValidate;
 use App\Models\Response;
+use App\Models\ProductByTechnical;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use Illuminate\Http\Request;
@@ -72,6 +74,38 @@ class connect extends Controller
                 $sheet->fromArray($data);
             });
         })->download('xlsx'); 
+    }
+
+    public function changeByProductForModel(Request $request){
+        $response = new Response();
+        try {
+            $ProductByTechnical = ProductByTechnical::get();
+
+            foreach($ProductByTechnical as $product){
+                $productJpa = Product::find($product->_product);
+                if($productJpa){
+                    $product_technical = ProductByTechnical::find($product->id);
+                    $product_technical->_model = $productJpa->_model;
+                    $product_technical->save();
+                }else{
+                    $product_technical = ProductByTechnical::find($product->id);
+                    $product_technical->_model = 72;
+                    $product_technical->save();
+                }
+                
+            }
+            $response->setMessage('Operacion correcta');
+            $response->setStatus('200');
+            $response->setData($ProductByTechnical->toArray());
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage().'ln: '.$th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
     
 }

@@ -403,7 +403,7 @@ Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsB
 Route::post('/record/product/return', [RecordsController::class, 'returnEqipment']);
 
 
-// ENTRYS 
+// ENTRYS
 Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
 Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
 Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
@@ -434,3 +434,4 @@ Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::get('/excel', [connect::class, 'exportDataToExcel']);
+// Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

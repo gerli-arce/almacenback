@@ -291,7 +291,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])->first();
+                ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
             $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
@@ -373,7 +373,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])->first();
+                ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
             $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
@@ -1164,10 +1164,8 @@ class TechnicalsController extends Controller
                     $stock->save();
                     $productJpa->save();
 
-                    $productByTechnicalJpa = ProductByTechnical::select(['*'])
-                        ->leftJoin('products', 'product_by_technical._product', '=', 'products.id')
-                        ->leftJoin('models', 'products.model', '=', 'models.id')
-                        ->where('_technical', $request->id)->where('models.id', $productJpa->_model)->first();
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
+                    ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
@@ -1279,7 +1277,8 @@ class TechnicalsController extends Controller
                     $stock->save();
                     $productJpa->save();
 
-                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
+                    ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
