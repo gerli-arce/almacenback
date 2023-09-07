@@ -46,23 +46,28 @@ class connect extends Controller
     {
         $data = [
             [
-                "Nombre" => "Juan",
-                "Apellido" => "Pérez",
-                "Edad" => 30,
-                "Email" => "juan@example.com",
-            ],
-            [
-                "Nombre" => "María",
-                "Apellido" => "Gómez",
-                "Edad" => 25,
-                "Email" => "maria@example.com",
-            ],
-            [
-                "Nombre" => "Carlos",
-                "Apellido" => "López",
-                "Edad" => 35,
-                "Email" => "carlos@example.com",
-            ],
+                'date_send'=>'marzo xs',
+                'num_voucher'=>'comprobante',
+                "buisnes" => "GALVANIZADOS",
+                "price_transport" => "120",
+                "date_pickup" => '12/12/2012',
+                "num_guia" => "GIA",
+                "provider"=>"PROVIDER",
+                "description"=>'DESCRIPCION DE PRODUCTO',
+                "extent"=>'UNIDAD',
+                "mount"=>'120',
+                "nun_bill"=>'NUM FACTURA',
+                'business_destination'=>"FASTNETPERU",
+                'val_unit'=>'12',
+                'subtotal'=>'140',
+                'igv'=>'2',
+                'price_with_igv'=>'160',
+                'price'=>'160',
+                'price_unit_with_igv'=>'16',
+                'margin_revenue35'=>'3',
+                'price_all'=>'130'
+            ]
+          
         ];
         
         $export = new ExcelExport($data);
