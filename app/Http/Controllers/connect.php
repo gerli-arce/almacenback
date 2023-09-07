@@ -70,7 +70,7 @@ class connect extends Controller
           
         ];
         
-        $export = new ExcelExport($data);
+        $export = new ExcelExport($data,'ENERO');
 
         // Genera el archivo Excel y obtén su contenido
         $tempFilePath = 'public/temp/archivo_excel.xlsx';

@@ -13,9 +13,10 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
 
     protected $data;
 
-    public function __construct(array $data)
+    public function __construct(array $data, string $month)
     {
         $this->data = $data;
+        $this->month = $month;
     }
 
     // Define los encabezados del archivo Excel
@@ -23,7 +24,7 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
     {
         return [
             [
-                'CONTROL DE GUIAS Y FATURAS DE COMPRA ALMACEN MES DE AGOSTO',
+                'CONTROL DE GUIAS Y FATURAS DE COMPRA ALMACEN MES DE '.$this->month,
                 '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',''
             ],
             [
