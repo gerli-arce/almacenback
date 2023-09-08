@@ -63,8 +63,25 @@ class connect extends Controller
         foreach ($parcelsJpa as $parcelJpa) {
             // $parcel = gJSON::restore($parcelJpa->toArray(), '__');
             $parcel['date_send'] = $parcelJpa->date_send;
-            // $parcel['date_send'] = $parcelJpa->date_send;
-
+            $parcel['num_voucher'] = $parcelJpa->num_voucher;
+            $parcel['business_transport__name'] = $parcelJpa->provider__name;
+            $parcel['price_transport'] = $parcelJpa->price_transport;
+            $parcel['date_entry'] = $parcelJpa->date_entry;
+            $parcel['num_guia'] = $parcelJpa->num_guia;
+            $parcel['provider__name'] = $parcelJpa->provider__name;
+            $parcel['description'] = $parcelJpa->description;
+            $parcel['model__unity__name'] = $parcelJpa->model__unity__name;
+            $parcel['mount_product'] = $parcelJpa->mount_product;
+            $parcel['num_bill'] = $parcelJpa->num_bill;
+            $parcel['business_designed__name'] = $parcelJpa->business_designed__name;
+            $parcel['value_unity'] = $parcelJpa->value_unity;
+            $parcel['amount'] = $parcelJpa->amount;
+            $parcel['igv'] = $parcelJpa->igv;
+            $parcel['price_unity'] = $parcelJpa->price_unity;
+            $parcel['price'] =round($parcelJpa->amount + $parcelJpa->igv, 2);
+            $parcel['price_with_igv'] =round($parcel['price'] / $parcel['mount_product'], 2);
+            $parcel['35%'] = round($parcel['price_with_igv']*0.35,2);
+            $parcel['price_all'] = round($parcel['price_with_igv']+$parcel['35%'],2);
             $parcels[] = $parcel;
         } 
 
