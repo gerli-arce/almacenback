@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJSON;
+
 use App\Models\ExcelExport;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
 use App\Models\Response;
+use App\Models\ViewParcelsRegisters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -44,48 +47,69 @@ class connect extends Controller
 
     public function exportDataToExcel(Request $request)
     {
-        $data = [
-            [
-                'date_send'=>'marzo xs',
-                'num_voucher'=>'comprobante',
-                "buisnes" => "GALVANIZADOS",
-                "price_transport" => "120",
-                "date_pickup" => '12/12/2012',
-                "num_guia" => "GIA",
-                "provider"=>"PROVIDER",
-                "description"=>'DESCRIPCION DE PRODUCTO',
-                "extent"=>'UNIDAD',
-                "mount"=>'120',
-                "nun_bill"=>'NUM FACTURA',
-                'business_destination'=>"FASTNETPERU",
-                'val_unit'=>'12',
-                'subtotal'=>'140',
-                'igv'=>'2',
-                'price_with_igv'=>'160',
-                'price'=>'160',
-                'price_unit_with_igv'=>'16',
-                'margin_revenue35'=>'3',
-                'price_all'=>'130'
-            ]
-          
-        ];
-        
-        $export = new ExcelExport($data,'ENERO');
 
-        // Genera el archivo Excel y obtén su contenido
+        $query = ViewParcelsRegisters::select(['*'])
+            ->orderBy('id', 'desc');
+
+        // if (isset($request->date_start) && isset($request->date_end)) {
+        //     $query->where('date_entry', '<=', $request->date_end)
+        //         ->where('date_entry', '>=', $request->date_start);
+        // }
+
+        $parcelsJpa = $query->get();
+        
+        $parcels = array();
+
+        foreach ($parcelsJpa as $parcelJpa) {
+            // $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+            $parcel['date_send'] = $parcelJpa->date_send;
+            // $parcel['date_send'] = $parcelJpa->date_send;
+
+            $parcels[] = $parcel;
+        } 
+
+        // return $parcels;
+
+        // foreach ($parcelsJpa as $parcelJpa) {
+        //     $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+        //     $parcels[] = $parcel;
+        // }
+
+        // return $parcelsJpa;
+
+
+        // $data = [
+        //     [
+        //         'date_send' => 'marzo xs',
+        //         'num_voucher' => 'comprobante',
+        //         "buisnes" => "GALVANIZADOS",
+        //         "price_transport" => "120",
+        //         "date_pickup" => '12/12/2012',
+        //         "num_guia" => "GIA",
+        //         "provider" => "PROVIDER",
+        //         "description" => 'DESCRIPCION DE PRODUCTO',
+        //         "extent" => 'UNIDAD',
+        //         "mount" => '120',
+        //         "nun_bill" => 'NUM FACTURA',
+        //         'business_destination' => "FASTNETPERU",
+        //         'val_unit' => '12',
+        //         'subtotal' => '140',
+        //         'igv' => '2',
+        //         'price_with_igv' => '160',
+        //         'price' => '160',
+        //         'price_unit_with_igv' => '16',
+        //         'margin_revenue35' => '3',
+        //         'price_all' => '130',
+        //     ],
+
+        // ];
+
+        $export = new ExcelExport($parcels, 'ENERO');
         $tempFilePath = 'public/temp/archivo_excel.xlsx';
         Excel::store($export, $tempFilePath);
-    
-        // Obtiene la ruta completa al archivo temporal
         $tempFilePath = storage_path('app/' . $tempFilePath);
-    
-        // Lee el contenido del archivo temporal en una variable
         $excelContent = file_get_contents($tempFilePath);
-    
-        // Convierte el contenido a base64
         $base64Content = base64_encode($excelContent);
-    
-        // Retorna el contenido base64
         return response()->json(['base64' => $base64Content]);
     }
 

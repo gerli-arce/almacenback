@@ -19,34 +19,16 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
         $this->month = $month;
     }
 
-    // Define los encabezados del archivo Excel
     public function headings(): array
     {
         return [
             [
-                'CONTROL DE GUIAS Y FATURAS DE COMPRA ALMACEN MES DE '.$this->month,
-                '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',''
+                'CONTROL DE GUIAS Y FACTURAS DE COMPRA ALMACEN MES DE '.$this->month,
+                '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             ],
             [
-                'CONTROL DE TRANSPORTE', 
-                '', 
-                '', 
-                '', 
-                'CONTROL DE GUIA DE PROVEEDOR', 
-                '', 
-                '', 
-                '', 
-                'CONTROL DE FACTURA', 
-                '', 
-                '', 
-                '', 
-                '',
-                '',
-                '',
-                'PRECIO AL 35%',
-                '',
-                ''
-            ], 
+                'CONTROL DE TRANSPORTE', '', '', '', 'CONTROL DE GUIA DE PROVEEDOR', '', '', '', 'CONTROL DE FACTURA', '', '', '', '', '', '', 'PRECIO AL 35%', '', '',
+            ],
             [
                 'FECHA DE ENVIO',
                 'Nº DE COMPRPOBANTE',
@@ -67,7 +49,7 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
                 'TOTAL', 
                 'PRECIO UNIT CON IGV',
                 '35%',
-                'PRECIO TOTAL'
+                'PRECIO TOTAL',
             ],
         ];
     }
@@ -77,40 +59,36 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
         return [
             AfterSheet::class => function (AfterSheet $event) {
 
-                // Combinar celdas para el encabezado principal CONTROL DE TITULO (horizontal y vertical)
-                $event->sheet->getDelegate()->mergeCells('A1:T2');
-                $event->sheet->getDelegate()->getStyle('A1:T2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $event->sheet->getDelegate()->getStyle('A1:T2')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                // Combinar celdas para el encabezado principal CONTROL DE GUIAS Y FACTURAS DE COMPRA ALMACEN MES DE (horizontal y vertical)
+                $event->sheet->getDelegate()->mergeCells('A1:S1');
+                $event->sheet->getDelegate()->getStyle('A1:S1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Combinar celdas para el encabezado principal CONTROL DE TRANSPORTE
-                $event->sheet->getDelegate()->mergeCells('A3:D3');
-                $event->sheet->getDelegate()->getStyle('A3:D3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $event->sheet->getDelegate()->mergeCells('A2:D2');
+                $event->sheet->getDelegate()->getStyle('A2:D2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Combinar celdas para la segunda fila del encabezado CONTROL DE GUIA DE PROVEEDOR
-                $event->sheet->getDelegate()->mergeCells('E3:H3');
-                $event->sheet->getDelegate()->getStyle('E3:H3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $event->sheet->getDelegate()->mergeCells('E2:H2');
+                $event->sheet->getDelegate()->getStyle('E2:H2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                 // Combinar celdas para la segunda fila del encabezado CONTROL DE FACTURA
-                 $event->sheet->getDelegate()->mergeCells('I3:O3');
-                 $event->sheet->getDelegate()->getStyle('I3:O3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                // Combinar celdas para la segunda fila del encabezado CONTROL DE FACTURA
+                $event->sheet->getDelegate()->mergeCells('I2:O2');
+                $event->sheet->getDelegate()->getStyle('I2:O2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                  // Combinar celdas para la segunda fila del encabezado PRECIO AL 35%
-                  $event->sheet->getDelegate()->mergeCells('P3:R3');
-                  $event->sheet->getDelegate()->getStyle('P3:R3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                // Combinar celdas para la segunda fila del encabezado PRECIO AL 35%
+                $event->sheet->getDelegate()->mergeCells('P2:R2');
+                $event->sheet->getDelegate()->getStyle('P2:R2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Congelar la primera fila (encabezado principal)
-                $event->sheet->freezePane('A4', 'A4');
+                $event->sheet->freezePane('A3', 'A3');
             },
         ];
     }
 
-    // Devuelve la colección de datos para el archivo Excel
+
     public function collection()
     {
-        // Accede a los datos proporcionados en el constructor
         $data = $this->data;
-
-        // Convierte los datos en una colección y devuélvela
         return collect($data);
     }
 }
