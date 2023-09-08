@@ -714,7 +714,7 @@ class InstallationController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_model', $product['product']['model']['id'])->first();
+                                ->where('_model', $productJpa->_model)->first();
 
                             if ($product['mount_new'] > 0) {
                                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
