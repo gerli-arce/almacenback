@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
+use Exception;
+
 // use Illuminate\Http\Response;
 
 class connect extends Controller
@@ -48,13 +50,32 @@ class connect extends Controller
     public function exportDataToExcel(Request $request)
     {
 
+        if(!isset($request->month)){
+            throw new Exception('Debes escoger un mes para generar el informe');
+        }
+
         $query = ViewParcelsRegisters::select(['*'])
             ->orderBy('id', 'desc');
 
-        // if (isset($request->date_start) && isset($request->date_end)) {
-        //     $query->where('date_entry', '<=', $request->date_end)
-        //         ->where('date_entry', '>=', $request->date_start);
-        // }
+        if (isset($request->date_start) && isset($request->date_end)) {
+            $query->where('date_entry', '<=', $request->date_end)
+                ->where('date_entry', '>=', $request->date_start);
+        }
+
+        $month = [
+            '1' => 'ENERO',
+            '2' => 'FEBRERO',
+            '3' => 'MARZO',
+            '4' => 'ABRIL',
+            '5' => 'MAYO',
+            '6' => 'JUNIO',
+            '7' => 'JULIO',
+            '8' => 'AGOSTO',
+            '9' => 'SEPTIEMBRE',
+            '10' => 'OCTUBRE',
+            '11' => 'NOVIEMBRE',
+            '12' => 'DICIEMBRE',
+        ];
 
         $parcelsJpa = $query->get();
         
@@ -85,43 +106,7 @@ class connect extends Controller
             $parcels[] = $parcel;
         } 
 
-        // return $parcels;
-
-        // foreach ($parcelsJpa as $parcelJpa) {
-        //     $parcel = gJSON::restore($parcelJpa->toArray(), '__');
-        //     $parcels[] = $parcel;
-        // }
-
-        // return $parcelsJpa;
-
-
-        // $data = [
-        //     [
-        //         'date_send' => 'marzo xs',
-        //         'num_voucher' => 'comprobante',
-        //         "buisnes" => "GALVANIZADOS",
-        //         "price_transport" => "120",
-        //         "date_pickup" => '12/12/2012',
-        //         "num_guia" => "GIA",
-        //         "provider" => "PROVIDER",
-        //         "description" => 'DESCRIPCION DE PRODUCTO',
-        //         "extent" => 'UNIDAD',
-        //         "mount" => '120',
-        //         "nun_bill" => 'NUM FACTURA',
-        //         'business_destination' => "FASTNETPERU",
-        //         'val_unit' => '12',
-        //         'subtotal' => '140',
-        //         'igv' => '2',
-        //         'price_with_igv' => '160',
-        //         'price' => '160',
-        //         'price_unit_with_igv' => '16',
-        //         'margin_revenue35' => '3',
-        //         'price_all' => '130',
-        //     ],
-
-        // ];
-
-        $export = new ExcelExport($parcels, 'ENERO');
+        $export = new ExcelExport($parcels, $month[$request->month]);
         $tempFilePath = 'public/temp/archivo_excel.xlsx';
         Excel::store($export, $tempFilePath);
         $tempFilePath = storage_path('app/' . $tempFilePath);

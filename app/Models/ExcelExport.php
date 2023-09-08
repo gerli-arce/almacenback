@@ -102,7 +102,7 @@ class ExcelExport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getDelegate()->getStyle('R2:T2')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
                 $event->sheet->getDelegate()->getStyle('R2:T2')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
                 $event->sheet->getDelegate()->getStyle('R2:T2')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-                $event->sheet->getDelegate()->getStyle('R2:T2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('00BFFF'); // Color de fondo amarillo
+                $event->sheet->getDelegate()->getStyle('R2:T2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF8000'); // Color de fondo amarillo
                 $event->sheet->getDelegate()->getStyle('R2:T2')->getFont()->getColor()->setARGB('000000');
                 $event->sheet->getDelegate()->getStyle('R2:T2')->getFont()->setSize(18);
 
