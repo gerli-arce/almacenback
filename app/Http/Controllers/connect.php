@@ -49,18 +49,6 @@ class connect extends Controller
 
         try {
 
-            if (!isset($request->month)) {
-                throw new Exception('Debes escoger un mes para generar el informe');
-            }
-
-            $query = ViewParcelsRegisters::select(['*'])
-                ->orderBy('id', 'desc');
-
-            if (isset($request->date_start) && isset($request->date_end)) {
-                $query->where('date_entry', '<=', $request->date_end)
-                    ->where('date_entry', '>=', $request->date_start);
-            }
-
             $month = [
                 '1' => 'ENERO',
                 '2' => 'FEBRERO',
@@ -75,6 +63,22 @@ class connect extends Controller
                 '11' => 'NOVIEMBRE',
                 '12' => 'DICIEMBRE',
             ];
+
+            // if (!isset($request->month)) {
+            //     throw new Exception('Debes escoger un mes para generar el informe');
+            // }
+
+            
+
+            $query = ViewParcelsRegisters::select(['*'])
+                ->orderBy('id', 'desc');
+
+            if (isset($request->date_start) && isset($request->date_end)) {
+                $query->where('date_entry', '<=', $request->date_end)
+                    ->where('date_entry', '>=', $request->date_start);
+            }
+
+            
 
             $parcelsJpa = $query->get();
 
@@ -105,7 +109,12 @@ class connect extends Controller
                 $parcels[] = $parcel;
             }
 
-            $export = new ExcelExport($parcels,$month[$request->month] );
+            if (!isset($request->date_start) && !isset($request->date_end)) {
+                $export = new ExcelExport($parcels, 'ESTE AÑO' );
+            }else{
+                $export = new ExcelExport($parcels,$month[$request->month] );
+            }
+            
             $tempFilePath = 'public/temp/archivo_excel.xlsx';
             Excel::store($export, $tempFilePath);
             $tempFilePath = storage_path('app/' . $tempFilePath);
