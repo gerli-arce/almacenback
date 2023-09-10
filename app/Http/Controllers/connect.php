@@ -64,28 +64,23 @@ class connect extends Controller
                 '12' => 'DICIEMBRE',
             ];
 
-            // if (!isset($request->month)) {
-            //     throw new Exception('Debes escoger un mes para generar el informe');
-            // }
-
-            
-
             $query = ViewParcelsRegisters::select(['*'])
                 ->orderBy('id', 'desc');
 
-            if (isset($request->date_start) && isset($request->date_end)) {
-                $query->where('date_entry', '<=', $request->date_end)
-                    ->where('date_entry', '>=', $request->date_start);
-            }
-
-            
+                if (isset($request->date_start) && isset($request->date_end)) {
+                    // Convertir las fechas al formato de la base de datos (Y-m-d)
+                    $dateStart = \DateTime::createFromFormat('d/m/Y', $request->date_start)->format('Y-m-d');
+                    $dateEnd = \DateTime::createFromFormat('d/m/Y', $request->date_end)->format('Y-m-d');
+                
+                    $query->where('date_entry', '<=', $dateEnd)
+                          ->where('date_entry', '>=', $dateStart);
+                }
 
             $parcelsJpa = $query->get();
 
             $parcels = array();
 
             foreach ($parcelsJpa as $parcelJpa) {
-                // $parcel = gJSON::restore($parcelJpa->toArray(), '__');
                 $parcel['date_send'] = $parcelJpa->date_send;
                 $parcel['num_voucher'] = $parcelJpa->num_voucher;
                 $parcel['business_transport__name'] = $parcelJpa->provider__name;
@@ -103,9 +98,15 @@ class connect extends Controller
                 $parcel['igv'] = $parcelJpa->igv;
                 $parcel['price_unity'] = $parcelJpa->price_unity;
                 $parcel['price'] = round($parcelJpa->amount + $parcelJpa->igv, 2);
-                $parcel['price_with_igv'] = round($parcel['price'] / $parcel['mount_product'], 2);
-                $parcel['35%'] = round($parcel['price_with_igv'] * 0.35, 2);
-                $parcel['price_all'] = round($parcel['price_with_igv'] + $parcel['35%'], 2);
+                if($parcel['price']!=0 && $parcel['mount_product'] != 0){
+                    $parcel['price_with_igv'] = round($parcel['price'] / $parcel['mount_product'], 2);
+                    $parcel['35%'] = round($parcel['price_with_igv'] * 0.35, 2);
+                    $parcel['price_all'] = round($parcel['price_with_igv'] + $parcel['35%'], 2);
+                }else{
+                    $parcel['price_with_igv'] = '0';
+                    $parcel['35%'] = '0';
+                    $parcel['price_all'] = '0';
+                }
                 $parcels[] = $parcel;
             }
 
