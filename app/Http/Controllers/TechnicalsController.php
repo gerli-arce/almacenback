@@ -1174,7 +1174,8 @@ class TechnicalsController extends Controller
                     } else {
                         $productByTechnicalJpaNew = new ProductByTechnical();
                         $productByTechnicalJpaNew->_technical = $request->id;
-                        $productByTechnicalJpaNew->_product = $productJpa->id;
+                        // $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
                         $productByTechnicalJpaNew->type = $request->type;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
