@@ -81,6 +81,13 @@ class connect extends Controller
             $parcels = array();
 
             foreach ($parcelsJpa as $parcelJpa) {
+
+                $currency = '$';
+
+                if($parcelJpa->currency == 'SOLES'){
+                    $currency = 'S/';
+                }
+
                 $parcel['date_send'] = $parcelJpa->date_send;
                 $parcel['num_voucher'] = $parcelJpa->num_voucher;
                 $parcel['business_transport__name'] = $parcelJpa->provider__name;
@@ -93,12 +100,32 @@ class connect extends Controller
                 $parcel['mount_product'] = $parcelJpa->mount_product;
                 $parcel['num_bill'] = $parcelJpa->num_bill;
                 $parcel['business_designed__name'] = $parcelJpa->business_designed__name;
-                $parcel['value_unity'] = $parcelJpa->value_unity;
-                $parcel['amount'] = $parcelJpa->amount;
-                $parcel['igv'] = $parcelJpa->igv;
-                $parcel['price_unity'] = $parcelJpa->price_unity;
-                $parcel['price'] = round($parcelJpa->amount + $parcelJpa->igv, 2);
-                if($parcel['price']!=0 && $parcel['mount_product'] != 0){
+                if($parcelJpa->value_unity != 0){
+                    $parcel['value_unity'] = $parcelJpa->value_unity;
+                }else{
+                    $parcel['value_unity'] = '0';
+                }
+                if($parcelJpa->amount!= 0){
+                    $parcel['amount'] = $parcelJpa->amount;
+                }else{
+                    $parcel['amount'] = '0';
+                }
+                if($parcelJpa->igv != 0){
+                    $parcel['igv'] = $parcelJpa->igv;
+                }else{
+                    $parcel['igv'] = '0';
+                }
+                if($parcelJpa->price_unity!= 0){
+                    $parcel['price_unity'] =  $parcelJpa->price_unity;
+                }else{
+                    $parcel['price_unity'] =  '0';
+                }
+                if($parcel['amount'] != '0' ||  $parcel['igv'] != '0'){
+                    $parcel['price'] = round($parcelJpa->amount + $parcelJpa->igv, 2);
+                }else{
+                    $parcel['price'] = '0';
+                }
+                if($parcel['price']!= '0' && $parcel['mount_product'] != '0'){
                     $parcel['price_with_igv'] = round($parcel['price'] / $parcel['mount_product'], 2);
                     $parcel['35%'] = round($parcel['price_with_igv'] * 0.35, 2);
                     $parcel['price_all'] = round($parcel['price_with_igv'] + $parcel['35%'], 2);
@@ -107,6 +134,16 @@ class connect extends Controller
                     $parcel['35%'] = '0';
                     $parcel['price_all'] = '0';
                 }
+
+                $parcel['value_unity']=  $currency.$parcel['value_unity'];
+                $parcel['amount']=  $currency.$parcel['amount'];
+                $parcel['igv']=  $currency.$parcel['igv'];
+                $parcel['price_unity']=  $currency.$parcel['price_unity'];
+                $parcel['price']=  $currency.$parcel['price'];
+                $parcel['price_with_igv']=  $currency.$parcel['price_with_igv'];
+                $parcel['35%']=  $currency.$parcel['35%'];
+                $parcel['price_all']=  $currency.$parcel['price_all'];
+
                 $parcels[] = $parcel;
             }
 
