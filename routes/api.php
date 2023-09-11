@@ -238,6 +238,7 @@ Route::post('/stock/products/all', [StockController::class, 'generateReportBySto
 Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
 Route::post('/stock/star', [StockController::class, 'changeStar']);
+Route::post('/stock/products/stock', [StockController::class, 'generateReportStock']);
 
 
 

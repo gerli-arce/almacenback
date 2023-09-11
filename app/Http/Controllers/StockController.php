@@ -6,8 +6,8 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\Response;
 use App\Models\Product;
+use App\Models\Response;
 use App\Models\Stock;
 use App\Models\User;
 use App\Models\ViewStock;
@@ -76,17 +76,17 @@ class StockController extends Controller
                 </div>
                 ";
 
-            //     $sumary .= "
-            //     <tr>
-            //         <td class='text-center'>{$models['id']}</td>
-            //         <td><p><strong style='font-size:14px;'>{$models['model']['model']}</strong></p><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
-            //         <td>{$curencies}</td>
-            //         <td class='text-center'>{$stock}</td>
-            //         <td class=''>{$models['model']['description']}</td>
-            //     </tr>
-            // ";
+                //     $sumary .= "
+                //     <tr>
+                //         <td class='text-center'>{$models['id']}</td>
+                //         <td><p><strong style='font-size:14px;'>{$models['model']['model']}</strong></p><img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img></td>
+                //         <td>{$curencies}</td>
+                //         <td class='text-center'>{$stock}</td>
+                //         <td class=''>{$models['model']['description']}</td>
+                //     </tr>
+                // ";
 
-            $actual = "
+                $actual = "
                 <div style='margin-left:35px;'>
                     <input style='width:80px; border:solid 2px #000; height: 20px; margin: 1px;'> <br>
                     <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
@@ -100,6 +100,121 @@ class StockController extends Controller
                 <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
                 <td>{$stock}</td>
                 <td></td>
+            </tr>
+        ";
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_name}',
+                    '{issue_long_date}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $sumary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+
+            return $pdf->stream('Informe.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportStock(Request $request)
+    {
+        set_time_limit(120);
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'read')) {
+                throw new Exception('No tienes permisos para listar stock');
+            }
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+
+            $pdf = new Dompdf($options);
+
+            $template = file_get_contents('../storage/templates/reportStock.html');
+
+            $sumary = '';
+
+            $stocksJpa = ViewStock::select(['*'])
+                ->where('branch__correlative', $branch)
+                ->where('mount_new', '>', '0')
+                ->orWhere('mount_second', '>', '0')
+                ->where('branch__correlative', $branch)
+                ->orWhere('mount_ill_fated', '>', '0')
+                ->where('branch__correlative', $branch)
+                ->orderBy('category__category', 'asc')->get();
+
+            $stocks = array();
+            foreach ($stocksJpa as $stockJpa) {
+                $stock = gJSON::restore($stockJpa->toArray(), '__');
+                $stocks[] = $stock;
+            }
+
+            foreach ($stocks as $models) {
+                $currency = "$";
+                if ($models['model']['currency'] == "SOLES") {
+                    $currency = "S/.";
+                }
+
+                $image = "
+                <div>
+                <img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img>
+                </div>
+                ";
+
+                $product = "
+                <div style='font-size:12px'>
+                    <p style='margin-top:0px;magin-bottom:0px;'>Modelo: <strong>{$models['model']['model']}</strong></p>
+                    <p style='margin-top:0px;magin-bottom:0px;'>Categoria: <strong>{$models['category']['category']}</strong></p>
+                </div>
+                ";
+
+                $stock = "
+                <div style='padding:0px;'>
+                    <p style='margin:0px;'>Nuevos: <strong style='font-size:16px'>{$models['mount_new']}</strong></p>
+                    <p style='margin:0px'>Seminuevos <strong style='font-size:16px'>{$models['mount_second']}</strong></p>
+                    <p style='margin:0px'>Malogrados <strong style='font-size:16px'>{$models['mount_ill_fated']}</strong></p>
+                </div>
+                ";
+
+                $actual = "
+                <div style='margin-left:35px;'>
+                    <input style='width:80px; border:solid 2px #000; height: 20px; margin: 1px;'> <br>
+                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
+                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
+                </div>
+            ";
+
+                $sumary .= "
+            <tr>
+                <td class='text-center'>{$models['id']}</td>
+                <td>{$image}</td>
+                <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
+                <td>{$stock}</td>
             </tr>
         ";
             }
@@ -158,7 +273,7 @@ class StockController extends Controller
                 'users.id as id',
                 'users.username as username',
                 'people.name as person__name',
-                'people.lastname as person__lastname'
+                'people.lastname as person__lastname',
             ])
                 ->join('people', 'users._person', 'people.id')
                 ->where('users.id', $userid)->first();
@@ -357,7 +472,6 @@ class StockController extends Controller
                 throw new Exception("No tiene este producto en su almacen.");
             }
 
-
             $stockJpa->save();
 
             $response->setStatus(200);
@@ -373,7 +487,8 @@ class StockController extends Controller
         }
     }
 
-    public function getStockByModel(Request $request){
+    public function getStockByModel(Request $request)
+    {
         $response = new Response();
         $tatus = 400;
         try {
@@ -409,7 +524,8 @@ class StockController extends Controller
         }
     }
 
-    public function changeStar(Request $request){
+    public function changeStar(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -438,7 +554,7 @@ class StockController extends Controller
             $response->setStatus(200);
             $response->setMessage('El stock a sido cambiado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
