@@ -1012,7 +1012,7 @@ class PlantPendingController extends Controller
                         $productJpa->save();
                     } else {
                         $productJpa = Product::find($product['product']['id']);
-                        $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->first();
+                        $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $plantJpa->id)->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
                             $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
@@ -1075,9 +1075,6 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $saleProductJpa = SalesProducts::find($request->id);
-            $saleProductJpa->status_sale = 'CULMINADA';
-            $saleProductJpa->save();
 
             $saleProductJpa = SalesProducts::find($request->id);
             $saleProductJpa->status_sale = 'CULMINADA';
@@ -1087,7 +1084,7 @@ class PlantPendingController extends Controller
             foreach ($detailsSalesJpa as $detail) {
                 $productJpa = Product::find($detail['_product']);
                 if ($productJpa->type == "MATERIAL") {
-                    $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
+                    $productByPlantJpa = ProductByPlant::where('_model', $productJpa->_model)
                         ->where('_plant', $saleProductJpa->_plant)->first();
                     if ($productByPlantJpa) {
                         $productByPlantJpa->mount_new = $productByPlantJpa->mount_new + $detail['mount_new'];
@@ -1098,6 +1095,7 @@ class PlantPendingController extends Controller
                         $productByPlantJpa_new = new ProductByPlant();
                         $productByPlantJpa_new->_product = $productJpa->id;
                         $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                        $productByPlantJpa_new->_model = $saleProductJpa->_model;
                         $productByPlantJpa_new->mount_new = $detail['mount_new'];
                         $productByPlantJpa_new->mount_second = $detail['mount_second'];
                         $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
@@ -1107,6 +1105,7 @@ class PlantPendingController extends Controller
                 } else {
                     $productByPlantJpa_new = new ProductByPlant();
                     $productByPlantJpa_new->_product = $productJpa->id;
+                    $productByPlantJpa_new->_model = $productJpa->_model;
                     $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
                     $productByPlantJpa_new->mount_new = $detail['mount_new'];
                     $productByPlantJpa_new->mount_second = $detail['mount_second'];
