@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ExcelExport;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
+use App\Models\StockPlant;
 use App\Models\Response;
 use App\Models\ViewParcelsRegisters;
 use Exception;
@@ -193,6 +194,38 @@ class connect extends Controller
             $response->setMessage('Operacion correcta');
             $response->setStatus('200');
             $response->setData($ProductByTechnical->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function changeByProductForModelStokPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+            $StockPlant = StockPlant::get();
+
+            foreach ($StockPlant as $product) {
+                $productJpa = Product::find($product->_product);
+                if ($productJpa) {
+                    $stock_plant = StockPlant::find($product->id);
+                    $stock_plant->_model = $productJpa->_model;
+                    $stock_plant->save();
+                } else {
+                    $stock_plant = StockPlant::find($product->id);
+                    $stock_plant->_model = 72;
+                    $stock_plant->save();
+                }
+            }
+            $response->setMessage('Operacion correcta');
+            $response->setStatus('200');
+            $response->setData($StockPlant->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
