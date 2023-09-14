@@ -8,6 +8,7 @@ use App\Models\ProductByTechnical;
 use App\Models\StockPlant;
 use App\Models\Response;
 use App\Models\ViewParcelsRegisters;
+use App\Models\ProductByPlant;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -226,6 +227,38 @@ class connect extends Controller
             $response->setMessage('Operacion correcta');
             $response->setStatus('200');
             $response->setData($StockPlant->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function changeByProductForModelProductsPlant(Request $request)
+    {
+        $response = new Response();
+        try {
+            $productPlant = ProductByPlant::get();
+
+            foreach ($productPlant as $product) {
+                $productJpa = Product::find($product->_product);
+                if ($productJpa) {
+                    $product_plant = ProductByPlant::find($product->id);
+                    $product_plant->_model = $productJpa->_model;
+                    $product_plant->save();
+                } else {
+                    $product_plant = ProductByPlant::find($product->id);
+                    $product_plant->_model = 72;
+                    $product_plant->save();
+                }
+            }
+            $response->setMessage('Operacion correcta');
+            $response->setStatus('200');
+            $response->setData($productPlant->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());

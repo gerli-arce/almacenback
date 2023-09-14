@@ -1502,6 +1502,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+            ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
@@ -1852,6 +1853,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+            ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'DESC')
                 ->where('technical_id', $request->technical)

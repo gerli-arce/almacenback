@@ -437,3 +437,4 @@ Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
 Route::get('/stock_plant', [connect::class, 'changeByProductForModelStokPlant']);
+Route::get('/products_plant', [connect::class, 'changeByProductForModelProductsPlant']);
