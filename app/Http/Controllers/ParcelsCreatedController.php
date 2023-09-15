@@ -255,27 +255,41 @@ class ParcelsCreatedController extends Controller
 
             $pdf = new Dompdf($options);
 
-            $template = file_get_contents('../storage/templates/reportGuia.html');
+            $template = file_get_contents('../storage/templates/reportForMonthParcelsCreated.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $branchId = $branch_->id;
 
-            $SalesProductsJpa = ViewParcelsCreated::
-                where(function ($query) use ($branchId, $request) {
-                $query->where('branch_send__id', $branchId)
-                    ->where('branch_destination__id', $request->branch);
+            $query = ViewParcelsCreated::select();
+
+            $query->where(function ($query) use ($branchId, $request) {
+                if (isset($request->date_start) || isset($request->date_end)) {
+                    $query->where('branch_send__id', $branchId)
+                        ->where('branch_destination__id', $request->branch)
+                        ->where('date_send', '>=',  $request->date_start )
+                        ->where('date_send', '<=',  $request->date_end );
+                } else {
+                    $query->where('branch_send__id', $branchId)
+                        ->where('branch_destination__id', $request->branch);
+                }
             })
                 ->orWhere(function ($query) use ($branchId, $request) {
-                    $query->where('branch_send__id', $request->branch)
-                        ->Where('branch_destination__id', $branchId);
-                })
-                
-                ->get();
+                    if (isset($request->date_start) || isset($request->date_end)) {
+                        $query->where('branch_send__id', $request->branch)
+                            ->Where('branch_destination__id', $branchId)
+                            ->where('date_send', '>=',  $request->date_start )
+                            ->where('date_send', '<=',  $request->date_end );
+                    } else {
+                        $query->where('branch_send__id', $request->branch)
+                            ->Where('branch_destination__id', $branchId);
+                    }
+                });
+
+            $SalesProductsJpa = $query->get();
 
             $parcels = array();
             foreach ($SalesProductsJpa as $parcelJpa) {
                 $parcel = gJSON::restore($parcelJpa->toArray(), '__');
-
                 $detailsJpa = DetailsParcel::select(
                     'details_parcel.id as id',
                     'details_parcel._parcel as _parcel',
@@ -311,20 +325,181 @@ class ParcelsCreatedController extends Controller
                     $details[] = $detail;
                 }
 
-                $parcel['sale'] = $details;
-
-                $parcels[] = $parcel;
+                $parcel['details']=$details;
+                if($parcel['branch_send']['id'] == $branch_->id){
+                    $parcels['send'][] = $parcel;
+                }else{
+                    $parcels['received'][] = $parcel;
+                }
             }
 
-            $response = new Response();
-            $response->setData($parcels);
-            $response->setMessage('Operacion correcta');
-            $response->setStatus(200);
+            if(isset($parcels['send'])){
+                $parcels['parcels_send'] = count($parcels['send']);
+            }else{
+                $parcels['parcels_send'] = [];
+            }
+            
+            if(isset($parcels['received'])){
+                $parcels['parcels_received'] = count($parcels['received']);
+            }else{
+                $parcels['parcels_received'] = [];
+            }
 
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $detailsByParcelsend = array();
+            foreach($parcels['send'] as $ParcelJpa){
+                foreach($ParcelJpa['details'] as $detailsJpa){
+                    $detailsByParcelsend[] = $detailsJpa;
+                }
+            }
+            $parcels['details_send'] = $detailsByParcelsend;
+
+            $detailsByParcelreceived = array();
+            if(isset($parcels['received'])){
+                foreach($parcels['received'] as $ParcelJpa){
+                    foreach($ParcelJpa['details'] as $detailJpa){
+                        $detailsByParcelreceived[] = $detailJpa;
+                    }
+                }
+            }
+            $parcels['details_received'] = $detailsByParcelreceived;
+
+            $models_send = array();
+            foreach ($parcels['details_send'] as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models_send[$model])) {
+                    $models_send[$model]['mount_new'] += $mount_new;
+                    $models_send[$model]['mount_second'] += $mount_second;
+                    $models_send[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models_send[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity);
+                }
+            }
+
+
+            $parcels['products_send']= array_values($models_send);
+
+            $models_received = array();
+            foreach ($parcels['details_received'] as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models_received[$model])) {
+                    $models_received[$model]['mount_new'] += $mount_new;
+                    $models_received[$model]['mount_second'] += $mount_second;
+                    $models_received[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models_received[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity);
+                }
+            }
+
+
+            $parcels['products_received']= array_values($models_received);
+
+
+            $count =1;
+            $sumary_send = '';
+
+            foreach ($parcels['products_send'] as $detail) {
+
+                $sumary_send .= "
+                <tr>
+                    <td><center style='font-size:15px;'>{$count}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_new']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_second']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+
+                $count = $count + 1;
+            }
+
+            
+            $count =1;
+            $sumary_received = '';
+
+            foreach ($parcels['products_received'] as $detail) {
+
+                $sumary_received .= "
+                <tr>
+                    <td><center style='font-size:15px;'>{$count}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_new']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_second']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:15px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+
+                $count = $count + 1;
+            }
+
+
+            $template = str_replace(
+                [
+                    '{summary_send}',
+                    '{summary_received}',
+                ],
+                [
+                    $sumary_send,
+                    $sumary_received,
+                ],
+                $template
             );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+
+
+
+            return $pdf->stream('Guia.pdf');
+
+
+
+            // $response = new Response();
+            // $response->setData($parcels);
+            // $response->setMessage('Operacion correcta');
+            // $response->setStatus(200);
+
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();
