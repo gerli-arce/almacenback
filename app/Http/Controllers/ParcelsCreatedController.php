@@ -258,6 +258,7 @@ class ParcelsCreatedController extends Controller
             $template = file_get_contents('../storage/templates/reportForMonthParcelsCreated.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $branch_selected = Branch::find($request->branch);
             $branchId = $branch_->id;
 
             $query = ViewParcelsCreated::select();
@@ -336,19 +337,21 @@ class ParcelsCreatedController extends Controller
             if(isset($parcels['send'])){
                 $parcels['parcels_send'] = count($parcels['send']);
             }else{
-                $parcels['parcels_send'] = [];
+                $parcels['parcels_send'] = 0;
             }
-            
+
             if(isset($parcels['received'])){
                 $parcels['parcels_received'] = count($parcels['received']);
             }else{
-                $parcels['parcels_received'] = [];
+                $parcels['parcels_received'] = 0;
             }
 
             $detailsByParcelsend = array();
-            foreach($parcels['send'] as $ParcelJpa){
-                foreach($ParcelJpa['details'] as $detailsJpa){
-                    $detailsByParcelsend[] = $detailsJpa;
+            if(isset($parcels['send'])){
+                foreach($parcels['send'] as $ParcelJpa){
+                    foreach($ParcelJpa['details'] as $detailsJpa){
+                        $detailsByParcelsend[] = $detailsJpa;
+                    }
                 }
             }
             $parcels['details_send'] = $detailsByParcelsend;
@@ -426,9 +429,22 @@ class ParcelsCreatedController extends Controller
                 }
             }
 
-
             $parcels['products_received']= array_values($models_received);
 
+            $month = [
+                '1' => 'ENERO',
+                '2' => 'FEBRERO',
+                '3' => 'MARZO',
+                '4' => 'ABRIL',
+                '5' => 'MAYO',
+                '6' => 'JUNIO',
+                '7' => 'JULIO',
+                '8' => 'AGOSTO',
+                '9' => 'SEPTIEMBRE',
+                '10' => 'OCTUBRE',
+                '11' => 'NOVIEMBRE',
+                '12' => 'DICIEMBRE',
+            ];
 
             $count =1;
             $sumary_send = '';
@@ -438,11 +454,11 @@ class ParcelsCreatedController extends Controller
                 $sumary_send .= "
                 <tr>
                     <td><center style='font-size:15px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_new']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_second']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_ill_fated']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
                 ";
 
@@ -458,11 +474,11 @@ class ParcelsCreatedController extends Controller
                 $sumary_received .= "
                 <tr>
                     <td><center style='font-size:15px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_new']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_second']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['mount_ill_fated']}</center></td>
                     <td><center style='font-size:15px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
                 </tr>
                 ";
 
@@ -472,10 +488,26 @@ class ParcelsCreatedController extends Controller
 
             $template = str_replace(
                 [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{month}',
+                    '{branch_selected}',
+                    '{parcels_send}',
+                    '{parcel_received}',
+                    '{date_start}',
+                    '{date_end}',
                     '{summary_send}',
                     '{summary_received}',
                 ],
                 [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $month[$request->month],
+                    $branch_selected->name,
+                    $parcels['parcels_send'],
+                    $parcels['parcels_received'],
+                    $request->date_start,
+                    $request->date_end,
                     $sumary_send,
                     $sumary_received,
                 ],

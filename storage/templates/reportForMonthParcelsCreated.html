@@ -249,16 +249,19 @@
                             border: solid 2px #000;
                         ">
                     <p>RUC 20602791816</p>
-                    <p>MES</p>
+                    <p>GUIA DEL MES DE</p>
                     <p>{month}</p>
                 </div>
             </div>
         </div>
         <br />
-
+        <p id="date">{branch_onteraction}, {issue_long_date}</p>
         <div>
-            <p>ENCOMIENDAS ENVIADAS: <span>{parcels_send}</span></p>
-            <p>ENCOMIENDAS RECIBIDAS: <span>{parcel_received}</span></p>
+            <p>SUCURSAL: <strong>{branch_selected}</strong></p>
+            <p>ENCOMIENDAS ENVIADAS: <strong>{parcels_send}</strong></p>
+            <p>ENCOMIENDAS RECIBIDAS: <strong>{parcel_received}</strong></p>
+            <p>FECHA INICIO: <strong>{date_start}</strong></p>
+            <p>FECHA FIN: <strong>{date_end}</strong></p>
         </div>
 
         <center class="text-bold" style="margin-top: 8px">PRODUCTOS ENVIADOS</center>
@@ -266,11 +269,11 @@
             <thead>
                 <tr>
                     <td>#</td>
+                    <td>DESCRIPCIÓN</td>
                     <td>NU</td>
                     <td>SE</td>
                     <td>MA</td>
                     <td>UNID.</td>
-                    <td>DESCRIPCIÓN</td>
                 </tr>
             </thead>
             <tbody>
@@ -283,11 +286,11 @@
             <thead>
                 <tr>
                     <td>#</td>
+                    <td>DESCRIPCIÓN</td>
                     <td>NU</td>
                     <td>SE</td>
                     <td>MA</td>
                     <td>UNID.</td>
-                    <td>DESCRIPCIÓN</td>
                 </tr>
             </thead>
             <tbody>
