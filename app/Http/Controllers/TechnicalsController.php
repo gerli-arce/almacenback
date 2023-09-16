@@ -1175,6 +1175,7 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpaNew = new ProductByTechnical();
                         $productByTechnicalJpaNew->_technical = $request->id;
                         $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
                         $productByTechnicalJpaNew->type = $request->type;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
@@ -1193,7 +1194,7 @@ class TechnicalsController extends Controller
                     $stock->save();
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
-                    // $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->_product = $productJpa->id;
                     $productByTechnicalJpaNew->_model = $productJpa->_model;
                     $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
@@ -1289,6 +1290,7 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpaNew = new ProductByTechnical();
                         $productByTechnicalJpaNew->_technical = $request->id;
                         $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
                         $productByTechnicalJpaNew->type = $request->type;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
@@ -1308,6 +1310,7 @@ class TechnicalsController extends Controller
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
                     $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->_model = $productJpa->_model;
                     $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
@@ -1499,6 +1502,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+            ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
@@ -1849,6 +1853,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+            ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'DESC')
                 ->where('technical_id', $request->technical)

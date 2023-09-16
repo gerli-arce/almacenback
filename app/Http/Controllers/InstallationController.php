@@ -968,8 +968,8 @@ class InstallationController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                        ->where('_model', $request->product['model']['id'])->first();
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
+                        ->where('_model', $productJpa->_model)->first();
                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
                 $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
                 $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;

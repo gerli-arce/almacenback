@@ -7,11 +7,11 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
-use App\Models\EntryDetail;
 use App\Models\ViewProducts;
 use Exception;
 use Illuminate\Http\Request;
@@ -170,6 +170,8 @@ class ProductsController extends Controller
                     }
 
                     if (!$reppet_product) {
+                        $stock->_update_user = $userid;
+                        $stock->update_date = gTrace::getDate('mysql');
                         $stock->save();
                     }
 
@@ -302,7 +304,6 @@ class ProductsController extends Controller
                         $productJpa->mount = 0;
                     }
 
-
                     $productJpa->save();
 
                     $entryDetail = new EntryDetail();
@@ -316,6 +317,8 @@ class ProductsController extends Controller
                     $entryDetail->status = "1";
                     $entryDetail->save();
                 }
+                $stock->_update_user = $userid;
+                $stock->update_date = gTrace::getDate('mysql');
                 $stock->save();
             }
 
@@ -599,7 +602,7 @@ class ProductsController extends Controller
                     $q->orWhere('num_bill', $type, $value);
                 }
             })->where('branch__correlative', $branch)
-            ->where('disponibility', '=', 'DISPONIBLE')
+                ->where('disponibility', '=', 'DISPONIBLE')
                 ->where('type', 'EQUIPO');
 
             $iTotalDisplayRecords = $query->count();
@@ -751,7 +754,6 @@ class ProductsController extends Controller
             $productJpa = Product::find($request->id);
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-
             if (!$productJpa) {
                 throw new Exception("Error: El registro que intenta modificar no existe");
             }
@@ -826,11 +828,15 @@ class ProductsController extends Controller
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = (intval($stock->mount_second) + 1);
                                 $stock->mount_new = (intval($stock->mount_new) - 1);
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             } else {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = intval($stock->mount_second) + 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             }
                         }
@@ -841,11 +847,15 @@ class ProductsController extends Controller
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = intval($stock->mount_second) - 1;
                                 $stock->mount_new = intval($stock->mount_new) + 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             } else {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_new = intval($stock->mount_new) + 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             }
                         }
@@ -855,11 +865,15 @@ class ProductsController extends Controller
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_new = intval($stock->mount_new) - 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             } else if ($productJpa->product_status == "SEMINUEVO") {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = intval($stock->mount_second) - 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             }
                         }
@@ -869,11 +883,15 @@ class ProductsController extends Controller
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_new = intval($stock->mount_new) - 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             } else if ($productJpa->product_status == "SEMINUEVO") {
                                 $stock = Stock::where('_model', $productJpa->_model)
                                     ->where('_branch', $branch_->id)->first();
                                 $stock->mount_second = intval($stock->mount_second) - 1;
+                                $stock->_update_user = $userid;
+                                $stock->update_date = gTrace::getDate('mysql');
                                 $stock->save();
                             }
                         }
@@ -982,6 +1000,8 @@ class ProductsController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     $stock->mount_new = intval($stock->mount_new) - 1;
+                    $stock->_update_user = $userid;
+                    $stock->update_date = gTrace::getDate('mysql');
                     $stock->save();
                 }
                 if ($productJpa->product_status == "SEMINUEVO") {
@@ -989,6 +1009,8 @@ class ProductsController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     $stock->mount_second = intval($stock->mount_second) - 1;
+                    $stock->_update_user = $userid;
+                    $stock->update_date = gTrace::getDate('mysql');
                     $stock->save();
                 }
             } else {

@@ -295,14 +295,14 @@ class ModelsController extends Controller
             $type = $modelJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable $th) {
-            $ruta = '../storage/images/brands-default.jpg';
+            $ruta = '../storage/images/img-default.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,

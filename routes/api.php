@@ -238,6 +238,7 @@ Route::post('/stock/products/all', [StockController::class, 'generateReportBySto
 Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
 Route::post('/stock/star', [StockController::class, 'changeStar']);
+Route::post('/stock/products/stock', [StockController::class, 'generateReportStock']);
 
 
 
@@ -272,6 +273,7 @@ Route::post('/parcels_created/paginate', [ParcelsCreatedController::class, 'pagi
 Route::post('/parcels_created/searchentry', [ParcelsCreatedController::class, 'getParcelsByPerson']);
 Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getParcelByPerson']);
 Route::post('/parcels_created/guia', [ParcelsCreatedController::class, 'generateGuia']);
+Route::post('/parcels_created/report', [ParcelsCreatedController::class, 'generateReportByBranchByMonth']);
 Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
@@ -435,3 +437,5 @@ Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
+Route::get('/stock_plant', [connect::class, 'changeByProductForModelStokPlant']);
+Route::get('/products_plant', [connect::class, 'changeByProductForModelProductsPlant']);
