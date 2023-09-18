@@ -60,8 +60,8 @@ class EntrysController extends Controller
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
-                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
-                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+                $dateStart = date('Y-m-d 00:00:00', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d 23:59:59', strtotime($request->search['date_end']));
 
                 $query->where('entry_products.entry_date', '>=', $dateStart)
                     ->where('entry_products.entry_date', '<=', $dateEnd);
