@@ -2,29 +2,22 @@
 
 namespace App\Http\Controllers;
 
-
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\ViewDetailSale;
-use App\Models\ViewPlant;
-use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
+use App\Models\Parcel;
+use App\Models\Plant;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\ViewDetailsSales;
+use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
-use App\Models\viewInstallations;
-use Exception;
-
 use Dompdf\Dompdf;
 use Dompdf\Options;
-
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SalesController extends Controller
 {
@@ -78,8 +71,8 @@ class SalesController extends Controller
                 'view_sales.status as status',
 
             ])
-            ->distinct()
-            ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->distinct()
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
                 ->where('view_sales.branch__correlative', $branch)
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir']);
@@ -89,7 +82,6 @@ class SalesController extends Controller
                     ->where('view_details_sales.product__model__id', $request->search['model']);
             }
 
-
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
                 $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
@@ -97,7 +89,6 @@ class SalesController extends Controller
                 $query->where('date_sale', '>=', $dateStart)
                     ->where('date_sale', '<=', $dateEnd);
             }
-
 
             if ($request->search['column'] != '*') {
                 if ($request->search['column'] == 'INSTALLATION') {
@@ -108,7 +99,7 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->search['column'] == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
-                } else if($request->search['column'] == 'TECHNICAL'){
+                } else if ($request->search['column'] == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
                 }
             }
@@ -126,7 +117,7 @@ class SalesController extends Controller
                 $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
                 $details = array();
                 foreach ($detailSalesJpa as $detailJpa) {
-                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
                 $sale['details'] = $details;
@@ -165,7 +156,6 @@ class SalesController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportSales.html');
 
-
             if (
                 !isset($request->date_start) ||
                 !isset($request->date_end)
@@ -173,60 +163,59 @@ class SalesController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $user = ViewUsers::select([
                 'id',
                 'username',
                 'person__name',
-                'person__lastname'
+                'person__lastname',
             ])->where('id', $userid)->first();
             $sumary = '';
 
             $dateStart = date('Y-m-d', strtotime($request->date_start));
             $dateEnd = date('Y-m-d', strtotime($request->date_end));
 
-                $query = ViewSales::select([
-                    'view_sales.id as id',
-                    'view_sales.client_id as client_id',
-                    'view_sales.technical_id as technical_id',
-                    'view_sales.branch__id as branch__id',
-                    'view_sales.branch__name as branch__name',
-                    'view_sales.branch__correlative	 as branch__correlative',
-                    'view_sales.type_operation__id	 as type_operation__id',
-                    'view_sales.type_operation__operation	 as type_operation__operation',
-                    'view_sales.tower_id as tower_id',
-                    'view_sales.plant_id as plant_id',
-                    'view_sales.room_id as room_id',
-                    'view_sales.type_intallation as type_intallation',
-                    'view_sales.date_sale as date_sale',
-                    'view_sales.issue_date as issue_date',
-                    'view_sales.issue_user_id as issue_user_id',
-                    'view_sales.status_sale as status_sale',
-                    'view_sales.description as description',
-                    'view_sales.user_creation__id as user_creation__id',
-                    'view_sales.user_creation__username as user_creation__username',
-                    'view_sales.user_creation__person__id as user_creation__person__id',
-                    'view_sales.user_creation__person__name as user_creation__person__name',
-                    'view_sales.user_creation__person__lastname as user_creation__person__lastname',
-                    'view_sales.creation_date as creation_date',
-                    'view_sales.update_user_id as update_user_id',
-                    'view_sales.update_date as update_date',
-                    'view_sales.status as status',
-    
-                ])
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+
+            ])
                 ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
-                    ->whereNotNull('view_sales.status')
-                    ->where('view_sales.branch__correlative', $branch)
-                    ->orderBy('view_sales.date_sale', 'desc')
-                    ->where('view_sales.date_sale', '>=', $dateStart)
-                    ->where('view_sales.date_sale', '<=', $dateEnd);
-    
-                if (isset($request->model)) {
-                    $query
-                        ->where('view_details_sales.product__model__id', $request->model);
-                }
+                ->whereNotNull('view_sales.status')
+                ->where('view_sales.branch__correlative', $branch)
+                ->orderBy('view_sales.date_sale', 'desc')
+                ->where('view_sales.date_sale', '>=', $dateStart)
+                ->where('view_sales.date_sale', '<=', $dateEnd);
+
+            if (isset($request->model)) {
+                $query
+                    ->where('view_details_sales.product__model__id', $request->model);
+            }
 
             if ($request->filter != '*') {
                 if ($request->filter == 'INSTALLATION') {
@@ -237,7 +226,7 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->filter == 'PLANT') {
                     $query->where('type_operation__operation', 'PLANTA');
-                } else if($request->filter == 'TECHNICAL'){
+                } else if ($request->filter == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
                 }
             }
@@ -250,7 +239,7 @@ class SalesController extends Controller
                 $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
                 $details = array();
                 foreach ($detailSalesJpa as $detailJpa) {
-                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
                 $sale['details'] = $details;
@@ -265,9 +254,9 @@ class SalesController extends Controller
                 $plant_details = "";
                 $tower_details = "";
                 $fauld_details = "";
+                $parcel_details = "";
 
-
-                if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] ==  'INSTALACION' || $sale['type_operation']['operation'] == 'AVERIA') {
+                if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'INSTALACION' || $sale['type_operation']['operation'] == 'AVERIA') {
                     $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
                     $install = gJSON::restore($viewInstallations->toArray(), '__');
 
@@ -296,15 +285,28 @@ class SalesController extends Controller
                         ->join('plant', 'sales_products._plant', 'plant.id')
                         ->where('sales_products.id', $sale['id'])->first();
 
-
                     if ($viewPlant) {
                         $plant_details = "
                         <div>
-                            <p>Proyecto: <strong>{$viewPlant->plant__name}</strong></p>
+                            <p>Tipo: LIQUIDACION</p>
+                            <p>Proyecto:{$viewPlant->id}) <strong>{$viewPlant->plant__name}</strong></p>
                             <p>Técnico: <strong>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</strong></p>
                             <p>Fecha: <strong>{$viewPlant->date_sale}</strong></p>
                         </div>
                         ";
+                    } else {
+
+                        $PlantJpa = Plant::find($sale['plant_id']);
+                        if ($PlantJpa) {
+                            $plant_details = "
+                              <div>
+                                    <p>Tipo: AGREGADO A STOCK</p>
+                                    <p>Proyecto: {$PlantJpa->id}) <strong>{$PlantJpa->name}</strong></p>
+                                    <p>Fecha: <strong>{$sale['date_sale']}</strong></p>
+                              </div>
+                              ";
+                        }
+
                     }
                 } else if ($sale['type_operation']['operation'] == 'TORRE') {
 
@@ -331,7 +333,7 @@ class SalesController extends Controller
                         <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
                     </div>
                     ";
-                }else if ($sale['type_operation']['operation'] == 'PARA TECNICO'){
+                } else if ($sale['type_operation']['operation'] == 'PARA TECNICO') {
                     $saleProductJpa = SalesProducts::select([
                         'sales_products.id as id',
                         'tech.id as technical__id',
@@ -347,17 +349,29 @@ class SalesController extends Controller
 
                     $tower_details = "
                     <div>
-                        <p>Persona: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
                         <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+                } else if ($sale['type_operation']['operation'] == 'ENCOMIENDA') {
+                    $ParcelJpa = Parcel::where('_sale_product', $sale['id'])->first();
+                    $branch_send = Branch::find($ParcelJpa->_branch_send);
+                    $branch_received = Branch::find($ParcelJpa->_branch_destination);
+
+                    $parcel_details = "
+                    <div>
+                        <p>Sucursal de envio: {$branch_send->name}</p>
+                        <p>Sucursal de recepcion: {$branch_received->name}</p>
+                        <p>Fecha de envio: {$ParcelJpa->date_send}</p>
+                        <p>Fecha de recojo: {$ParcelJpa->date_entry}</p>
                     </div>
                     ";
                 }
 
                 $usuario = "
                 <div>
-                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
-                    <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
-                    <p>{$sale['date_sale']}</p>
+                    <p><center><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </center></p>
+                    <p><center>{$sale['date_sale']}</center></p>
                 </div>
                 ";
 
@@ -372,9 +386,8 @@ class SalesController extends Controller
                     </div>
                 ";
 
-
                 $sumary .= "
-                <tr>
+                <tr style='font-size:12px;'>
                     <td>{$count}</td>
                     <td>{$usuario}</td>
                     <td>{$datos}</td>
@@ -383,12 +396,13 @@ class SalesController extends Controller
 
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <p style='margin-buttom: 12px;'><strong>{$count}){$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$instalation_details}
                         {$plant_details}
                         {$tower_details}
                         {$fauld_details}
+                        {$parcel_details}
                     </div>
                     <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
 
@@ -404,7 +418,7 @@ class SalesController extends Controller
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
                                         <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
-                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>                                 
+                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
                                     </div>
                                     <div>
                                         <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
@@ -419,11 +433,8 @@ class SalesController extends Controller
                         </div>
                     ";
 
-
                 $count = $count + 1;
             }
-
-
 
             $template = str_replace(
                 [
@@ -446,7 +457,6 @@ class SalesController extends Controller
                 ],
                 $template
             );
-
 
             $pdf->loadHTML($template);
             $pdf->render();
