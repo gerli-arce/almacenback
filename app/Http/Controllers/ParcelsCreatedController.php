@@ -431,20 +431,7 @@ class ParcelsCreatedController extends Controller
 
             $parcels['products_received']= array_values($models_received);
 
-            $month = [
-                '1' => 'ENERO',
-                '2' => 'FEBRERO',
-                '3' => 'MARZO',
-                '4' => 'ABRIL',
-                '5' => 'MAYO',
-                '6' => 'JUNIO',
-                '7' => 'JULIO',
-                '8' => 'AGOSTO',
-                '9' => 'SEPTIEMBRE',
-                '10' => 'OCTUBRE',
-                '11' => 'NOVIEMBRE',
-                '12' => 'DICIEMBRE',
-            ];
+          
 
             $count =1;
             $sumary_send = '';
@@ -490,7 +477,6 @@ class ParcelsCreatedController extends Controller
                 [
                     '{branch_onteraction}',
                     '{issue_long_date}',
-                    '{month}',
                     '{branch_selected}',
                     '{parcels_send}',
                     '{parcel_received}',
@@ -502,7 +488,6 @@ class ParcelsCreatedController extends Controller
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
-                    $month[$request->month],
                     $branch_selected->name,
                     $parcels['parcels_send'],
                     $parcels['parcels_received'],
