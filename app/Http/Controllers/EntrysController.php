@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\{gJson, gValidate, gTrace};
-use App\Models\{Product, EntryDetail, EntryProducts, Response, Branch};
+use App\Models\{Product, EntryDetail, EntryProducts, Response, Branch, ViewDetailEntry};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,17 +90,6 @@ class EntrysController extends Controller
             $entrys = array();
             foreach ($entrysJpa as $entryJpa) {
                 $entry = gJSON::restore($entryJpa->toArray(), '__');
-
-                // $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
-
-                // $details = [];
-                // foreach ($detailsJpa as $detailJpa) {
-                //     $detail = gJSON::restore($detailJpa->toArray(), '__');
-                //     $details[] = $detail;
-                // }
-
-                // $entry['details'] = $details;
-
                 $entrys[] = $entry;
             }
 
@@ -299,92 +288,63 @@ class EntrysController extends Controller
                 ->join('people', 'users._person', 'people.id')
                 ->join('operation_types', 'entry_products._type_operation', 'operation_types.id')
                 ->where('entry_products._branch', $branch_->id)
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy('entry_products.id', 'desc');
 
-            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
-                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
-                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+            if (isset($request->date_start) || isset($request->date_end)) {
+                $dateStart = date('Y-m-d 00:00:00', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d 23:59:59', strtotime($request->date_end));
 
                 $query->where('entry_products.entry_date', '>=', $dateStart)
                     ->where('entry_products.entry_date', '<=', $dateEnd);
             }
 
-            $query->where(function ($q) use ($request) {
-                $column = $request->search['column'];
-                $type = $request->search['regex'] ? 'like' : '=';
-                $value = $request->search['value'];
-                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-
-                if ($column == 'user' || $column == '*') {
-                    $q->orWhere('users.username', $type, $value);
-                }
-                if ($column == 'operation' || $column == '*') {
-                    $q->orWhere('operation_types.operation', $type, $value);
-                }
-            });
-            $iTotalDisplayRecords = $query->count();
-
-            $entrysJpa = $query
-                ->skip($request->start)
-                ->take($request->length)
-                ->get();
+            $entrysJpa = $query->get();
 
             $entrys = array();
-            foreach ($entrysJpa as $entryJpa) {
-                $entry = gJSON::restore($entryJpa->toArray(), '__');
 
-                $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
-
-                $details = [];
-                foreach ($detailsJpa as $detailJpa) {
+            foreach($entrysJpa as $entryJpa){
+                $entry =  gJSON::restore($entryJpa->toArray(), '__');
+                $productJpa = ViewDetailEntry::where('_entry_product', $entryJpa['id'])->get();
+                $details = array();
+                foreach ($productJpa as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
-
                 $entry['details'] = $details;
-
                 $entrys[] = $entry;
+
             }
-            $count = 1;
-            $products = array_values($models);
-            foreach ($products as $detail) {
-                $sumary .= "
-                <tr>
-                    <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-                </tr>
-                ";
-                $count = $count + 1;
-            }
-            $template = str_replace(
-                [
-                    '{id}',
-                    '{branch_onteraction}',
-                    '{issue_long_date}',
-                    '{project_name}',
-                    '{leader}',
-                    '{date_sale}',
-                    '{description}',
-                    '{summary}',
-                ],
-                [
-                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
-                    $branch_->name,
-                    gTrace::getDate('long'),
-                    $request->plant['name'],
-                    $request->plant['leader']['name'] . ' ' . $request->plant['leader']['lastname'],
-                    $request->date_sale,
-                    $request->description,
-                    $sumary,
-                ],
-                $template
-            );
+
             
-            $pdf->loadHTML($template);
-            $pdf->render();
-            return $pdf->stream('Guia.pdf');
+
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $sumary,
+            //     ],
+            //     $template
+            // );
+            
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Guia.pdf');
+
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('Operacion correcta');
+            $response->setData($entrys);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
