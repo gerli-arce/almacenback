@@ -2,13 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\{gJson, gValidate, gTrace};
-use App\Models\{Product, EntryDetail, EntryProducts, Response, Branch, ViewDetailEntry};
+use App\gLibraries\gJson;
+use App\gLibraries\gTrace;
+use App\gLibraries\gValidate;
+
+use App\Models\Branch;
+use App\Models\EntryDetail;
+use App\Models\EntryProducts;
+use App\Models\Product;
+use App\Models\Response;
+use App\Models\ViewDetailEntry;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class EntrysController extends Controller
 {
@@ -130,7 +139,6 @@ class EntrysController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
             $entryDetailJpa = EntryDetail::select([
                 'entry_detail.id as id',
                 'products.id AS product__id',
@@ -196,7 +204,6 @@ class EntrysController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
             $productJpa = Product::select([
                 'products.id AS product__id',
                 'products.type AS product__type',
@@ -237,7 +244,6 @@ class EntrysController extends Controller
         }
     }
 
-    
     public function generateReportByDate(Request $request)
     {
         try {
@@ -253,10 +259,16 @@ class EntrysController extends Controller
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportEntrysByDate.html');
-          
+
             $sumary = '';
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            $branch_ = Branch::select('id', 'correlative', 'name')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
 
             $query = EntryProducts::select(
                 [
@@ -302,8 +314,34 @@ class EntrysController extends Controller
 
             $entrys = array();
 
-            foreach($entrysJpa as $entryJpa){
-                $entry =  gJSON::restore($entryJpa->toArray(), '__');
+            $count = 1;
+
+            foreach ($entrysJpa as $entryJpa) {
+                $entry = gJSON::restore($entryJpa->toArray(), '__');
+
+                $usuario = "
+                    <div>
+                        <center>
+                            <strong>
+                                {$entry['user']['person']['name']} {$entry['user']['person']['lastname']}
+                            </strong>
+                            <br>
+                            <strong>
+                                {$entry['entry_date']}
+                            </strong>
+                        </center>
+                    </div>
+                ";
+
+                $datos = "
+                ";
+
+                $sumary .= "
+               <tr>
+                    <td>{$count}</td>
+                    <td>{$usuario}</td>
+               </tr>
+                ";
                 $productJpa = ViewDetailEntry::where('_entry_product', $entryJpa['id'])->get();
                 $details = array();
                 foreach ($productJpa as $detailJpa) {
@@ -312,39 +350,43 @@ class EntrysController extends Controller
                 }
                 $entry['details'] = $details;
                 $entrys[] = $entry;
-
+                $count +=1;
             }
 
-            
-
-
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $sumary,
-            //     ],
-            //     $template
-            // );
-            
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Guia.pdf');
-
-
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('Operacion correcta');
-            $response->setData($entrys);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{branch_name}',
+                    '{user_name}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{date_start_str}',
+                    '{date_end_str}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->date_start_str,
+                    $request->date_end_str,
+                    $sumary,
+                ],
+                $template
             );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('Operacion correcta');
+            // $response->setData($entrys);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
