@@ -91,15 +91,15 @@ class EntrysController extends Controller
             foreach ($entrysJpa as $entryJpa) {
                 $entry = gJSON::restore($entryJpa->toArray(), '__');
 
-                $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
+                // $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
 
-                $details = [];
-                foreach ($detailsJpa as $detailJpa) {
-                    $detail = gJSON::restore($detailJpa->toArray(), '__');
-                    $details[] = $detail;
-                }
+                // $details = [];
+                // foreach ($detailsJpa as $detailJpa) {
+                //     $detail = gJSON::restore($detailJpa->toArray(), '__');
+                //     $details[] = $detail;
+                // }
 
-                $entry['details'] = $details;
+                // $entry['details'] = $details;
 
                 $entrys[] = $entry;
             }
@@ -269,118 +269,118 @@ class EntrysController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            // $query = EntryProducts::select(
-            //     [
-            //         'entry_products.id as id',
-            //         'users.id as user__id',
-            //         'users.username as user__username',
-            //         'people.id as user__person__id',
-            //         'people.name as user__person__name',
-            //         'people.lastname as user__person__lastname',
-            //         'entry_products._client AS _client',
-            //         'entry_products._technical AS _technical',
-            //         'entry_products._branch AS _branch',
-            //         'entry_products._type_operation AS _type_operation',
-            //         'operation_types.id as operation_type__id',
-            //         'operation_types.operation as operation_type__operation',
-            //         'entry_products._tower AS _tower',
-            //         'entry_products._plant AS _plant',
-            //         'entry_products.type_entry AS type_entry',
-            //         'entry_products.entry_date AS entry_date',
-            //         'entry_products.description AS description',
-            //         'entry_products.condition_product AS condition_product',
-            //         'entry_products.product_status AS product_status',
-            //         'entry_products._creation_user AS _creation_user',
-            //         'entry_products.creation_date AS creation_date',
-            //         'entry_products.status AS status',
-            //     ]
-            // )
-            //     ->join('users', 'entry_products._user', 'users.id')
-            //     ->join('people', 'users._person', 'people.id')
-            //     ->join('operation_types', 'entry_products._type_operation', 'operation_types.id')
-            //     ->where('entry_products._branch', $branch_->id)
-            //     ->orderBy($request->order['column'], $request->order['dir']);
+            $query = EntryProducts::select(
+                [
+                    'entry_products.id as id',
+                    'users.id as user__id',
+                    'users.username as user__username',
+                    'people.id as user__person__id',
+                    'people.name as user__person__name',
+                    'people.lastname as user__person__lastname',
+                    'entry_products._client AS _client',
+                    'entry_products._technical AS _technical',
+                    'entry_products._branch AS _branch',
+                    'entry_products._type_operation AS _type_operation',
+                    'operation_types.id as operation_type__id',
+                    'operation_types.operation as operation_type__operation',
+                    'entry_products._tower AS _tower',
+                    'entry_products._plant AS _plant',
+                    'entry_products.type_entry AS type_entry',
+                    'entry_products.entry_date AS entry_date',
+                    'entry_products.description AS description',
+                    'entry_products.condition_product AS condition_product',
+                    'entry_products.product_status AS product_status',
+                    'entry_products._creation_user AS _creation_user',
+                    'entry_products.creation_date AS creation_date',
+                    'entry_products.status AS status',
+                ]
+            )
+                ->join('users', 'entry_products._user', 'users.id')
+                ->join('people', 'users._person', 'people.id')
+                ->join('operation_types', 'entry_products._type_operation', 'operation_types.id')
+                ->where('entry_products._branch', $branch_->id)
+                ->orderBy($request->order['column'], $request->order['dir']);
 
-            // if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
-            //     $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
-            //     $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
 
-            //     $query->where('entry_products.entry_date', '>=', $dateStart)
-            //         ->where('entry_products.entry_date', '<=', $dateEnd);
-            // }
+                $query->where('entry_products.entry_date', '>=', $dateStart)
+                    ->where('entry_products.entry_date', '<=', $dateEnd);
+            }
 
-            // $query->where(function ($q) use ($request) {
-            //     $column = $request->search['column'];
-            //     $type = $request->search['regex'] ? 'like' : '=';
-            //     $value = $request->search['value'];
-            //     $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-            //     if ($column == 'user' || $column == '*') {
-            //         $q->orWhere('users.username', $type, $value);
-            //     }
-            //     if ($column == 'operation' || $column == '*') {
-            //         $q->orWhere('operation_types.operation', $type, $value);
-            //     }
-            // });
-            // $iTotalDisplayRecords = $query->count();
+                if ($column == 'user' || $column == '*') {
+                    $q->orWhere('users.username', $type, $value);
+                }
+                if ($column == 'operation' || $column == '*') {
+                    $q->orWhere('operation_types.operation', $type, $value);
+                }
+            });
+            $iTotalDisplayRecords = $query->count();
 
-            // $entrysJpa = $query
-            //     ->skip($request->start)
-            //     ->take($request->length)
-            //     ->get();
+            $entrysJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
 
-            // $entrys = array();
-            // foreach ($entrysJpa as $entryJpa) {
-            //     $entry = gJSON::restore($entryJpa->toArray(), '__');
+            $entrys = array();
+            foreach ($entrysJpa as $entryJpa) {
+                $entry = gJSON::restore($entryJpa->toArray(), '__');
 
-            //     $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
+                $detailsJpa = EntryDetail::where('_entry_product', $entry['id'])->whereNotNull('status')->get();
 
-            //     $details = [];
-            //     foreach ($detailsJpa as $detailJpa) {
-            //         $detail = gJSON::restore($detailJpa->toArray(), '__');
-            //         $details[] = $detail;
-            //     }
+                $details = [];
+                foreach ($detailsJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
 
-            //     $entry['details'] = $details;
+                $entry['details'] = $details;
 
-            //     $entrys[] = $entry;
-            // }
-            // $count = 1;
-            // $products = array_values($models);
-            // foreach ($products as $detail) {
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center style='font-size:12px;'>{$count}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-            //         <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-            //     </tr>
-            //     ";
-            //     $count = $count + 1;
-            // }
-            // $template = str_replace(
-            //     [
-            //         '{id}',
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{project_name}',
-            //         '{leader}',
-            //         '{date_sale}',
-            //         '{description}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         str_pad($request->id, 6, "0", STR_PAD_LEFT),
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $request->plant['name'],
-            //         $request->plant['leader']['name'] . ' ' . $request->plant['leader']['lastname'],
-            //         $request->date_sale,
-            //         $request->description,
-            //         $sumary,
-            //     ],
-            //     $template
-            // );
+                $entrys[] = $entry;
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{project_name}',
+                    '{leader}',
+                    '{date_sale}',
+                    '{description}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->plant['name'],
+                    $request->plant['leader']['name'] . ' ' . $request->plant['leader']['lastname'],
+                    $request->date_sale,
+                    $request->description,
+                    $sumary,
+                ],
+                $template
+            );
             
             $pdf->loadHTML($template);
             $pdf->render();
