@@ -1388,7 +1388,8 @@ class TechnicalsController extends Controller
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
-                ->where('branch__correlative', $branch);
+                // ->where('branch__correlative', $branch)
+                ;
 
             if (isset($request->search['model'])) {
                 $query
@@ -1507,7 +1508,7 @@ class TechnicalsController extends Controller
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
-                ->where('branch__correlative', $branch)
+                // ->where('branch__correlative', $branch)
                 ->where('type_products', 'EPP');
 
             $query->where('type_operation__id', '10');

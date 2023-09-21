@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-
 use App\Models\Branch;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
@@ -316,6 +315,8 @@ class EntrysController extends Controller
 
             $count = 1;
 
+            $view_details = '';
+
             foreach ($entrysJpa as $entryJpa) {
                 $entry = gJSON::restore($entryJpa->toArray(), '__');
 
@@ -334,23 +335,61 @@ class EntrysController extends Controller
                 ";
 
                 $datos = "
+                    <div>
+                        <p>Tipo: <strong>{$entry['type_entry']}</strong></p>
+                        <p>Operación: <strong>{$entry['operation_type']['operation']}</strong></p>
+                        <p>Descripcion: <strong>{$entry['description']}</strong></p>
+                    </div>
                 ";
 
                 $sumary .= "
-               <tr>
+               <tr style='font-size:11px;'>
                     <td>{$count}</td>
                     <td>{$usuario}</td>
+                    <td>{$datos}</td>
                </tr>
                 ";
+
+                $view_details .= "
+                    <div>
+                        <p><strong>{$count}) {$entry['user']['person']['name']} {$entry['user']['person']['lastname']}: {$entry['entry_date']}</strong></p>
+                        <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>
+                ";
+
                 $productJpa = ViewDetailEntry::where('_entry_product', $entryJpa['id'])->get();
                 $details = array();
                 foreach ($productJpa as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details_equipment = 'display:none;';
+                    if ($detail['product']['type'] == 'EQUIPO') {
+                        $details_equipment = '';
+                    }
+                    $view_details .= "
+                    <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                        <center>
+                            <p><strong>{$detail['product']['model']['model']}</strong></p>
+                            <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
+                            <div style='{$details_equipment}'>
+                                <p>Mac: <strong>{$detail['product']['mac']}</strong><p>
+                                <p>Serie: <strong>{$detail['product']['serie']}</strong></p>
+                            </div>
+                            <div>
+                                <p style='font-size:20px; color:#2f6593'>Nu:{$detail['mount_new']} | Se:{$detail['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                            </div>
+                        </center>
+                    </div>
+                ";
+
                     $details[] = $detail;
                 }
+
+                $view_details .= "
+                            </div>
+                    </div>
+                ";
                 $entry['details'] = $details;
                 $entrys[] = $entry;
-                $count +=1;
+                $count += 1;
             }
 
             $template = str_replace(
@@ -362,6 +401,7 @@ class EntrysController extends Controller
                     '{date_start_str}',
                     '{date_end_str}',
                     '{summary}',
+                    '{view_details}',
                 ],
                 [
                     $branch_->name,
@@ -371,6 +411,7 @@ class EntrysController extends Controller
                     $request->date_start_str,
                     $request->date_end_str,
                     $sumary,
+                    $view_details,
                 ],
                 $template
             );
