@@ -414,6 +414,7 @@ Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 // SALES
 Route::post('/sales/paginate', [SalesController::class, 'paginate']);
 Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
+Route::post('/sales/report', [SalesController::class, 'generateReport']);
 
 // ROOM
 Route::post('/room', [RoomController::class, 'store']);
