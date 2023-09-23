@@ -286,15 +286,12 @@ class ParcelsRegistersController extends Controller
                     ->first();
 
                 if (isset($productJpa)) {
-                    $mount_old = $productJpa->mount;
-                    $mount_new = $mount_old + $request->mount_product;
-
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
                     $productJpa->relative_id = guid::short();
                     $productJpa->_model = $request->_model;
                     $productJpa->_provider = $request->_provider;
-                    $productJpa->mount = $mount_new;
+                    $productJpa->mount = $productJpa->mount + $request->mount_product;
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
                         $productJpa->price_buy = $request->value_unity;

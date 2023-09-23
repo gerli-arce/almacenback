@@ -1485,16 +1485,6 @@ class ParcelsCreatedController extends Controller
                         ->first();
 
                     if (isset($productJpa_new)) {
-                        $mount_old = $productJpa_new->mount;
-                        $mount_new = $mount_old + $detailParcel['mount'];
-
-                        $productJpa_new->mount = $mount_new;
-
-                        $productJpa_new->update_date = gTrace::getDate('mysql');
-                        $productJpa_new->_update_user = $userid;
-                        $productJpa_new->status = "1";
-                        $productJpa_new->save();
-
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -1503,6 +1493,14 @@ class ParcelsCreatedController extends Controller
                         $stock->mount_second = intval($stock->mount_second) + intval($detailParcel['mount_second']);
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + intval($detailParcel['mount_ill_fated']);
                         $stock->save();
+
+                        $productJpa_new->mount =  $stock->mount_new + $stock->mount_second;
+
+                        $productJpa_new->update_date = gTrace::getDate('mysql');
+                        $productJpa_new->_update_user = $userid;
+                        $productJpa_new->status = "1";
+                        $productJpa_new->save();
+
                     }
                 }
             }

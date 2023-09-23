@@ -367,7 +367,10 @@ class StockController extends Controller
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {
-                $query->where('mount_new', '>', '0');
+                $query->where(function ($q) use ($request){
+                    $q->where('mount_new', '>', '0')
+                    ->orWhere('mount_second', '>', '0');
+                });
             }
 
             $query->where(function ($q) use ($request) {
