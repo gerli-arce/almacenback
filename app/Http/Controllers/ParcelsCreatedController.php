@@ -267,8 +267,8 @@ class ParcelsCreatedController extends Controller
                 if (isset($request->date_start) || isset($request->date_end)) {
                     $query->where('branch_send__id', $branchId)
                         ->where('branch_destination__id', $request->branch)
-                        ->where('date_send', '>=',  $request->date_start )
-                        ->where('date_send', '<=',  $request->date_end );
+                        ->where('date_send', '>=', $request->date_start)
+                        ->where('date_send', '<=', $request->date_end);
                 } else {
                     $query->where('branch_send__id', $branchId)
                         ->where('branch_destination__id', $request->branch);
@@ -278,8 +278,8 @@ class ParcelsCreatedController extends Controller
                     if (isset($request->date_start) || isset($request->date_end)) {
                         $query->where('branch_send__id', $request->branch)
                             ->Where('branch_destination__id', $branchId)
-                            ->where('date_send', '>=',  $request->date_start )
-                            ->where('date_send', '<=',  $request->date_end );
+                            ->where('date_send', '>=', $request->date_start)
+                            ->where('date_send', '<=', $request->date_end);
                     } else {
                         $query->where('branch_send__id', $request->branch)
                             ->Where('branch_destination__id', $branchId);
@@ -326,30 +326,30 @@ class ParcelsCreatedController extends Controller
                     $details[] = $detail;
                 }
 
-                $parcel['details']=$details;
-                if($parcel['branch_send']['id'] == $branch_->id){
+                $parcel['details'] = $details;
+                if ($parcel['branch_send']['id'] == $branch_->id) {
                     $parcels['send'][] = $parcel;
-                }else{
+                } else {
                     $parcels['received'][] = $parcel;
                 }
             }
 
-            if(isset($parcels['send'])){
+            if (isset($parcels['send'])) {
                 $parcels['parcels_send'] = count($parcels['send']);
-            }else{
+            } else {
                 $parcels['parcels_send'] = 0;
             }
 
-            if(isset($parcels['received'])){
+            if (isset($parcels['received'])) {
                 $parcels['parcels_received'] = count($parcels['received']);
-            }else{
+            } else {
                 $parcels['parcels_received'] = 0;
             }
 
             $detailsByParcelsend = array();
-            if(isset($parcels['send'])){
-                foreach($parcels['send'] as $ParcelJpa){
-                    foreach($ParcelJpa['details'] as $detailsJpa){
+            if (isset($parcels['send'])) {
+                foreach ($parcels['send'] as $ParcelJpa) {
+                    foreach ($ParcelJpa['details'] as $detailsJpa) {
                         $detailsByParcelsend[] = $detailsJpa;
                     }
                 }
@@ -357,9 +357,9 @@ class ParcelsCreatedController extends Controller
             $parcels['details_send'] = $detailsByParcelsend;
 
             $detailsByParcelreceived = array();
-            if(isset($parcels['received'])){
-                foreach($parcels['received'] as $ParcelJpa){
-                    foreach($ParcelJpa['details'] as $detailJpa){
+            if (isset($parcels['received'])) {
+                foreach ($parcels['received'] as $ParcelJpa) {
+                    foreach ($ParcelJpa['details'] as $detailJpa) {
                         $detailsByParcelreceived[] = $detailJpa;
                     }
                 }
@@ -396,8 +396,7 @@ class ParcelsCreatedController extends Controller
                 }
             }
 
-
-            $parcels['products_send']= array_values($models_send);
+            $parcels['products_send'] = array_values($models_send);
 
             $models_received = array();
             foreach ($parcels['details_received'] as $product) {
@@ -429,11 +428,9 @@ class ParcelsCreatedController extends Controller
                 }
             }
 
-            $parcels['products_received']= array_values($models_received);
+            $parcels['products_received'] = array_values($models_received);
 
-          
-
-            $count =1;
+            $count = 1;
             $sumary_send = '';
 
             foreach ($parcels['products_send'] as $detail) {
@@ -452,8 +449,7 @@ class ParcelsCreatedController extends Controller
                 $count = $count + 1;
             }
 
-            
-            $count =1;
+            $count = 1;
             $sumary_received = '';
 
             foreach ($parcels['products_received'] as $detail) {
@@ -471,7 +467,6 @@ class ParcelsCreatedController extends Controller
 
                 $count = $count + 1;
             }
-
 
             $template = str_replace(
                 [
@@ -502,11 +497,7 @@ class ParcelsCreatedController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
 
-
-
             return $pdf->stream('Guia.pdf');
-
-
 
             // $response = new Response();
             // $response->setData($parcels);
@@ -837,19 +828,17 @@ class ParcelsCreatedController extends Controller
                             $stock->save();
                         } else {
                             $productJpa->disponibility = "EN ENCOMIENDA";
+                            $stock = Stock::where('_model', $productJpa->_model)
+                                ->where('_branch', $branch_->id)
+                                ->first();
                             if ($productJpa->product_status == "NUEVO") {
-                                $stock = Stock::where('_model', $productJpa->_model)
-                                    ->where('_branch', $branch_->id)
-                                    ->first();
                                 $stock->mount_new = $stock->mount_new - 1;
-                                $stock->save();
                             } else if ($productJpa->product_status == "SEMINUEVO") {
-                                $stock = Stock::where('_model', $productJpa->_model)
-                                    ->where('_branch', $branch_->id)
-                                    ->first();
                                 $stock->mount_second = $stock->mount_second - 1;
-                                $stock->save();
+                            } else {
+                                $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                             }
+                            $stock->save();
                         }
 
                         $detailsParcelJpa = new DetailsParcel();
@@ -935,6 +924,8 @@ class ParcelsCreatedController extends Controller
                     $stock->mount_new = intval($stock->mount_new) + 1;
                 } else if ($productJpa->product_status == "SEMINUEVO") {
                     $stock->mount_second = intval($stock->mount_second) + 1;
+                }else{
+                    $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                 }
                 $stock->save();
             }
@@ -1466,11 +1457,12 @@ class ParcelsCreatedController extends Controller
 
                     if ($productJpa->product_status == "NUEVO") {
                         $stock->mount_new = $stock->mount_new + 1;
-                        $stock->save();
                     } else if ($productJpa->product_status == "SEMINUEVO") {
                         $stock->mount_second = $stock->mount_second + 1;
-                        $stock->save();
+                    }else{
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
+                    $stock->save();
                 } else {
                     $productJpa_new = Product::select([
                         'id',
@@ -1494,7 +1486,7 @@ class ParcelsCreatedController extends Controller
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + intval($detailParcel['mount_ill_fated']);
                         $stock->save();
 
-                        $productJpa_new->mount =  $stock->mount_new + $stock->mount_second;
+                        $productJpa_new->mount = $stock->mount_new + $stock->mount_second;
 
                         $productJpa_new->update_date = gTrace::getDate('mysql');
                         $productJpa_new->_update_user = $userid;
