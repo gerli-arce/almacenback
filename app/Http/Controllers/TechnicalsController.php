@@ -291,6 +291,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('status', '!=', '0')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -373,6 +374,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('status', '!=', '0')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -630,7 +632,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'PRODUCTO')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('status', '!=', '0')->where('type', 'PRODUCTO')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -667,7 +669,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'EPP')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('status', '!=', '0')->where('type', 'EPP')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -1165,7 +1167,8 @@ class TechnicalsController extends Controller
                     $productJpa->save();
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
-                    ->where('_model', $product['product']['model']['id'])->first();
+                        ->where('status', '!=', '0')
+                        ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
@@ -1280,7 +1283,8 @@ class TechnicalsController extends Controller
                     $productJpa->save();
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
-                    ->where('_model', $product['product']['model']['id'])->first();
+                        ->where('status', '!=', '0')
+                        ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
@@ -1388,8 +1392,8 @@ class TechnicalsController extends Controller
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
-                // ->where('branch__correlative', $branch)
-                ;
+            // ->where('branch__correlative', $branch)
+            ;
 
             if (isset($request->search['model'])) {
                 $query
@@ -1503,12 +1507,12 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
-            ->distinct()
+                ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
-                // ->where('branch__correlative', $branch)
+            // ->where('branch__correlative', $branch)
                 ->where('type_products', 'EPP');
 
             $query->where('type_operation__id', '10');
@@ -1854,7 +1858,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
-            ->distinct()
+                ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'DESC')
                 ->where('technical_id', $request->technical)
