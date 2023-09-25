@@ -18,6 +18,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Database\Query\Builder;
 
 class SalesController extends Controller
 {
@@ -544,6 +545,7 @@ class SalesController extends Controller
                     $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
                         ->where('view_sales.type_products', '=', 'PRODUCTS');
                 })
+                ->whereNot('view_sales.type_intallation', '=', 'SACADO_DE_STOCK')
                 ->orderBy('view_sales.date_sale', 'desc')
                 ->where('view_sales.date_sale', '>=', $dateStart)
                 ->where('view_sales.date_sale', '<=', $dateEnd);
@@ -564,10 +566,14 @@ class SalesController extends Controller
                     $query->where('view_sales.type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
                     $query->where('view_sales.type_operation__operation', 'PARA TECNICO')
-                    ->whereNot(function ($q1) {
-                        $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
-                            ->where('view_sales.type_products', '=', 'PRODUCTS');
-                    })
+                    // ->whereNot(function ($q1) {
+                    //     $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
+                    //         ->where('view_sales.type_products', '=', 'PRODUCTS');
+                    // })
+                    // ->whereNot(function ($q1) {
+                    //     $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
+                    //         ->where('view_sales.type_products', '=', 'PRODUCTS');
+                    // })
                     ;
                 }
             }
