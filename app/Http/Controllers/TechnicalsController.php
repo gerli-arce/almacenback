@@ -669,7 +669,9 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('status', '!=', '0')->where('type', 'EPP')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
+            // ->where('status', '!=', '0')
+            ->where('type', 'EPP')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
