@@ -1348,7 +1348,7 @@ class ParcelsCreatedController extends Controller
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + intval($detailParcel['mount_ill_fated']);
                         $stock->save();
 
-                        $productJpa_new->mount = $productJpa_new->mount + $stock->mount_new + $stock->mount_second;
+                        $productJpa_new->mount = $stock->mount_new + $stock->mount_second;
 
                         $productJpa_new->creation_date = gTrace::getDate('mysql');
                         $productJpa_new->_creation_user = $userid;
