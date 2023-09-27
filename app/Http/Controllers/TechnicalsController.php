@@ -2034,7 +2034,7 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception('No tienes permisos para eliminar técnicos');
             }
 
