@@ -847,7 +847,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
                                     $stock->mount_new = $stock->mount_new + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
                                     $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
                                     $stock->mount_new = $stock->mount_new - $mount_dif;
                                 }
@@ -857,7 +857,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
                                     $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
                                     $stock->mount_second = $stock->mount_second + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
                                     $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
                                     $stock->mount_second = $stock->mount_second - $mount_dif;
                                 }
@@ -867,7 +867,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated - $mount_dif;
                                 }
