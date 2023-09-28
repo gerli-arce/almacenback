@@ -239,6 +239,7 @@ Route::post('/stock/products/selected', [StockController::class, 'generateReport
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
 Route::post('/stock/star', [StockController::class, 'changeStar']);
 Route::post('/stock/products/stock', [StockController::class, 'generateReportStock']);
+Route::delete('/stock', [StockController::class, 'delete']);
 
 
 

@@ -367,9 +367,9 @@ class StockController extends Controller
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {
-                $query->where(function ($q) use ($request){
+                $query->where(function ($q) use ($request) {
                     $q->where('mount_new', '>', '0')
-                    ->orWhere('mount_second', '>', '0');
+                        ->orWhere('mount_second', '>', '0');
                 });
             }
 
@@ -479,6 +479,50 @@ class StockController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Producto actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus($tatus);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        $tatus = 400;
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'update')) {
+                throw new Exception('No tienes permisos para actualizar el stock');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $stockJpa = Stock::find($request->id);
+
+            $stockJpa->stock_min =0;
+            $stockJpa->mount_new = 0;
+            $stockJpa->mount_second = 0;
+            $stockJpa->mount_ill_fated = 0;
+            $stockJpa->_update_user = $userid;
+            $stockJpa->update_date = gTrace::getDate('mysql');
+            $stockJpa->status = null;
+            $stockJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Stock eliminado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus($tatus);
             $response->setMessage($th->getMessage());
