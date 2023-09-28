@@ -146,6 +146,7 @@ Route::post('/technicals/stock/paginate', [TechnicalsController::class, 'paginat
 Route::post('/technicals/search/stock', [TechnicalsController::class, 'getStockProductByModel']);
 Route::post('/technicals/report/records', [TechnicalsController::class, 'generateReportBySearch']);
 Route::post('/technicals/report/records/epp', [TechnicalsController::class, 'generateReportBySearchEPP']);
+Route::delete('/technicals/stock/delete', [TechnicalsController::class, 'deleteStockTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);

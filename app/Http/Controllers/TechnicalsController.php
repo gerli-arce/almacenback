@@ -291,7 +291,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('status', '!=', '0')
+            ->whereNotNull('status')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -374,7 +374,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('status', '!=', '0')
+            ->whereNotNull('status')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -633,8 +633,8 @@ class TechnicalsController extends Controller
             }
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
-            // ->where('status', '!=', '0')
-            ->where('type', 'PRODUCTO')->get();
+            ->whereNotNull('status')
+                ->where('type', 'PRODUCTO')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -672,8 +672,8 @@ class TechnicalsController extends Controller
             }
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
-            // ->where('status', '!=', '0')
-            ->where('type', 'EPP')->get();
+            ->whereNotNull('status')
+                ->where('type', 'EPP')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -1099,7 +1099,7 @@ class TechnicalsController extends Controller
             }
 
             if ($request->status == 1) {
-                $ProductByTechnicalJpa->status = null;
+                $ProductByTechnicalJpa->status = 0;
             } else {
                 $ProductByTechnicalJpa->status = 1;
             }
@@ -1108,6 +1108,40 @@ class TechnicalsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Registro actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function deleteStockTechnical(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete')) {
+                throw new Exception('No tienes permisos para eliminar estado de productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $ProductByTechnicalJpa = ProductByTechnical::find($request->id);
+            $ProductByTechnicalJpa->status = null;
+            $ProductByTechnicalJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Stock eliminado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -1171,7 +1205,7 @@ class TechnicalsController extends Controller
                     $productJpa->save();
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
-                        ->where('status', '!=', '0')
+                        ->whereNotNull('status')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
@@ -1287,7 +1321,7 @@ class TechnicalsController extends Controller
                     $productJpa->save();
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
-                        ->where('status', '!=', '0')
+                        ->whereNotNull('status')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
