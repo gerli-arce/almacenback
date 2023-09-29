@@ -1015,4 +1015,167 @@ class ParcelsRegistersController extends Controller
             );
         }
     }
+
+    public function generateReportByParcel(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas registradas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('enable_html5_parser', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportParcelRegister.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname'
+            ])->where('id', $userid)->first();
+
+
+          
+            $productJpa = ViewProducts::select(['*'])
+                ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
+
+            $products = array();
+            foreach ($productJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
+            }
+
+            // $sumary = '';
+            // $bills = '';
+            // $count = 1;
+
+            // foreach ($parcels as $parcel) {
+            //     $model = "
+            //     <div>
+            //         <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
+            //         <img class='img-fluid img-thumbnail' 
+            //             src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+            //     </div>
+            //     ";
+
+            //     $reception = "
+            //     <div style='font-size: 9px;'>
+            //         <p><center><strong>{$parcel['business_designed']['name']}</strong></center></p>
+            //         <hr>
+            //         <p>Envio: <strong>{$parcel['date_send']}</strong></p>
+            //         <p>Recojo: <strong>{$parcel['date_entry']}</strong></p>
+            //     </div>
+            //     ";
+
+            //     $trasport = "
+            //     <div style='font-size: 9px;'>
+            //         <p><center><strong>{$parcel['business_transport']['name']}</strong></center></p>
+            //         <p>DOC: <strong>{$parcel['business_transport']['doc_number']}</strong></p>
+            //         <p>Nº Comprobante: <strong>{$parcel['num_voucher']}</strong></p>
+            //         <p>Precio: <strong>S/.{$parcel['price_transport']}</strong></p>
+            //     </div>
+            //     ";
+
+            //     $provider = "
+            //     <div style='font-size: 9px;'>
+            //         <p><center><strong>{$parcel['provider']['name']}</strong></center></p>
+            //         <p>DOC: <strong>{$parcel['provider']['doc_number']}</strong></p>
+            //         <p>Nº GUIA: <strong>{$parcel['num_guia']}</strong></p>
+            //         <p>Nº Factura: <strong>{$parcel['num_bill']}</strong></p>
+            //         <hr>
+            //         <center>
+            //             <p><strong>{$parcel['model']['unity']['name']}</strong></p>
+            //             <p><strong>{$parcel['mount_product']}</strong></p>
+            //         </center>
+            //     </div>
+            //     ";
+
+            //     $price = "
+            //     <div style='font-size: 9px;'>
+            //         <p>Total: <strong>{$parcel['total']}</strong></p>
+            //         <p>Importe: <strong>{$parcel['amount']}</strong></p>
+            //         <p>IGV: <strong>{$parcel['igv']}</strong></p>
+            //         <p>V. Unitario: <strong>{$parcel['value_unity']}</strong></p>
+            //         <p>P. Unitario: <strong>{$parcel['price_unity']}</strong></p>
+            //     </div>
+            //     ";
+
+
+            //     $sumary .= "
+            //     <tr>
+            //         <td><center >{$count}</center></td>
+            //         <td><center >{$model}</center></td>
+            //         <td><center >{$reception}</center></td>
+            //         <td><center >{$trasport}</center></td>
+            //         <td><center >{$provider}</center></td>
+            //         <td><center >{$price}</center></td>
+            //     </tr>
+            //     ";
+
+
+            //     $bills .= "
+            //     <div style='page-break-before: always;'>
+            //         <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
+            //         <center>
+            //             <img 
+            //                 src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
+                    
+            //         </center>
+            //     </div>
+            //     ";
+
+
+            //     $count += 1;
+            // }
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{user_generate}',
+            //         '{date_start_str}',
+            //         '{date_end_str}',
+            //         '{summary}',
+            //         '{bills}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $user->person__name . ' ' . $user->person__lastname,
+            //         $request->date_start_str,
+            //         $request->date_end_str,
+            //         $sumary,
+            //         $bills,
+            //     ],
+            //     $template
+            // );
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reporte de registro de encomiendas.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('OPeracion correcta');
+            $response->setData();
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+            
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }

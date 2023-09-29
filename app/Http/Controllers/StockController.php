@@ -364,6 +364,7 @@ class StockController extends Controller
             }
 
             $query = ViewStock::select(['*'])
+            ->whereNotNull('status')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {

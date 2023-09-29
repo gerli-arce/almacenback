@@ -292,6 +292,7 @@ Route::delete('/parcels_register', [ParcelsRegistersController::class, 'delete']
 Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image']);
 Route::post('/parcels_register/restore', [ParcelsRegistersController::class, 'restore']);
 Route::post('/parcels_register/report', [ParcelsRegistersController::class, 'generateReport']);
+Route::post('/parcels_register/report/parcel', [ParcelsRegistersController::class, 'generateReportByParcel']);
 
 
 // KEYS
