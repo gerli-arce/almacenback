@@ -468,6 +468,7 @@ class TechnicalsController extends Controller
                 $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
                 $stock->save();
                 $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                $productJpa->disponibility = 'DISPONIBLE';
                 $productJpa->save();
             } else if ($request->reazon == "DISCOUNT") {
                 $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
@@ -556,6 +557,7 @@ class TechnicalsController extends Controller
                 $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
                 $stock->save();
                 $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                $productJpa->disponibility = 'DISPONIBLE';
                 $productJpa->save();
             } else if ($request->reazon == "DISCOUNT") {
                 $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";

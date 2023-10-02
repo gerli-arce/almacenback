@@ -14,13 +14,14 @@ use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
-use App\Models\ViewUsers;
 use App\Models\ViewParcelsRegisters;
+use App\Models\ViewProducts;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class ParcelsRegistersController extends Controller
 {
@@ -178,7 +179,7 @@ class ParcelsRegistersController extends Controller
                         if ($productValidation) {
                             if ($productValidation->mac == $product['mac']) {
                                 $is_duplicate = true;
-                                $message_error .=  "Ya existe un produto con el número MAC: " . $product['mac'];
+                                $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                             if ($productValidation->serie == $product['serie']) {
                                 $is_duplicate = true;
@@ -881,9 +882,8 @@ class ParcelsRegistersController extends Controller
                 'id',
                 'username',
                 'person__name',
-                'person__lastname'
+                'person__lastname',
             ])->where('id', $userid)->first();
-
 
             $parcelsJpa = ViewParcelsRegisters::select(['*'])
                 ->orderBy('id', 'desc')
@@ -891,7 +891,7 @@ class ParcelsRegistersController extends Controller
                 ->where('branch__correlative', $branch)
                 ->where('date_entry', '<=', $request->date_end)
                 ->where('date_entry', '>=', $request->date_start)
-                ->get();;
+                ->get();
 
             $parcels = array();
             foreach ($parcelsJpa as $parcelJpa) {
@@ -906,7 +906,7 @@ class ParcelsRegistersController extends Controller
                 $model = "
                 <div>
                     <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
-                    <img class='img-fluid img-thumbnail' 
+                    <img class='img-fluid img-thumbnail'
                         src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
                 </div>
                 ";
@@ -953,7 +953,6 @@ class ParcelsRegistersController extends Controller
                 </div>
                 ";
 
-
                 $sumary .= "
                 <tr>
                     <td><center >{$count}</center></td>
@@ -965,18 +964,16 @@ class ParcelsRegistersController extends Controller
                 </tr>
                 ";
 
-
                 $bills .= "
                 <div style='page-break-before: always;'>
                     <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
                     <center>
-                        <img 
+                        <img
                             src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
-                    
+
                     </center>
                 </div>
                 ";
-
 
                 $count += 1;
             }
@@ -1016,7 +1013,8 @@ class ParcelsRegistersController extends Controller
         }
     }
 
-    public function generateReportByParcel(Request $request){
+    public function generateReportByParcel(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -1029,7 +1027,7 @@ class ParcelsRegistersController extends Controller
             $options->set('isRemoteEnabled', true);
             $options->set('enable_html5_parser', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportParcelRegister.html');
+            $template = file_get_contents('../storage/templates/reportParcelRegisterByParcel.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -1037,20 +1035,25 @@ class ParcelsRegistersController extends Controller
                 'id',
                 'username',
                 'person__name',
-                'person__lastname'
+                'person__lastname',
             ])->where('id', $userid)->first();
 
-
-          
+            
             $productJpa = ViewProducts::select(['*'])
-                ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
-
+            ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
+            
             $products = array();
             foreach ($productJpa as $product_) {
                 $product = gJSON::restore($product_->toArray(), '__');
                 $products[] = $product;
             }
-
+            
+            $user_creation = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $request->creation_user)->first();
             // $sumary = '';
             // $bills = '';
             // $count = 1;
@@ -1059,7 +1062,7 @@ class ParcelsRegistersController extends Controller
             //     $model = "
             //     <div>
             //         <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
-            //         <img class='img-fluid img-thumbnail' 
+            //         <img class='img-fluid img-thumbnail'
             //             src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
             //     </div>
             //     ";
@@ -1106,7 +1109,6 @@ class ParcelsRegistersController extends Controller
             //     </div>
             //     ";
 
-
             //     $sumary .= "
             //     <tr>
             //         <td><center >{$count}</center></td>
@@ -1118,56 +1120,64 @@ class ParcelsRegistersController extends Controller
             //     </tr>
             //     ";
 
-
             //     $bills .= "
             //     <div style='page-break-before: always;'>
             //         <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
             //         <center>
-            //             <img 
+            //             <img
             //                 src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
-                    
+
             //         </center>
             //     </div>
             //     ";
 
-
             //     $count += 1;
             // }
 
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{user_generate}',
-            //         '{date_start_str}',
-            //         '{date_end_str}',
-            //         '{summary}',
-            //         '{bills}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $user->person__name . ' ' . $user->person__lastname,
-            //         $request->date_start_str,
-            //         $request->date_end_str,
-            //         $sumary,
-            //         $bills,
-            //     ],
-            //     $template
-            // );
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reporte de registro de encomiendas.pdf');
+            $parts = explode(" ", $request->date_entry);
+            $date = $parts[0];
+            $dateFormater = date("Y-m-d", strtotime($date));
 
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('OPeracion correcta');
-            $response->setData();
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{id_parcel}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{date_entry}',
+                    '{num_bill}',
+                    '{num_guia}',
+                    '{user_register}',
+                    '{model}',
+                    '{category}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $dateFormater,
+                    $request->num_bill,
+                    $request->num_guia,
+                    $user_creation->person__name.' '.$user_creation->person__lastname,
+                    $request->model['model'],
+                    $request->model['category']['category'],
+                ],
+                $template
             );
-            
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reporte de registro de encomiendas.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('OPeracion correcta');
+            // $response->setData($products);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
