@@ -1322,7 +1322,12 @@ class ParcelsCreatedController extends Controller
                         $stock->mount_new = $stock->mount_new + 1;
                     } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second = $stock->mount_second + 1;
+                    }else{
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
+                    
+                    $stock->save();
+
                 } else {
                     $productJpa_new = Product::select([
                         'id',
