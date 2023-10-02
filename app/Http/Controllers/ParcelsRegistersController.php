@@ -1042,97 +1042,49 @@ class ParcelsRegistersController extends Controller
             $productJpa = ViewProducts::select(['*'])
             ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
             
-            $products = array();
-            foreach ($productJpa as $product_) {
-                $product = gJSON::restore($product_->toArray(), '__');
-                $products[] = $product;
-            }
-            
+            $sumary = '';
             $user_creation = ViewUsers::select([
                 'id',
                 'username',
                 'person__name',
                 'person__lastname',
             ])->where('id', $request->creation_user)->first();
-            // $sumary = '';
-            // $bills = '';
-            // $count = 1;
+            $products = array();
 
-            // foreach ($parcels as $parcel) {
-            //     $model = "
-            //     <div>
-            //         <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
-            //         <img class='img-fluid img-thumbnail'
-            //             src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
-            //     </div>
-            //     ";
+            $count = 1;
 
-            //     $reception = "
-            //     <div style='font-size: 9px;'>
-            //         <p><center><strong>{$parcel['business_designed']['name']}</strong></center></p>
-            //         <hr>
-            //         <p>Envio: <strong>{$parcel['date_send']}</strong></p>
-            //         <p>Recojo: <strong>{$parcel['date_entry']}</strong></p>
-            //     </div>
-            //     ";
+            foreach ($productJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
 
-            //     $trasport = "
-            //     <div style='font-size: 9px;'>
-            //         <p><center><strong>{$parcel['business_transport']['name']}</strong></center></p>
-            //         <p>DOC: <strong>{$parcel['business_transport']['doc_number']}</strong></p>
-            //         <p>Nº Comprobante: <strong>{$parcel['num_voucher']}</strong></p>
-            //         <p>Precio: <strong>S/.{$parcel['price_transport']}</strong></p>
-            //     </div>
-            //     ";
+                $datos = "
+                <div>
+                    <p>Mac: <strong>{$product['mac']}</strong></p>
+                    <p>Serie: <strong>{$product['serie']}</strong></p>
+                </div>
+                ";
+                $estado = "
+                <div>
+                    <p>Estado: <strong>{$product['product_status']}</strong></p>
+                    <p>Disponibilidad: <strong>{$product['disponibility']}</strong></p>
+                </div>
+                ";
+                $sucursal = "
+                <div>
+                    <strong>{$product['branch']['name']}</strong>
+                </div>
+                ";
+                $sumary.="
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$datos}</td>
+                    <td>{$estado}</td>
+                    <td>{$sucursal}</td>
+                </tr>
+                ";
+                $count +=1;
+                $products[] = $product;
+            }
 
-            //     $provider = "
-            //     <div style='font-size: 9px;'>
-            //         <p><center><strong>{$parcel['provider']['name']}</strong></center></p>
-            //         <p>DOC: <strong>{$parcel['provider']['doc_number']}</strong></p>
-            //         <p>Nº GUIA: <strong>{$parcel['num_guia']}</strong></p>
-            //         <p>Nº Factura: <strong>{$parcel['num_bill']}</strong></p>
-            //         <hr>
-            //         <center>
-            //             <p><strong>{$parcel['model']['unity']['name']}</strong></p>
-            //             <p><strong>{$parcel['mount_product']}</strong></p>
-            //         </center>
-            //     </div>
-            //     ";
-
-            //     $price = "
-            //     <div style='font-size: 9px;'>
-            //         <p>Total: <strong>{$parcel['total']}</strong></p>
-            //         <p>Importe: <strong>{$parcel['amount']}</strong></p>
-            //         <p>IGV: <strong>{$parcel['igv']}</strong></p>
-            //         <p>V. Unitario: <strong>{$parcel['value_unity']}</strong></p>
-            //         <p>P. Unitario: <strong>{$parcel['price_unity']}</strong></p>
-            //     </div>
-            //     ";
-
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center >{$count}</center></td>
-            //         <td><center >{$model}</center></td>
-            //         <td><center >{$reception}</center></td>
-            //         <td><center >{$trasport}</center></td>
-            //         <td><center >{$provider}</center></td>
-            //         <td><center >{$price}</center></td>
-            //     </tr>
-            //     ";
-
-            //     $bills .= "
-            //     <div style='page-break-before: always;'>
-            //         <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
-            //         <center>
-            //             <img
-            //                 src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
-
-            //         </center>
-            //     </div>
-            //     ";
-
-            //     $count += 1;
-            // }
 
             $parts = explode(" ", $request->date_entry);
             $date = $parts[0];
@@ -1150,6 +1102,7 @@ class ParcelsRegistersController extends Controller
                     '{user_register}',
                     '{model}',
                     '{category}',
+                    '{summary}',
                 ],
                 [
                     str_pad($request->id, 6, "0", STR_PAD_LEFT),
@@ -1162,12 +1115,13 @@ class ParcelsRegistersController extends Controller
                     $user_creation->person__name.' '.$user_creation->person__lastname,
                     $request->model['model'],
                     $request->model['category']['category'],
+                    $sumary,
                 ],
                 $template
             );
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Reporte de registro de encomiendas.pdf');
+            return $pdf->stream('Detalles de encomienda - '.str_pad($request->id, 6, "0", STR_PAD_LEFT).'.pdf');
 
             // $response = new Response();
             // $response->setStatus(200);
