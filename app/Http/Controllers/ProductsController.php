@@ -384,6 +384,10 @@ class ProductsController extends Controller
                 if ($column == 'id' || $column == '*') {
                     $q->orWhere('id', $type, $value);
                 }
+
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
                 if ($column == 'model__brand__brand' || $column == '*') {
                     $q->orWhere('model__brand__brand', $type, $value);
                 }
@@ -688,6 +692,9 @@ class ProductsController extends Controller
                 }
                 if ($column == 'serie' || $column == '*') {
                     $q->orWhere('serie', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
                 }
                 if ($column == 'price_buy' || $column == '*') {
                     $q->orWhere('price_buy', $type, $value);
