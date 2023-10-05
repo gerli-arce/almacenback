@@ -1345,7 +1345,7 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                         $productByTechnicalJpaNew->description = $product['description'];
-                        $productByTechnicalJpaNew->status = 1;
+                        $productByTechnicalJpaNew->status = 0;
 
                         $productByTechnicalJpaNew->save();
                     }
@@ -1367,7 +1367,7 @@ class TechnicalsController extends Controller
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                     $productByTechnicalJpaNew->description = $product['description'];
-                    $productByTechnicalJpaNew->status = 1;
+                    $productByTechnicalJpaNew->status = 0;
 
                     $productByTechnicalJpaNew->save();
                 }
