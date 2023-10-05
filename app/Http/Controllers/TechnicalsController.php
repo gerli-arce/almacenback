@@ -291,7 +291,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-            ->whereNotNull('status')
+                ->whereNotNull('status')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -374,7 +374,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-            ->whereNotNull('status')
+                ->whereNotNull('status')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -635,7 +635,7 @@ class TechnicalsController extends Controller
             }
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
-            ->whereNotNull('status')
+                ->whereNotNull('status')
                 ->where('type', 'PRODUCTO')->get();
 
             $products = array();
@@ -674,7 +674,7 @@ class TechnicalsController extends Controller
             }
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
-            ->whereNotNull('status')
+                ->whereNotNull('status')
                 ->where('type', 'EPP')->get();
 
             $products = array();
@@ -1121,7 +1121,8 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function deleteStockTechnical(Request $request){
+    public function deleteStockTechnical(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -1224,6 +1225,8 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                         $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->status = 1;
+
                         $productByTechnicalJpaNew->save();
                     }
                 } else {
@@ -1244,6 +1247,8 @@ class TechnicalsController extends Controller
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                     $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->status = 1;
+
                     $productByTechnicalJpaNew->save();
                 }
 
@@ -1340,6 +1345,8 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                         $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->status = 1;
+
                         $productByTechnicalJpaNew->save();
                     }
                 } else {
@@ -1360,6 +1367,8 @@ class TechnicalsController extends Controller
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                     $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->status = 1;
+
                     $productByTechnicalJpaNew->save();
                 }
 
@@ -1428,6 +1437,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+                ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
