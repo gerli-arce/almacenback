@@ -17,25 +17,25 @@ class AdminController extends Controller
     {
         $response = new Response();
         try {
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
 
+            [$branch, $status, $message, $role] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'stock', 'read')) {
-                throw new Exception('No tienes permisos para listar el stock');
+            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
+                throw new Exception('No tienes permisos para listar modelos');
             }
 
-            $query = ViewStock::select(['*'])
-            ->whereNotNull('status')
+            $query = ViewModels::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
-            if ($request->all) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('mount_new', '>', '0')
-                        ->orWhere('mount_second', '>', '0');
-                });
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            if ($request->star) {
+                $query->where('star', 1);
             }
 
             $query->where(function ($q) use ($request) {
@@ -43,40 +43,41 @@ class AdminController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-
+                if ($column == 'model' || $column == '*') {
+                    $q->orWhere('model', $type, $value);
+                }
                 if ($column == 'brand__brand' || $column == '*') {
-                    $q->where('brand__brand', $type, $value);
+                    $q->orWhere('brand__brand', $type, $value);
                 }
                 if ($column == 'category__category' || $column == '*') {
                     $q->orWhere('category__category', $type, $value);
                 }
-                if ($column == 'model__model' || $column == '*') {
-                    $q->orWhere('model__model', $type, $value);
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
                 }
-            })->where('branch__correlative', $branch);
+            });
 
             $iTotalDisplayRecords = $query->count();
-
-            $stocksJpa = $query
+            $modelsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $stocks = array();
-            foreach ($stocksJpa as $stockJpa) {
-                $stock = gJSON::restore($stockJpa->toArray(), '__');
-                $stocks[] = $stock;
+            $models = array();
+            foreach ($modelsJpa as $modelJpa) {
+                $model = gJSON::restore($modelJpa->toArray(), '__');
+                $models[] = $model;
             }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewStock::count());
-            $response->setData($stocks);
+            $response->setITotalRecords(ViewModels::count());
+            $response->setData($models);
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage() . $th->getLine());
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
