@@ -6,7 +6,7 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\{Branch, People, Response, ViewPeople, ViewModels, ViewStock, User, SalesProducts,};
+use App\Models\{Branch, People, Response, ViewPeople, ViewModels, ViewStock, User, SalesProducts,Stock,};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +66,19 @@ class AdminController extends Controller
             $models = array();
             foreach ($modelsJpa as $modelJpa) {
                 $model = gJSON::restore($modelJpa->toArray(), '__');
+                $StockJpa = Stock::where('_model',$model['id'])->whereNot('_branch', '8')->whereNotNull('status')->get();
+                $stock_mount_new = 0;
+                $stock_mount_second =0;
+                $stock_mount_ill_fated = 0;
+                foreach($StockJpa as $stock){
+                        $stock_mount_new +=$stock['mount_new']; 
+                        $stock_mount_second +=$stock['mount_second']; 
+                        $stock_mount_ill_fated +=$stock['mount_ill_fated']; 
+                }
+                $model['stock'] = $StockJpa;
+                $model['stock_new']= $stock_mount_new;
+                $model['stock_second']= $stock_mount_second;
+                $model['stock_ill_fated']= $stock_mount_ill_fated;
                 $models[] = $model;
             }
 

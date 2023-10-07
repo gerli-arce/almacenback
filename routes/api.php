@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect, SaleController, RoomController,
+    SalesController, connect, SaleController, RoomController, AdminController
 };
 
 /*
@@ -36,6 +36,8 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
     Route::get('home',[UserLoginController::class,'home'])->name('home');
     Route::get('logout',[UserLoginController::class,'logout'])->name('logout');
 });
+
+Route::post('/admin/paginate', [AdminController::class, 'paginate']);
 
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
