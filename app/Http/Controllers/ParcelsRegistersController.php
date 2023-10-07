@@ -886,7 +886,7 @@ class ParcelsRegistersController extends Controller
             ])->where('id', $userid)->first();
 
             $parcelsJpa = ViewParcelsRegisters::select(['*'])
-                ->orderBy('id', 'desc')
+                ->orderBy('date_entry', 'desc')
                 ->whereNotNull('status')
                 ->where('branch__correlative', $branch)
                 ->where('date_entry', '<=', $request->date_end)
