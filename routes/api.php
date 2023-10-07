@@ -38,6 +38,7 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
 });
 
 Route::post('/admin/paginate', [AdminController::class, 'paginate']);
+Route::post('/admin/get/stocks/model', [AdminController::class, 'getStocksByModel']);
 
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
