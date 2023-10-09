@@ -453,26 +453,28 @@ class TechnicalsController extends Controller
             $salesProduct->update_date = gTrace::getDate('mysql');
             $salesProduct->status = "1";
 
+            $productJpa = Product::find($request->product['id']);
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
             if ($request->reazon == "ILLFATED") {
                 $salesProduct->status_sale = "MALOGRADO";
+                $stock->mount_ill_fated = $request->mount_new + $request->mount_second + $request->mount_ill_fated;
             } else if ($request->reazon == "STORE") {
                 $salesProduct->status_sale = "USO EN ALMACEN";
             } else if ($request->reazon == "RETURN") {
                 $salesProduct->status_sale = "DEVOLUCION";
-                $productJpa = Product::find($request->product['id']);
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
                 $stock->mount_new = $stock->mount_new + $request->mount_new;
                 $stock->mount_second = $stock->mount_second + $request->mount_second;
                 $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
-                $stock->save();
-                $productJpa->mount = $stock->mount_new + $stock->mount_second;
-                $productJpa->disponibility = 'DISPONIBLE';
-                $productJpa->save();
             } else if ($request->reazon == "DISCOUNT") {
                 $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
             }
+
+            $stock->save();
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+            $productJpa->disponibility = 'DISPONIBLE';
+            $productJpa->save();
             $salesProduct->save();
 
             $detailSale = new DetailSale();
