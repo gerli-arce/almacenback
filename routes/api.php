@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect, SaleController, RoomController, AdminController
+    SalesController, connect, SaleController, RoomController, AdminController,LendProductsController
 };
 
 /*
@@ -368,6 +368,10 @@ Route::patch('/plant_pending/image', [PlantPendingController::class, 'updateImag
 Route::delete('/plant_pending/image/{id}', [PlantPendingController::class, 'deleteImage']);
 Route::get('/plant_pending/image/{id}', [PlantPendingController::class, 'getImages']);
 Route::post('/plant_pending/generate/report/details', [PlantPendingController::class, 'reportDetailsByPlant']);
+
+Route::post('/lend/paginate', [LendProductsController::class, 'paginate']);
+
+
 
 // TOWER
 Route::post('/towers', [TowerController::class, 'store']);
