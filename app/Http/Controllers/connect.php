@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ExcelExport;
 use App\Models\Product;
-use App\Models\ProductByTechnical;
-use App\Models\StockPlant;
-use App\Models\Response;
-use App\Models\ViewParcelsRegisters;
 use App\Models\ProductByPlant;
-use Exception;
+use App\Models\ProductByTechnical;
+use App\Models\Response;
+use App\Models\StockPlant;
+use App\Models\ViewParcelsRegisters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -67,16 +66,17 @@ class connect extends Controller
             ];
 
             $query = ViewParcelsRegisters::select(['*'])
+                ->whereNotNull('status')
                 ->orderBy('id', 'desc');
 
-                if (isset($request->date_start) && isset($request->date_end)) {
-                    // Convertir las fechas al formato de la base de datos (Y-m-d)
-                    $dateStart = \DateTime::createFromFormat('d/m/Y', $request->date_start)->format('Y-m-d');
-                    $dateEnd = \DateTime::createFromFormat('d/m/Y', $request->date_end)->format('Y-m-d');
-                
-                    $query->where('date_entry', '<=', $dateEnd)
-                          ->where('date_entry', '>=', $dateStart);
-                }
+            if (isset($request->date_start) && isset($request->date_end)) {
+                // Convertir las fechas al formato de la base de datos (Y-m-d)
+                $dateStart = \DateTime::createFromFormat('d/m/Y', $request->date_start)->format('Y-m-d');
+                $dateEnd = \DateTime::createFromFormat('d/m/Y', $request->date_end)->format('Y-m-d');
+
+                $query->where('date_entry', '<=', $dateEnd)
+                    ->where('date_entry', '>=', $dateStart);
+            }
 
             $parcelsJpa = $query->get();
 
@@ -86,7 +86,7 @@ class connect extends Controller
 
                 $currency = '$';
 
-                if($parcelJpa->currency == 'SOLES'){
+                if ($parcelJpa->currency == 'SOLES') {
                     $currency = 'S/';
                 }
 
@@ -102,59 +102,59 @@ class connect extends Controller
                 $parcel['mount_product'] = $parcelJpa->mount_product;
                 $parcel['num_bill'] = $parcelJpa->num_bill;
                 $parcel['business_designed__name'] = $parcelJpa->business_designed__name;
-                if($parcelJpa->value_unity != 0){
+                if ($parcelJpa->value_unity != 0) {
                     $parcel['value_unity'] = $parcelJpa->value_unity;
-                }else{
+                } else {
                     $parcel['value_unity'] = '0';
                 }
-                if($parcelJpa->amount!= 0){
+                if ($parcelJpa->amount != 0) {
                     $parcel['amount'] = $parcelJpa->amount;
-                }else{
+                } else {
                     $parcel['amount'] = '0';
                 }
-                if($parcelJpa->igv != 0){
+                if ($parcelJpa->igv != 0) {
                     $parcel['igv'] = $parcelJpa->igv;
-                }else{
+                } else {
                     $parcel['igv'] = '0';
                 }
-                if($parcelJpa->price_unity!= 0){
-                    $parcel['price_unity'] =  $parcelJpa->price_unity;
-                }else{
-                    $parcel['price_unity'] =  '0';
+                if ($parcelJpa->price_unity != 0) {
+                    $parcel['price_unity'] = $parcelJpa->price_unity;
+                } else {
+                    $parcel['price_unity'] = '0';
                 }
-                if($parcel['amount'] != '0' ||  $parcel['igv'] != '0'){
+                if ($parcel['amount'] != '0' || $parcel['igv'] != '0') {
                     $parcel['price'] = round($parcelJpa->amount + $parcelJpa->igv, 2);
-                }else{
+                } else {
                     $parcel['price'] = '0';
                 }
-                if($parcel['price']!= '0' && $parcel['mount_product'] != '0'){
+                if ($parcel['price'] != '0' && $parcel['mount_product'] != '0') {
                     $parcel['price_with_igv'] = round($parcel['price'] / $parcel['mount_product'], 2);
                     $parcel['35%'] = round($parcel['price_with_igv'] * 0.35, 2);
                     $parcel['price_all'] = round($parcel['price_with_igv'] + $parcel['35%'], 2);
-                }else{
+                } else {
                     $parcel['price_with_igv'] = '0';
                     $parcel['35%'] = '0';
                     $parcel['price_all'] = '0';
                 }
 
-                $parcel['value_unity']=  $currency.$parcel['value_unity'];
-                $parcel['amount']=  $currency.$parcel['amount'];
-                $parcel['igv']=  $currency.$parcel['igv'];
-                $parcel['price_unity']=  $currency.$parcel['price_unity'];
-                $parcel['price']=  $currency.$parcel['price'];
-                $parcel['price_with_igv']=  $currency.$parcel['price_with_igv'];
-                $parcel['35%']=  $currency.$parcel['35%'];
-                $parcel['price_all']=  $currency.$parcel['price_all'];
+                $parcel['value_unity'] = $currency . $parcel['value_unity'];
+                $parcel['amount'] = $currency . $parcel['amount'];
+                $parcel['igv'] = $currency . $parcel['igv'];
+                $parcel['price_unity'] = $currency . $parcel['price_unity'];
+                $parcel['price'] = $currency . $parcel['price'];
+                $parcel['price_with_igv'] = $currency . $parcel['price_with_igv'];
+                $parcel['35%'] = $currency . $parcel['35%'];
+                $parcel['price_all'] = $currency . $parcel['price_all'];
 
                 $parcels[] = $parcel;
             }
 
             if (!isset($request->date_start) && !isset($request->date_end)) {
-                $export = new ExcelExport($parcels, 'ESTE AÑO' );
-            }else{
-                $export = new ExcelExport($parcels,$month[$request->month] );
+                $export = new ExcelExport($parcels, 'ESTE AÑO');
+            } else {
+                $export = new ExcelExport($parcels, $month[$request->month]);
             }
-            
+
             $tempFilePath = 'public/temp/archivo_excel.xlsx';
             Excel::store($export, $tempFilePath);
             $tempFilePath = storage_path('app/' . $tempFilePath);

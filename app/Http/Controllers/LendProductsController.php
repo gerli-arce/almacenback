@@ -146,4 +146,123 @@ class LendProductsController extends Controller
             );
         }
     }
+
+    public function setLendByPerson(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'create')) {
+                throw new Exception('No tiene permisos para hacer prestamos');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->details)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->id;
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            foreach ($request->details as $product) {
+                $productJpa = Product::find($product['product']['id']);
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+
+                if ($productJpa->type == 'MATERIAL') {
+                    $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                    $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                    $stock->save();
+                    $productJpa->save();
+
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
+                        ->whereNotNull('status')
+                        ->where('_model', $product['product']['model']['id'])->first();
+                    if ($productByTechnicalJpa) {
+                        $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
+                        $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
+                        $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->save();
+                    } else {
+                        $productByTechnicalJpaNew = new ProductByTechnical();
+                        $productByTechnicalJpaNew->_technical = $request->id;
+                        $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
+                        $productByTechnicalJpaNew->type = $request->type;
+                        $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                        $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                        $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->status = 1;
+
+                        $productByTechnicalJpaNew->save();
+                    }
+                } else {
+                    $productJpa->disponibility = "En stok de: " . $request->name . ' ' . $request->lastname;
+                    $productJpa->save();
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new - 1;
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second - 1;
+                    }
+                    $stock->save();
+                    $productByTechnicalJpaNew = new ProductByTechnical();
+                    $productByTechnicalJpaNew->_technical = $request->id;
+                    $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->_model = $productJpa->_model;
+                    $productByTechnicalJpaNew->type = $request->type;
+                    $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                    $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                    $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                    $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->status = 1;
+
+                    $productByTechnicalJpaNew->save();
+                }
+
+                $detailSale = new DetailSale();
+                $detailSale->_product = $productJpa->id;
+                $detailSale->mount_new = $product['mount_new'];
+                $detailSale->mount_second = $product['mount_second'];
+                $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->description = $product['description'];
+                $detailSale->_sales_product = $salesProduct->id;
+                $detailSale->status = '1';
+                $detailSale->save();
+            }
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
