@@ -176,6 +176,7 @@ class LendProductsController extends Controller
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
             $salesProduct->date_sale = gTrace::getDate('mysql');
             $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "LEND";
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
             $salesProduct->_update_user = $userid;
@@ -211,6 +212,7 @@ class LendProductsController extends Controller
                         $productByTechnicalJpaNew->_technical = $request->id;
                         $productByTechnicalJpaNew->_product = $productJpa->id;
                         $productByTechnicalJpaNew->_model = $productJpa->_model;
+                        $productByTechnicalJpaNew->type = "LEND";
                         $productByTechnicalJpaNew->type = $request->type;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
@@ -221,18 +223,21 @@ class LendProductsController extends Controller
                         $productByTechnicalJpaNew->save();
                     }
                 } else {
-                    $productJpa->disponibility = "En stok de: " . $request->name . ' ' . $request->lastname;
+                    $productJpa->disponibility = "Se presto ha: " . $request->name . ' ' . $request->lastname;
                     $productJpa->save();
                     if ($productJpa->product_status == "NUEVO") {
                         $stock->mount_new = $stock->mount_new - 1;
                     } else if ($productJpa->product_status == "SEMINUEVO") {
                         $stock->mount_second = $stock->mount_second - 1;
+                    }else{
+                        $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                     }
                     $stock->save();
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
                     $productByTechnicalJpaNew->_product = $productJpa->id;
                     $productByTechnicalJpaNew->_model = $productJpa->_model;
+                    $productByTechnicalJpaNew->type = "LEND";
                     $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
