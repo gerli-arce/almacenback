@@ -1193,11 +1193,12 @@ class ParcelsRegistersController extends Controller
 
                 $parcel['date_send'] = $parcelJpa->date_send;
                 $parcel['num_voucher'] = $parcelJpa->num_voucher;
-                $parcel['business_transport__name'] = $parcelJpa->provider__name;
+                $parcel['business_transport__name'] = $parcelJpa->business_transport__name;
                 $parcel['price_transport'] = $parcelJpa->price_transport;
                 $parcel['date_entry'] = $parcelJpa->date_entry;
                 $parcel['num_guia'] = $parcelJpa->num_guia;
                 $parcel['provider__name'] = $parcelJpa->provider__name;
+                $parcel['model__model'] = $parcelJpa->model__model;
                 $parcel['description'] = $parcelJpa->description;
                 $parcel['model__unity__name'] = $parcelJpa->model__unity__name;
                 $parcel['mount_product'] = $parcelJpa->mount_product;
