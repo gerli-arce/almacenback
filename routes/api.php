@@ -296,6 +296,7 @@ Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image'
 Route::post('/parcels_register/restore', [ParcelsRegistersController::class, 'restore']);
 Route::post('/parcels_register/report', [ParcelsRegistersController::class, 'generateReport']);
 Route::post('/parcels_register/report/parcel', [ParcelsRegistersController::class, 'generateReportByParcel']);
+Route::post('/parcels_register/report/excel', [ParcelsRegistersController::class, 'exportDataToExcel']);
 
 
 // KEYS

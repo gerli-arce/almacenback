@@ -1457,14 +1457,17 @@ class TechnicalsController extends Controller
                             ->where('technical_id', $request->search['technical'])
                             ->where('type_intallation', 'AGREGADO_A_STOCK');
                     })
+                    ->where('technical_id', $request->search['technical'])
                     ->orWhere(function ($q) use ($request) {
                         $q->where('view_details_sales.product__model__id', $request->search['model'])
                             ->where('technical_id', $request->search['technical'])
                             ->where('type_intallation', 'SACADO_DE_STOCK');
-                    });
+                    })
+                    ->where('technical_id', $request->search['technical']);
             } else {
                 $query->where('type_intallation', 'AGREGADO_A_STOCK')
-                    ->orWhere('type_intallation', 'SACADO_DE_STOCK');
+                    ->orWhere('type_intallation', 'SACADO_DE_STOCK')
+                    ->where('technical_id', $request->search['technical']);
             }
 
             $query->where('type_operation__id', '10');
