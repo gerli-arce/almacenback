@@ -13,11 +13,11 @@ use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Parcel;
 use App\Models\Product;
-use App\Models\ViewProducts;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewParcelsCreated;
+use App\Models\ViewProducts;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -329,7 +329,7 @@ class ParcelsCreatedController extends Controller
             foreach ($parcels['parcels'] as $parcelJpa) {
                 foreach ($parcelJpa['details'] as $detailsJpa) {
                     $detailsByParcelsend[] = $detailsJpa;
-                    if($detailsJpa['product']['type'] === "EQUIPO"){
+                    if ($detailsJpa['product']['type'] === "EQUIPO") {
                         $productJpa = ViewProducts::find($detailsJpa['product']['id']);
                         $product = gJSON::restore($productJpa->toArray(), '__');
                         $rquipments[] = $product;
@@ -339,34 +339,34 @@ class ParcelsCreatedController extends Controller
 
             $products = array();
 
-            foreach($rquipments as $productJpa){
+            foreach ($rquipments as $productJpa) {
                 $model = $productJpa['model']['model'];
                 $stock = 0;
                 $liq = 0;
 
-                if($productJpa['disponibility'] == "DISPONIBLE"){
+                if ($productJpa['disponibility'] == "DISPONIBLE") {
                     $stock = 1;
-                }else{
+                } else {
                     $liq = 1;
                 }
 
-                if(isset($products[$model])){
-                    $products[$model]['all'] +=1;
+                if (isset($products[$model])) {
+                    $products[$model]['all'] += 1;
                     $products[$model]['stock'] += $stock;
-                    $products[$model]['liq'] += $liq; 
-                }else{
+                    $products[$model]['liq'] += $liq;
+                } else {
                     $products[$model] = array(
-                        'model'=>$model,
-                        'all'=>1,
-                        'stock'=>$stock,
-                        'liq'=>$liq,
+                        'model' => $model,
+                        'all' => 1,
+                        'stock' => $stock,
+                        'liq' => $liq,
                     );
                 }
             }
 
             $details_send = '';
 
-            foreach($products as $productJpa){
+            foreach ($products as $productJpa) {
                 $details_send .= "
                     <tr>
                         <td><center style='font-size:15px;'>{$productJpa['model']}</center></td>
@@ -377,9 +377,7 @@ class ParcelsCreatedController extends Controller
                 ";
             }
 
-
             $parcels['details'] = $detailsByParcelsend;
-
 
             $models = array();
             foreach ($parcels['details'] as $product) {
@@ -413,7 +411,6 @@ class ParcelsCreatedController extends Controller
 
             $parcels['products'] = array_values($models);
 
-
             $count = 1;
             $sumary = '';
 
@@ -434,7 +431,6 @@ class ParcelsCreatedController extends Controller
             }
 
             $count = 1;
-        
 
             $template = str_replace(
                 [
@@ -515,26 +511,15 @@ class ParcelsCreatedController extends Controller
 
             $query->where(function ($query) use ($branchId, $request) {
                 if (isset($request->date_start) || isset($request->date_end)) {
-                    $query->where('branch_send__id', $branchId)
-                        ->where('branch_destination__id', $request->branch)
+                    $query->where('branch_send__id', $request->branch)
+                        ->Where('branch_destination__id', $branchId)
                         ->where('date_send', '>=', $request->date_start)
                         ->where('date_send', '<=', $request->date_end);
                 } else {
-                    $query->where('branch_send__id', $branchId)
-                        ->where('branch_destination__id', $request->branch);
+                    $query->where('branch_send__id', $request->branch)
+                        ->Where('branch_destination__id', $branchId);
                 }
-            })
-                ->orWhere(function ($query) use ($branchId, $request) {
-                    if (isset($request->date_start) || isset($request->date_end)) {
-                        $query->where('branch_send__id', $request->branch)
-                            ->Where('branch_destination__id', $branchId)
-                            ->where('date_send', '>=', $request->date_start)
-                            ->where('date_send', '<=', $request->date_end);
-                    } else {
-                        $query->where('branch_send__id', $request->branch)
-                            ->Where('branch_destination__id', $branchId);
-                    }
-                });
+            });
 
             $SalesProductsJpa = $query->get();
 
