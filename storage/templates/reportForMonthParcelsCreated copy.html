@@ -257,8 +257,8 @@
         <p id="date">{branch_onteraction}, {issue_long_date}</p>
         <div>
             <p>SUCURSAL: <strong>{branch_selected}</strong></p>
-            <p>ENCOMIENDAS: <strong>{parcels}</strong></p>
-            <!-- <p>ENCOMIENDAS RECIBIDAS: <strong>{parcel_received}</strong></p> -->
+            <p>ENCOMIENDAS ENVIADAS: <strong>{parcels_send}</strong></p>
+            <p>ENCOMIENDAS RECIBIDAS: <strong>{parcel_received}</strong></p>
             <p>FECHA INICIO: <strong>{date_start}</strong></p>
             <p>FECHA FIN: <strong>{date_end}</strong></p>
         </div>
@@ -266,11 +266,10 @@
       
 
         <center class="text-bold" style="margin-top: 8px">PRODUCTOS ENVIADOS</center>
-        <h3>Estado de equipos</h3>
         <table>
-            <thead style="background-color: yellow;">
+            <thead>
                 <tr>
-                    <td>MODELO</td>
+                    <td>SUCURSAL</td>
                     <td>CANTIDAD</td>
                     <td>DISPONIBLE</td>
                     <td>LIQUIDADO</td>
@@ -292,9 +291,7 @@
                 </tr> -->
             </tbody>
         </table>
-        <br>
-        <h3>Productos</h3>
-        <table>
+        <table style="height: 370px">
             <thead>
                 <tr>
                     <td>#</td>
@@ -306,10 +303,28 @@
                 </tr>
             </thead>
             <tbody>
-                {summary}
+                {summary_send}
             </tbody>
         </table>
 
+        <center class="text-bold" style="margin-top: 8px">PRODUCTOS RECIBIDOS</center>
+        <table style="height: 370px">
+            <thead>
+                <tr>
+                    <td>#</td>
+                    <td>DESCRIPCIÓN</td>
+                    <td>NU</td>
+                    <td>SE</td>
+                    <td>MA</td>
+                    <td>UNID.</td>
+                </tr>
+            </thead>
+            <tbody>
+                {summary_received}
+            </tbody>
+        </table>
+       
+       
     </main>
 </body>
 

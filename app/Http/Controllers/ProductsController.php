@@ -781,8 +781,10 @@ class ProductsController extends Controller
                 }
                 if (isset($request->serie)) {
                     $productValidation = Product::select(['id', 'serie'])
-                        ->orWhere('serie', $request->serie)
+                        ->where('serie', $request->serie)
                         ->where('id', '!=', $request->id)
+                        ->where('mac', '!=', "")
+                        ->whereNotNull('mac')
                         ->first();
 
                     if ($productValidation->serie == $request->serie) {
