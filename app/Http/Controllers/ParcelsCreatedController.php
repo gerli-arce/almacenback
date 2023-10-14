@@ -256,7 +256,7 @@ class ParcelsCreatedController extends Controller
 
             $pdf = new Dompdf($options);
 
-            $template = file_get_contents('../storage/templates/reportForMonthParcelsCreated.html');
+            $template = file_get_contents('../storage/templates/reportForMonthParcelsSend.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $branch_selected = Branch::find($request->branch);
@@ -321,21 +321,26 @@ class ParcelsCreatedController extends Controller
 
             }
 
-            $parcels['mount'] = count($parcels['parcels']);
+            if (isset($parcels['parcels'])) {
+                $parcels['mount'] = count($parcels['parcels']);
+            } else {
+                $parcels['mount'] = 0;
+            }
 
             $rquipments = array();
 
             $detailsByParcelsend = array();
-            foreach ($parcels['parcels'] as $parcelJpa) {
-                foreach ($parcelJpa['details'] as $detailsJpa) {
-                    $detailsByParcelsend[] = $detailsJpa;
-                    if ($detailsJpa['product']['type'] === "EQUIPO") {
-                        $productJpa = ViewProducts::find($detailsJpa['product']['id']);
-                        $product = gJSON::restore($productJpa->toArray(), '__');
-                        $rquipments[] = $product;
+            if (isset($parcels['parcels'])) {
+                foreach ($parcels['parcels'] as $parcelJpa) {
+                    foreach ($parcelJpa['details'] as $detailsJpa) {
+                        $detailsByParcelsend[] = $detailsJpa;
+                        if ($detailsJpa['product']['type'] === "EQUIPO") {
+                            $productJpa = ViewProducts::find($detailsJpa['product']['id']);
+                            $product = gJSON::restore($productJpa->toArray(), '__');
+                            $rquipments[] = $product;
+                        }
                     }
-                }
-            }
+                }}
 
             $products = array();
 
@@ -430,8 +435,6 @@ class ParcelsCreatedController extends Controller
                 $count = $count + 1;
             }
 
-            $count = 1;
-
             $template = str_replace(
                 [
                     '{branch_onteraction}',
@@ -501,7 +504,7 @@ class ParcelsCreatedController extends Controller
 
             $pdf = new Dompdf($options);
 
-            $template = file_get_contents('../storage/templates/reportForMonthParcelsCreated.html');
+            $template = file_get_contents('../storage/templates/reportForMonthParcelsReceived.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $branch_selected = Branch::find($request->branch);
@@ -562,134 +565,112 @@ class ParcelsCreatedController extends Controller
                 }
 
                 $parcel['details'] = $details;
-                if ($parcel['branch_send']['id'] == $branch_->id) {
-                    $parcels['send'][] = $parcel;
-                } else {
-                    $parcels['received'][] = $parcel;
-                }
+                $parcels['parcels'][] = $parcel;
             }
 
-            if (isset($parcels['send'])) {
-                $parcels['parcels_send'] = count($parcels['send']);
+            if (isset($parcels['parcels'])) {
+                $parcels['mount'] = count($parcels['parcels']);
             } else {
-                $parcels['parcels_send'] = 0;
+                $parcels['mount'] = 0;
             }
 
-            if (isset($parcels['received'])) {
-                $parcels['parcels_received'] = count($parcels['received']);
-            } else {
-                $parcels['parcels_received'] = 0;
-            }
+            $rquipments = array();
 
-            $detailsByParcelsend = array();
-            if (isset($parcels['send'])) {
-                foreach ($parcels['send'] as $ParcelJpa) {
-                    foreach ($ParcelJpa['details'] as $detailsJpa) {
-                        $detailsByParcelsend[] = $detailsJpa;
+            $detailsByParcelReceived = array();
+
+            if (isset($parcels['parcels'])) {
+                foreach ($parcels['parcels'] as $parcelJpa) {
+                    foreach ($parcelJpa['details'] as $detailsJpa) {
+                        $detailsByParcelReceived[] = $detailsJpa;
+                        if ($detailsJpa['product']['type'] === "EQUIPO") {
+                            $productJpa = ViewProducts::find($detailsJpa['product']['id']);
+                            $product = gJSON::restore($productJpa->toArray(), '__');
+                            $rquipments[] = $product;
+                        }
                     }
                 }
             }
-            $parcels['details_send'] = $detailsByParcelsend;
 
-            $detailsByParcelreceived = array();
-            if (isset($parcels['received'])) {
-                foreach ($parcels['received'] as $ParcelJpa) {
-                    foreach ($ParcelJpa['details'] as $detailJpa) {
-                        $detailsByParcelreceived[] = $detailJpa;
-                    }
-                }
-            }
-            $parcels['details_received'] = $detailsByParcelreceived;
+            $parcels['details'] = $detailsByParcelReceived;
 
-            $models_send = array();
-            foreach ($parcels['details_send'] as $product) {
-                $model = $relativeId = $unity = "";
-                if ($product['product']['type'] === "EQUIPO") {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
+            $products = array();
+
+            foreach ($rquipments as $productJpa) {
+                $model = $productJpa['model']['model'];
+                $stock = 0;
+                $liq = 0;
+
+                if ($productJpa['disponibility'] == "DISPONIBLE") {
+                    $stock = 1;
                 } else {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
+                    $liq = 1;
                 }
-                $mount_new = $product['mount_new'];
-                $mount_second = $product['mount_second'];
-                $mount_ill_fated = $product['mount_ill_fated'];
-                if (isset($models_send[$model])) {
-                    $models_send[$model]['mount_new'] += $mount_new;
-                    $models_send[$model]['mount_second'] += $mount_second;
-                    $models_send[$model]['mount_ill_fated'] += $mount_ill_fated;
+
+                if (isset($products[$model])) {
+                    $products[$model]['all'] += 1;
+                    $products[$model]['stock'] += $stock;
+                    $products[$model]['liq'] += $liq;
                 } else {
-                    $models_send[$model] = array(
+                    $products[$model] = array(
                         'model' => $model,
-                        'mount_new' => $mount_new,
-                        'mount_second' => $mount_second,
-                        'mount_ill_fated' => $mount_ill_fated,
-                        'relative_id' => $relativeId,
-                        'unity' => $unity);
+                        'all' => 1,
+                        'stock' => $stock,
+                        'liq' => $liq,
+                    );
                 }
             }
 
-            $parcels['products_send'] = array_values($models_send);
+            $details_send = '';
 
-            $models_received = array();
-            foreach ($parcels['details_received'] as $product) {
-                $model = $relativeId = $unity = "";
-                if ($product['product']['type'] === "EQUIPO") {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
-                } else {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
-                }
-                $mount_new = $product['mount_new'];
-                $mount_second = $product['mount_second'];
-                $mount_ill_fated = $product['mount_ill_fated'];
-                if (isset($models_received[$model])) {
-                    $models_received[$model]['mount_new'] += $mount_new;
-                    $models_received[$model]['mount_second'] += $mount_second;
-                    $models_received[$model]['mount_ill_fated'] += $mount_ill_fated;
-                } else {
-                    $models_received[$model] = array(
-                        'model' => $model,
-                        'mount_new' => $mount_new,
-                        'mount_second' => $mount_second,
-                        'mount_ill_fated' => $mount_ill_fated,
-                        'relative_id' => $relativeId,
-                        'unity' => $unity);
-                }
-            }
-
-            $parcels['products_received'] = array_values($models_received);
-
-            $count = 1;
-            $sumary_send = '';
-
-            foreach ($parcels['products_send'] as $detail) {
-
-                $sumary_send .= "
-                <tr>
-                    <td><center style='font-size:15px;'>{$count}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-                    <td><center style='font-size:15px;'>{$detail['mount_new']}</center></td>
-                    <td><center style='font-size:15px;'>{$detail['mount_second']}</center></td>
-                    <td><center style='font-size:15px;'>{$detail['mount_ill_fated']}</center></td>
-                    <td><center style='font-size:15px;'>{$detail['unity']}</center></td>
-                </tr>
+            foreach ($products as $productJpa) {
+                $details_send .= "
+                    <tr>
+                        <td><center style='font-size:15px;'>{$productJpa['model']}</center></td>
+                        <td><center style='font-size:15px;'>{$productJpa['all']}</center></td>
+                        <td><center style='font-size:15px;'>{$productJpa['stock']}</center></td>
+                        <td><center style='font-size:15px;'>{$productJpa['liq']}</center></td>
+                    </tr>
                 ";
-
-                $count = $count + 1;
             }
 
+            $models = array();
+            foreach ($parcels['details'] as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity);
+                }
+            }
+
+            $parcels['products'] = array_values($models);
+
             $count = 1;
-            $sumary_received = '';
+            $sumary = '';
 
-            foreach ($parcels['products_received'] as $detail) {
+            foreach ($parcels['products'] as $detail) {
 
-                $sumary_received .= "
+                $sumary .= "
                 <tr>
                     <td><center style='font-size:15px;'>{$count}</center></td>
                     <td><center style='font-size:12px;'>{$detail['model']}</center></td>
@@ -708,23 +689,21 @@ class ParcelsCreatedController extends Controller
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{branch_selected}',
-                    '{parcels_send}',
-                    '{parcel_received}',
+                    '{parcels}',
                     '{date_start}',
                     '{date_end}',
-                    '{summary_send}',
-                    '{summary_received}',
+                    '{details_send}',
+                    '{summary}',
                 ],
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
                     $branch_selected->name,
-                    $parcels['parcels_send'],
-                    $parcels['parcels_received'],
+                    $parcels['mount'],
                     $request->date_start,
                     $request->date_end,
-                    $sumary_send,
-                    $sumary_received,
+                    $details_send,
+                    $sumary,
                 ],
                 $template
             );
