@@ -364,7 +364,7 @@ class StockController extends Controller
             }
 
             $query = ViewStock::select(['*'])
-            ->whereNotNull('status')
+                ->whereNotNull('status')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {
@@ -513,7 +513,7 @@ class StockController extends Controller
 
             $stockJpa = Stock::find($request->id);
 
-            $stockJpa->stock_min =0;
+            $stockJpa->stock_min = 0;
             $stockJpa->mount_new = 0;
             $stockJpa->mount_second = 0;
             $stockJpa->mount_ill_fated = 0;
@@ -605,6 +605,93 @@ class StockController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function RegularizeMountsByModel(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'update')) {
+                throw new Exception('No tienes permisos para actualizar stock.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $stockJpa = Stock::find($request->id);
+            if (!$stockJpa) {
+                throw new Exception('El stock que deseas cambiar no existe');
+            }
+
+            $productsJpa = Product::where('_model', $request->model['id'])
+                ->where('_branch', $branch_->id)
+                ->where('disponibility', 'DISPONIBLE')
+                ->where(function ($q) {
+                    $q->where('product_status', 'NUEVO')
+                        ->orWhere('product_status', 'SEMINUEVO')
+                        ->orWhere('product_status', 'MALOGRADO')
+                        ->orWhere('product_status', 'POR REVISAR');
+                })
+                ->whereNotNull('status')
+                ->get();
+
+            $new = $second = $ill_fated = 0;
+
+            $type = '';
+
+            if ($productsJpa->isEmpty()) {
+                $stockJpa->mount_new = 0;
+                $stockJpa->mount_second = 0;
+                $stockJpa->mount_ill_fated = 0;
+            } else {
+                foreach ($productsJpa as $product) {
+                    if ($product['type'] == 'EQUIPO') {
+                        $type = 'EQUIPO';
+                        if ($product['product_status'] == 'NUEVO') {
+                            $new += 1;
+                        } else if ($product['product_status'] == 'SEMINUEVO') {
+                            $second += 1;
+                        } else {
+                            $ill_fated += 1;
+                        }
+                    } else {
+                        $type = 'MATERIAL';
+                        $productJpa = Product::find($product['id']);
+                        $productJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
+                        $productJpa->save();
+                    }
+                }
+            }
+
+            if ($type == 'EQUIPO') {
+                $stockJpa->mount_new = $new;
+                $stockJpa->mount_second = $second;
+                $stockJpa->mount_ill_fated = $ill_fated;
+            }
+
+            $stockJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Pperación Correcta');
+            $response->setData($productsJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
