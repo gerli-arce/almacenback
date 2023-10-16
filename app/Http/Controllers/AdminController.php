@@ -45,6 +45,9 @@ class AdminController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'id' || $column == '*') {
+                    $q->where('id', $type, $value);
+                }
                 if ($column == 'model' || $column == '*') {
                     $q->orWhere('model', $type, $value);
                 }
