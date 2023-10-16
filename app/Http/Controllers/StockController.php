@@ -672,6 +672,17 @@ class StockController extends Controller
                         }
                     } else {
                         $type = 'MATERIAL';
+
+                        if ($stockJpa->mount_new < 0) {
+                            $stockJpa->mount_new = 0;
+                        }
+                        if ($stockJpa->mount_second < 0) {
+                            $stockJpa->mount_second = 0;
+                        }
+                        if ($stockJpa->mount_ill_fated < 0) {
+                            $stockJpa->mount_ill_fated = 0;
+                        }
+
                         $productJpa = Product::find($product['id']);
                         $productJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
                         $productJpa->save();
