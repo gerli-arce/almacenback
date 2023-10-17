@@ -373,6 +373,7 @@ Route::get('/plant_pending/image/{id}', [PlantPendingController::class, 'getImag
 Route::post('/plant_pending/generate/report/details', [PlantPendingController::class, 'reportDetailsByPlant']);
 
 Route::post('/lend/paginate', [LendProductsController::class, 'paginate']);
+Route::post('/lend/mew/lend', [LendProductsController::class, 'setLendByPerson']);
 
 
 

@@ -11,6 +11,12 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\ViewPeople;
+use App\Models\Branch;
+use App\Models\SalesProducts;
+use App\Models\Product;
+use App\Models\Stock;
+use App\Models\ProductByTechnical;
+use App\Models\DetailSale;
 
 use Exception;
 
@@ -172,8 +178,8 @@ class LendProductsController extends Controller
             $salesProduct = new SalesProducts();
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_technical = $request->id;
-            $salesProduct->_type_operation = "10";
-            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->_type_operation = "12";
+            $salesProduct->type_intallation = "PRESTAMO";
             $salesProduct->date_sale = gTrace::getDate('mysql');
             $salesProduct->status_sale = "AGREGADO";
             $salesProduct->type_products = "LEND";
@@ -196,11 +202,11 @@ class LendProductsController extends Controller
                     $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
 
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
-                    $stock->save();
-                    $productJpa->save();
+                 
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
                         ->whereNotNull('status')
+                        ->where('type', 'LEND')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
@@ -213,15 +219,16 @@ class LendProductsController extends Controller
                         $productByTechnicalJpaNew->_product = $productJpa->id;
                         $productByTechnicalJpaNew->_model = $productJpa->_model;
                         $productByTechnicalJpaNew->type = "LEND";
-                        $productByTechnicalJpaNew->type = $request->type;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                         $productByTechnicalJpaNew->description = $product['description'];
                         $productByTechnicalJpaNew->status = 1;
-
                         $productByTechnicalJpaNew->save();
                     }
+
+                    $stock->save();
+                    $productJpa->save();
                 } else {
                     $productJpa->disponibility = "Se presto ha: " . $request->name . ' ' . $request->lastname;
                     $productJpa->save();
@@ -238,13 +245,11 @@ class LendProductsController extends Controller
                     $productByTechnicalJpaNew->_product = $productJpa->id;
                     $productByTechnicalJpaNew->_model = $productJpa->_model;
                     $productByTechnicalJpaNew->type = "LEND";
-                    $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
                     $productByTechnicalJpaNew->description = $product['description'];
                     $productByTechnicalJpaNew->status = 1;
-
                     $productByTechnicalJpaNew->save();
                 }
 
@@ -259,7 +264,7 @@ class LendProductsController extends Controller
                 $detailSale->save();
             }
             $response->setStatus(200);
-            $response->setMessage('Productos agregados correctamente al stock del técnico');
+            $response->setMessage('Operación correcta, prestamo registrado correctamnete.');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
