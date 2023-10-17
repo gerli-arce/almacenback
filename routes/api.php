@@ -374,6 +374,8 @@ Route::post('/plant_pending/generate/report/details', [PlantPendingController::c
 
 Route::post('/lend/paginate', [LendProductsController::class, 'paginate']);
 Route::post('/lend/mew/lend', [LendProductsController::class, 'setLendByPerson']);
+Route::post('/lend/get/lends', [LendProductsController::class, 'getLendsByPerson']);
+Route::post('/lend/paginate/record', [LendProductsController::class, 'paginateRecordsEpp']);
 
 
 
