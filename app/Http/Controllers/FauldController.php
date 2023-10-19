@@ -712,7 +712,7 @@ class FauldController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+                throw new Exception('No tienes permisos para eliminar averia pendientes');
             }
             if (
                 !isset($request->id)
