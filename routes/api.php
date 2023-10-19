@@ -376,6 +376,8 @@ Route::post('/lend/paginate', [LendProductsController::class, 'paginate']);
 Route::post('/lend/mew/lend', [LendProductsController::class, 'setLendByPerson']);
 Route::post('/lend/get/lends', [LendProductsController::class, 'getLendsByPerson']);
 Route::post('/lend/paginate/record', [LendProductsController::class, 'paginateRecordsEpp']);
+Route::post('/lend/record/report', [LendProductsController::class, 'generateReportBySearch']);
+Route::post('/lend/takeout/lend', [LendProductsController::class, 'recordTakeOutByTechnical']);
 
 
 
