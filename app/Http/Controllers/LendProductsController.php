@@ -2,27 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
-use App\Models\Response;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
-use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\ViewPeople;
+use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\SalesProducts;
-use App\Models\Product;
-use App\Models\Stock;
-use App\Models\ProductByTechnical;
-use App\Models\ViewProductByTechnical;
-use App\Models\ViewDetailsSales;
 use App\Models\DetailSale;
+use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\Response;
+use App\Models\SalesProducts;
+use App\Models\Stock;
+use App\Models\ViewDetailsSales;
+use App\Models\ViewPeople;
+use App\Models\ViewProductByTechnical;
 use App\Models\ViewSales;
-
 use Exception;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LendProductsController extends Controller
 {
@@ -145,7 +142,7 @@ class LendProductsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewPeople::count());
             $response->setData($people);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -205,7 +202,6 @@ class LendProductsController extends Controller
                     $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
 
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
-                 
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
                         ->whereNotNull('status')
@@ -239,7 +235,7 @@ class LendProductsController extends Controller
                         $stock->mount_new = $stock->mount_new - 1;
                     } else if ($productJpa->product_status == "SEMINUEVO") {
                         $stock->mount_second = $stock->mount_second - 1;
-                    }else{
+                    } else {
                         $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                     }
                     $stock->save();
@@ -279,7 +275,8 @@ class LendProductsController extends Controller
         }
     }
 
-    public function getLendsByPerson(Request $request){
+    public function getLendsByPerson(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -316,7 +313,7 @@ class LendProductsController extends Controller
             );
         }
     }
-    
+
     public function paginateRecordsEpp(Request $request)
     {
         $response = new Response();
@@ -432,8 +429,7 @@ class LendProductsController extends Controller
 
             if (
                 !isset($request->product) ||
-                !isset($request->technical) ||
-                !isset($request->reazon)
+                !isset($request->technical) 
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
@@ -460,38 +456,32 @@ class LendProductsController extends Controller
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
             $salesProduct->status = "1";
+            $salesProduct->status_sale = "DEVOLUCION";
 
-            if ($request->reazon == "ILLFATED") {
-                $salesProduct->status_sale = "MALOGRADO";
-            } else if ($request->reazon == "STORE") {
-                $salesProduct->status_sale = "USO EN ALMACEN";
-            } else if ($request->reazon == "RETURN") {
-                $salesProduct->status_sale = "DEVOLUCION";
-                $productJpa = Product::find($request->product['id']);
-                $stock = Stock::where('_model', $productJpa->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
-                if($productJpa->type == "EQUIPO"){
-                    $productJpa->description .= " (Se presto a ".$request->technical['nama'].' '.$request->technical['lastname'].'), devolvio en la fecha: '.gTrace::getDate('mysql');
-                    $productJpa->disponibility = 'DISPONIBLE';
-                    if($productJpa->product_status == "NUEVO"){
-                        $stock->mount_new += 1;
-                    }else if($productJpa->product_status == "SEMINUEVO"){
-                        $stock->mount_second += 1;
-                    }else{
-                        $stock->mount_ill_fated += 1;
-                    } 
-                }else{
-                    $stock->mount_new = $stock->mount_new + $request->mount_new;
-                    $stock->mount_second = $stock->mount_second + $request->mount_second;
-                    $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
+            $productJpa = Product::find($request->product['id']);
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+            if ($productJpa->type == "EQUIPO") {
+                $productJpa->description .= " (Se presto a " . $request->technical['nama'] . ' ' . $request->technical['lastname'] . '), devolvio en la fecha: ' . gTrace::getDate('mysql');
+                $productJpa->disponibility = 'DISPONIBLE';
+                if ($productJpa->product_status == "NUEVO") {
+                    $stock->mount_new += 1;
+                } else if ($productJpa->product_status == "SEMINUEVO") {
+                    $stock->mount_second += 1;
+                } else {
+                    $stock->mount_ill_fated += 1;
                 }
-                $stock->save();
-                $productJpa->mount = $stock->mount_new + $stock->mount_second;
-                $productJpa->save();
-            } else if ($request->reazon == "DISCOUNT") {
-                $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
+            } else {
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
             }
+
+            $stock->save();
+
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+            $productJpa->save();
             $salesProduct->save();
 
             $detailSale = new DetailSale();
@@ -499,6 +489,7 @@ class LendProductsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->descroption = $request->descroption;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
@@ -516,7 +507,6 @@ class LendProductsController extends Controller
             );
         }
     }
-
 
     public function generateReportBySearch(Request $request)
     {
