@@ -291,6 +291,7 @@ class TechnicalsController extends Controller
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNot('type', 'LEND')
                 ->whereNotNull('status')
                 ->where('_model', $request->product['model']['id'])->first();
 
@@ -375,6 +376,7 @@ class TechnicalsController extends Controller
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
                 ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
                 ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
@@ -432,7 +434,9 @@ class TechnicalsController extends Controller
             }
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])
                 ->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
@@ -522,7 +526,9 @@ class TechnicalsController extends Controller
             }
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])
                 ->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
@@ -602,7 +608,8 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')
+                ->whereNot('type', 'LEND')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -638,6 +645,7 @@ class TechnicalsController extends Controller
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
                 ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
                 ->where('type', 'PRODUCTO')->get();
 
             $products = array();
@@ -677,6 +685,7 @@ class TechnicalsController extends Controller
 
             $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
                 ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
                 ->where('type', 'EPP')->get();
 
             $products = array();
@@ -1211,6 +1220,7 @@ class TechnicalsController extends Controller
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
                         ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
@@ -1331,6 +1341,7 @@ class TechnicalsController extends Controller
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
                         ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
@@ -2095,7 +2106,10 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])->where('_product', $request->product['id'])->first();
+            $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])->first();
 
             $response->setData([$ProductByTechnical]);
             $response->setStatus(200);
