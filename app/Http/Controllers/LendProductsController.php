@@ -780,7 +780,7 @@ class LendProductsController extends Controller
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$technical_details}
                     </div>
-                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+                    <div style='display: flex;margin-top: 50px;'>";
 
                 foreach ($sale['details'] as $detailJpa) {
                     $details_equipment = 'display:none;';
@@ -788,38 +788,38 @@ class LendProductsController extends Controller
                         $details_equipment = '';
                     }
                     $view_details .= "
-                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 46%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 300px; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
-                                        <table style='margin:12px; width:94%;'>
+                                        <table class='table_details'>
                                             <tbody>
                                                 <tr>
-                                                    <td style='border: 1px solid #6874832e;'>MAC</td>
-                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['product']['mac']}</td>
+                                                    <td>MAC</td>
+                                                    <td>{$detailJpa['product']['mac']}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td style='border: 1px solid #6874832e;'>SERIE</td>
-                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['product']['serie']}</td>
+                                                    <td>SERIE</td>
+                                                    <td>{$detailJpa['product']['serie']}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                     <div>
-                                        <table style='margin:12px; width:94%; text-aling:center;'>
+                                        <table class='table_details'>
                                             <thead>
                                                 <tr>
-                                                    <td style='border: 1px solid #6874832e;'>NUEVOS</td>
-                                                    <td style='border: 1px solid #6874832e;'>SEMINUEVOS</td>
-                                                    <td style='border: 1px solid #6874832e;'>MALOGRADOS</td>
+                                                    <td>NUEVOS</td>
+                                                    <td>SEMINUEVOS</td>
+                                                    <td>MALOGRADOS</td>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_new']}</td>
-                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_second']}</td>
-                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_ill_fated']}</td>
+                                                    <td>{$detailJpa['mount_new']}</td>
+                                                    <td>{$detailJpa['mount_second']}</td>
+                                                    <td>{$detailJpa['mount_ill_fated']}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
