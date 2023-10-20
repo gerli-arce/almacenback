@@ -8,6 +8,7 @@ use App\gLibraries\gValidate;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\DetailSale;
+use App\Models\People;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
 use App\Models\Response;
@@ -17,6 +18,9 @@ use App\Models\ViewDetailsSales;
 use App\Models\ViewPeople;
 use App\Models\ViewProductByTechnical;
 use App\Models\ViewSales;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -67,11 +71,10 @@ class LendProductsController extends Controller
                 'status',
             ])
                 ->orderBy($request->order['column'], $request->order['dir'])
-                ->where('type', 'EJECUTIVE')
-                ->orWhere('type', 'TECHNICAL');
-
-            // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
-            // }
+                ->where(function ($q) {
+                    $q->where('type', 'EJECUTIVE')
+                        ->orWhere('type', 'TECHNICAL');
+                });
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -123,6 +126,7 @@ class LendProductsController extends Controller
                     $q->orWhere('status', $type, $value);
                 }
             });
+
             $iTotalDisplayRecords = $query->count();
 
             $peopleJpa = $query
@@ -140,7 +144,10 @@ class LendProductsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewPeople::count());
+            $response->setITotalRecords(ViewPeople::where(function ($q) {
+                $q->where('type', 'EJECUTIVE')
+                    ->orWhere('type', 'TECHNICAL');
+            })->count());
             $response->setData($people);
         } catch (\Throwable $th) {
             $response->setStatus(400);
@@ -311,7 +318,6 @@ class LendProductsController extends Controller
             $salesProduct->update_date = gTrace::getDate('mysql');
             $salesProduct->status = "1";
             $salesProduct->save();
-
 
             $detailSale = new DetailSale();
             $detailSale->_product = $request->product['id'];
@@ -532,7 +538,7 @@ class LendProductsController extends Controller
                     ->first();
             }
 
-            if(!$productByTechnicalJpa){
+            if (!$productByTechnicalJpa) {
                 throw new Exception("Error: El registro no fue encontrado, contactese con el programador");
             }
 
@@ -670,30 +676,30 @@ class LendProductsController extends Controller
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'desc')
                 ->where('view_sales.technical_id', $request->technical)
-                ->whereNotNUll('view_sales.status')
+            // ->whereNotNUll('view_sales.status')
                 ->where('branch__correlative', $branch);
 
             if (isset($request->model)) {
                 $query
                     ->where('view_details_sales.product__model__id', $request->model)
-                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->where('type_intallation', 'PRESTAMO')
                     ->orWhere(function ($q) use ($request) {
 
                         $q->where('view_details_sales.product__model__id', $request->model)
                             ->where('technical_id', $request->technical)
-                            ->where('type_intallation', 'AGREGADO_A_STOCK');
+                            ->where('type_intallation', 'PRESTAMO');
                     })
                     ->orWhere(function ($q) use ($request) {
                         $q->where('view_details_sales.product__model__id', $request->model)
                             ->where('technical_id', $request->technical)
-                            ->where('type_intallation', 'SACADO_DE_STOCK');
+                            ->where('type_intallation', 'DEVOLUCION_PRESTAMO');
                     });
             } else {
-                $query->where('view_sales.type_intallation', 'AGREGADO_A_STOCK')
-                    ->orWhere('view_sales.type_intallation', 'SACADO_DE_STOCK');
+                $query->where('view_sales.type_intallation', 'PRESTAMO')
+                    ->orWhere('view_sales.type_intallation', 'DEVOLUCION_PRESTAMO');
             }
 
-            $query->where('view_sales.type_operation__id', 10);
+            $query->where('view_sales.type_operation__id', 12);
 
             if (isset($request->date_start) || isset($request->date_end)) {
                 $dateStart = date('Y-m-d', strtotime($request->date_start));
@@ -746,7 +752,6 @@ class LendProductsController extends Controller
 
                 $usuario = "
                 <div>
-                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
                     <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
                     <p>{$sale['date_sale']}</p>
                 </div>
@@ -757,9 +762,7 @@ class LendProductsController extends Controller
 
                 $datos = "
                     <div>
-                        <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
-                        <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
-                        <p>Descripción: <strong>{$sale['description']}</strong></p>
+                        <p><strong>Tipo salida</strong>: {$tipo_instalacion}</p>
                     </div>
                 ";
 
@@ -773,7 +776,7 @@ class LendProductsController extends Controller
 
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$tipo_instalacion}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$technical_details}
                     </div>
@@ -785,16 +788,42 @@ class LendProductsController extends Controller
                         $details_equipment = '';
                     }
                     $view_details .= "
-                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 46%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
-                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
-                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                        <table style='margin:12px; width:94%;'>
+                                            <tbody>
+                                                <tr>
+                                                    <td style='border: 1px solid #6874832e;'>MAC</td>
+                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['product']['mac']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style='border: 1px solid #6874832e;'>SERIE</td>
+                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['product']['serie']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div>
-                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                        <table style='margin:12px; width:94%; text-aling:center;'>
+                                            <thead>
+                                                <tr>
+                                                    <td style='border: 1px solid #6874832e;'>NUEVOS</td>
+                                                    <td style='border: 1px solid #6874832e;'>SEMINUEVOS</td>
+                                                    <td style='border: 1px solid #6874832e;'>MALOGRADOS</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_new']}</td>
+                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_second']}</td>
+                                                    <td style='border: 1px solid #6874832e;'>{$detailJpa['mount_ill_fated']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
                                     </div>
                                 </center>
                             </div>
