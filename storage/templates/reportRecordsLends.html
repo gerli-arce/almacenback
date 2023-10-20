@@ -93,14 +93,15 @@
         }
 
         table tbody td {
-            border-bottom: 1px solid #222222;
+            border: 1px solid #222222;
         }
 
         table thead td {
             text-align: center;
             font-weight: bold;
-            background-color: #323a46;
-            color: #ffffff !important;
+            background-color: #323a4639;
+            color: #000000 !important;
+            border: 1px solid #222222;
         }
 
         table td {
@@ -114,9 +115,14 @@
             text-align: center;
             
         }
+        .table_details thead td{
+            border: 1px solid #222222;
+            background-color: #6b707a57;
+        }
         
-        .table_details td{
-            border: 1px solid #6874832e;
+        .table_details tbody td{
+            border: 1px solid #222222;
+            /* border: 1px solid #6874835f; */
         }
 
         #total_hours {
@@ -248,10 +254,10 @@
         </div>
         <br />
         <p id="date">{branch_interaction}, {issue_long_date}</p>
-        <p>Usiario generación: <strong>{user_generate}</strong></p>
-        <p>{people}: <strong>{people_names}</strong></p>
-        <p>Fecha inicio: <strong>{date_start_str}</strong></p>
-        <p>Fecha fin: <strong>{date_end_str}</strong></p>
+        <p><strong>Usiario generación:</strong> {user_generate}</p>
+        <p><strong>Persona:</strong> {people_names}</p>
+        <p><strong>Fecha inicio:</strong> {date_start_str}</p>
+        <p><strong>Fecha fin:</strong> {date_end_str}</p>
 
         <center class="text-bold" style="margin-top: 8px">Resumen</center>
         <table style="height: 370px; font-size: 14px;">

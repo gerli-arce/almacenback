@@ -823,7 +823,9 @@ class LendProductsController extends Controller
                                                 </tr>
                                             </tbody>
                                         </table>
-
+                                    </div>
+                                    <div>
+                                        <p><strong>Descripción:</strong>{$detailJpa['description']}</p>
                                     </div>
                                 </center>
                             </div>
@@ -843,7 +845,6 @@ class LendProductsController extends Controller
                     '{branch_interaction}',
                     '{issue_long_date}',
                     '{user_generate}',
-                    '{people}',
                     '{people_names}',
                     '{date_start_str}',
                     '{date_end_str}',
@@ -854,7 +855,6 @@ class LendProductsController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     $user->person__name . ' ' . $user->person__lastname,
-                    'TÉCNICO',
                     $dat_technical->name . ' ' . $dat_technical->lastname,
                     $request->date_start_str,
                     $request->date_end_str,
