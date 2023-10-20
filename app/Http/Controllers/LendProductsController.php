@@ -275,6 +275,92 @@ class LendProductsController extends Controller
         }
     }
 
+    public function setLendProductByPerson(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (
+                !isset($request->product) ||
+                !isset($request->technical)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "12";
+            $salesProduct->type_intallation = "PRESTAMO";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "LEND";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->description = $request->description;
+            $detailSale->status = '1';
+            $detailSale->save();
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNotNull('status')
+                ->where('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])->first();
+
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
+
+            $productJpa = Product::find($request->product['id']);
+
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
+            $stock->mount_new = $stock->mount_new - $request->mount_new;
+            $stock->mount_second = $stock->mount_second - $request->mount_second;
+            $stock->mount_ill_fated = $stock->mount_ill_fated - $request->mount_ill_fated;
+            $stock->save();
+
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+
+            $productJpa->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Prestamo agregado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getLendsByPerson(Request $request)
     {
         $response = new Response();
@@ -436,12 +522,18 @@ class LendProductsController extends Controller
 
             if ($request->product['type'] == "MATERIAL") {
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                    ->where('type', 'LEND')
                     ->where('_model', $request->product['model']['id'])
                     ->first();
             } else {
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                    ->whereNotNull('status')
                     ->where('_product', $request->product['id'])
                     ->first();
+            }
+
+            if(!$productByTechnicalJpa){
+                throw new Exception("Error: El registro no fue encontrado, contactese con el programador");
             }
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
@@ -469,7 +561,7 @@ class LendProductsController extends Controller
                 ->where('_branch', $branch_->id)
                 ->first();
             if ($productJpa->type == "EQUIPO") {
-                $productJpa->description .= " (Se presto a " . $request->technical['nama'] . ' ' . $request->technical['lastname'] . '), devolvio en la fecha: ' . gTrace::getDate('mysql');
+                $productJpa->description .= " (Se presto a " . $request->technical['name'] . ' ' . $request->technical['lastname'] . '), devolvio en la fecha: ' . gTrace::getDate('mysql');
                 $productJpa->disponibility = 'DISPONIBLE';
                 if ($productJpa->product_status == "NUEVO") {
                     $stock->mount_new += 1;
@@ -478,6 +570,8 @@ class LendProductsController extends Controller
                 } else {
                     $stock->mount_ill_fated += 1;
                 }
+
+                $productByTechnicalJpa->status = null;
             } else {
                 $stock->mount_new = $stock->mount_new + $request->mount_new;
                 $stock->mount_second = $stock->mount_second + $request->mount_second;
@@ -502,7 +596,8 @@ class LendProductsController extends Controller
 
             $productByTechnicalJpa->save();
             $response->setStatus(200);
-            $response->setMessage('Salida de productos registrados correctamente');
+            $response->setMessage('Devolución de productos registrados correctamente');
+            $response->setData($productByTechnicalJpa->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
@@ -776,11 +871,11 @@ class LendProductsController extends Controller
 
             if ($request->product['type'] == 'MATERIAL') {
                 $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('type', 'LEND')
-                ->where('_model', $request->product['model']['id'])->first();
+                    ->where('type', 'LEND')
+                    ->where('_model', $request->product['model']['id'])->first();
             } else {
                 $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])->first();
+                    ->where('_product', $request->product['id'])->first();
             }
 
             $response->setData([$ProductByTechnical]);
