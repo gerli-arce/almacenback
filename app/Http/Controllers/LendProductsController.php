@@ -314,7 +314,7 @@ class LendProductsController extends Controller
         }
     }
 
-    public function paginateRecordsEpp(Request $request)
+    public function paginateRecordsLends(Request $request)
     {
         $response = new Response();
         try {
@@ -429,14 +429,20 @@ class LendProductsController extends Controller
 
             if (
                 !isset($request->product) ||
-                !isset($request->technical) 
+                !isset($request->technical)
             ) {
                 throw new Exception("Error: No deje campos vaciós");
             }
 
-            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])
-                ->first();
+            if ($request->product['type'] == "MATERIAL") {
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                    ->where('_model', $request->product['model']['id'])
+                    ->first();
+            } else {
+                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                    ->where('_product', $request->product['id'])
+                    ->first();
+            }
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
             $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $request->mount_second;
@@ -447,7 +453,7 @@ class LendProductsController extends Controller
             $salesProduct = new SalesProducts();
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_technical = $request->technical['id'];
-            $salesProduct->_type_operation = "10";
+            $salesProduct->_type_operation = "12";
             $salesProduct->type_intallation = "DEVOLUCION_PRESTAMO";
             $salesProduct->date_sale = gTrace::getDate('mysql');
             $salesProduct->type_products = "LEND";
@@ -489,7 +495,7 @@ class LendProductsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
-            $detailSale->descroption = $request->descroption;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
@@ -742,6 +748,48 @@ class LendProductsController extends Controller
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getStockProductByModel(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'update')) {
+                throw new Exception('No tienes permisos para hacer devoluciones de prestamos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            if ($request->product['type'] == 'MATERIAL') {
+                $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])->first();
+            } else {
+                $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->where('_product', $request->product['id'])->first();
+            }
+
+            $response->setData([$ProductByTechnical]);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
             return response(
                 $response->toArray(),
                 $response->getStatus()
