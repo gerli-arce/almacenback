@@ -452,11 +452,31 @@ class LendProductsController extends Controller
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
-                ->whereNotNUll('view_sales.status')
-            // ->where('branch__correlative', $branch)
-                ->where('type_products', 'LEND');
+                ->whereNotNUll('view_sales.status');
 
             $query->where('type_operation__id', '12');
+            
+            if (isset($request->search['model'])) {
+                $query
+                    ->where('view_details_sales.product__model__id', $request->search['model'])
+                    ->where('type_intallation', 'PRESTAMO')
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                            ->where('technical_id', $request->search['technical'])
+                            ->where('type_intallation', 'PRESTAMO');
+                    })
+                    ->where('technical_id', $request->search['technical'])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                            ->where('technical_id', $request->search['technical'])
+                            ->where('type_intallation', 'DEVOLUCION_PRESTAMO');
+                    })
+                    ->where('technical_id', $request->search['technical']);
+            } else {
+                $query->where('type_intallation', 'PRESTAMO')
+                    ->orWhere('type_intallation', 'DEVOLUCION_PRESTAMO')
+                    ->where('technical_id', $request->search['technical']);
+            }
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
@@ -630,12 +650,12 @@ class LendProductsController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportRecordsLends.html');
 
-            if (
-                !isset($request->date_start) ||
-                !isset($request->date_end)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
+            // if (
+            //     !isset($request->date_start) ||
+            //     !isset($request->date_end)
+            // ) {
+            //     throw new Exception("Error: No deje campos vacíos");
+            // }
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $user = ViewUsers::select([
                 'id',
