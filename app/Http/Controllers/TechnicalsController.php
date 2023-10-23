@@ -371,6 +371,7 @@ class TechnicalsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
@@ -487,6 +488,7 @@ class TechnicalsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
@@ -578,6 +580,7 @@ class TechnicalsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
