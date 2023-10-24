@@ -402,6 +402,14 @@ class ParcelsRegistersController extends Controller
                 }
             }
 
+            if ($request->update_price_sale == "NEW") {
+                $model_->currency = $request->currency;
+                $model_->price_buy = $request->value_unity;
+                $model_->price_sale = $request->price_buy;
+                $model_->mr_revenue = $request->mr_revenue;
+                $model_->save();
+            }
+
             $stock = Stock::where('_model', $request->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
