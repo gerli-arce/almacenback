@@ -108,6 +108,7 @@ Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
 Route::get('/people/search/{id}', [PeopleController::class, 'searchById']);
 Route::get('/image_person/{relative_id}/{zize}', [PeopleController::class, 'image']);
+Route::get('/people/type/{doc_type}/doc/{doc_number}', [PeopleController::class, 'searchByDocument']);
 
 // PROVIDERS
 Route::get('/providers', [ProvidersController::class, 'index']);
