@@ -1095,7 +1095,7 @@ class PlantPendingController extends Controller
                         $productByPlantJpa_new = new ProductByPlant();
                         $productByPlantJpa_new->_product = $productJpa->id;
                         $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-                        $productByPlantJpa_new->_model = $saleProductJpa->_model;
+                        $productByPlantJpa_new->_model = $productJpa->_model;
                         $productByPlantJpa_new->mount_new = $detail['mount_new'];
                         $productByPlantJpa_new->mount_second = $detail['mount_second'];
                         $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
