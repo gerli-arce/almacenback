@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
+use App\gLibraries\guid;
 use App\Models\{
     Branch,
     DetailSale,
@@ -54,7 +55,9 @@ class PriceController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $peopleJpa = People::where('doc_type', $request->doc_type)->where('doc_number', $request->doc_number)->first();
+        
 
+            $salesProduct = new SalesProducts();
             if(empty($peopleJpa)){
                 $peopleNew = new People();
                 $peopleNew->doc_type = $request->doc_type;
@@ -71,25 +74,30 @@ class PriceController extends Controller
                 if(isset($request->phone)){
                     $peopleNew->phone = $request->phone;
                 }
+
+                $peopleNew->relative_id = guid::short();
+                $peopleNew->type = 'CLIENT';
+                $peopleNew->_branch = $branch_->id;
+                $peopleNew->_creation_user = $userid;
+                $peopleNew->creation_date = gTrace::getDate('mysql');
+                $peopleNew->_update_user = $userid;
+                $peopleNew->update_date = gTrace::getDate('mysql');
+                $peopleNew->status = "1";
+                $peopleNew->save();
+                
+                $salesProduct->_client = $peopleNew->id;
+            }else{
+                $salesProduct->_client = $peopleJpa->id;
             }
-
-
-            $salesProduct = new SalesProducts();
-                $salesProduct->_client = $request->_technical;
+               
             $salesProduct->_branch = $branch_->id;
-            $salesProduct->_plant = $request->_plant;
-            $salesProduct->_type_operation = $request->_type_operation;
-            $salesProduct->type_intallation = "PLANTA";
-            if (isset($request->date_sale)) {
-                $salesProduct->date_sale = $request->date_sale;
-            }
+            $salesProduct->_type_operation = 13;
+            $salesProduct->type_intallation = "COTIZACION";
+            
             $salesProduct->status_sale = "PENDIENTE";
             $salesProduct->_issue_user = $userid;
             $salesProduct->type_pay = "GASTOS INTERNOS";
-
-            if (isset($request->description)) {
-                $salesProduct->description = $request->description;
-            }
+            $salesProduct->price_all = $request->price_all;
 
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
@@ -98,29 +106,12 @@ class PriceController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
-            if (isset($request->data)) {
-                foreach ($request->data as $product) {
-                    $productJpa = Product::find($product['product']['id']);
-                    $stockPlantJpa = StockPlant::find($product['id']);
-
-                    if ($product['product']['type'] == "MATERIAL") {
-                        $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_new'];
-                        $stockPlantJpa->mount_second = $stockPlantJpa->mount_second - $product['mount_second'];
-                        $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
-                    } else {
-                        $stockPlantJpa->status = null;
-                        $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
-                    }
-
-                    $productJpa->save();
-                    $stockPlantJpa->save();
-
+            if (isset($request->details)) {
+                foreach ($request->details as $product) {
                     $detailSale = new DetailSale();
-                    $detailSale->_product = $productJpa->id;
+                    $detailSale->_model = $product['product']['model']['id'];
                     $detailSale->mount_new = $product['mount_new'];
-                    $detailSale->mount_second = $product['mount_second'];
-                    $detailSale->mount_ill_fated = $product['mount_ill_fated'];
-                    $detailSale->description = $product['description'];
+                    $detailSale->price_unity = $product['price_unity'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -128,7 +119,7 @@ class PriceController extends Controller
             }
 
             $response->setStatus(200);
-            $response->setMessage('El proyecto se ha creado correctamente');
+            $response->setMessage('La cotizacion se ha gurdado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());

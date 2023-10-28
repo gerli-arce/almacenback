@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect, SaleController, RoomController, AdminController,LendProductsController
+    SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
+    PriceController,
 };
 
 /*
@@ -418,6 +419,10 @@ Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
 Route::post('/sale/detail/canseluse', [SaleController::class, 'cancelUseProduct']);
 Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySale']);
 
+
+// PRICE
+
+Route::post('/price', [PriceController::class, 'store']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
