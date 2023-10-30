@@ -424,6 +424,8 @@ Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySa
 
 Route::post('/price', [PriceController::class, 'store']);
 Route::post('/price/paginate', [PriceController::class, 'paginate']);
+Route::delete('/price', [PriceController::class, 'delete']);
+Route::get('/price/{id}', [PriceController::class, 'getDetailsPriceByID']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);

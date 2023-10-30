@@ -102,7 +102,7 @@ class PriceController extends Controller
             if (isset($request->details)) {
                 foreach ($request->details as $product) {
                     $detailSale = new DetailSale();
-                    $detailSale->_model = $product['product']['model']['id'];
+                    $detailSale->_model = $product['model']['id'];
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->price_unity = $product['price_unity'];
                     $detailSale->_sales_product = $salesProduct->id;
@@ -186,6 +186,124 @@ class PriceController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'price', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar cotizaciones');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+            $saleProductJpa = SalesProducts::find($request->id);
+            if (!$saleProductJpa) {
+                throw new Exception("Este reguistro no existe");
+            }
+
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
+                ->get();
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            foreach ($detailsSalesJpa as $detail) {
+                $detailSale = DetailSale::find($detail['id']);
+                $detailSale->status = null;
+                $detailSale->save();
+            }
+
+            $saleProductJpa->update_date = gTrace::getDate('mysql');
+            $saleProductJpa->status = null;
+            $saleProductJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('La cortizacion se a eliminado correctamente.');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getDetailsPriceByID(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'price', 'read')) {
+                throw new Exception('No tienes permisos para listar detalles de cotizaciones');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $priceJpa = ViewPrice::find($id);
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'brands.id AS brand__id',
+                'brands.correlative AS brand__correlative',
+                'brands.brand AS brand__brand',
+                'brands.relative_id AS brand__relative_id',
+                'categories.id AS category__id',
+                'categories.category AS category__category',
+                'models.id AS model__id',
+                'models.model AS model__model',
+                'models.relative_id AS model__relative_id',
+                'unities.id as unity__id', 
+                'unities.name as unity__name', 
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.price_unity as price_unity',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('models', 'detail_sales._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+              
+                $details[] = $detail;
+            }
+
+            $price = gJSON::restore($priceJpa->toArray(), '__');
+            $price['products'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($price);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
