@@ -423,6 +423,7 @@ Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySa
 // PRICE
 
 Route::post('/price', [PriceController::class, 'store']);
+Route::post('/price/paginate', [PriceController::class, 'paginate']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);

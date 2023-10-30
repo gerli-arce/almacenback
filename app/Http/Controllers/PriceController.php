@@ -9,18 +9,11 @@ use App\Models\{
     Branch,
     DetailSale,
     EntryDetail,
-    EntryProducts,
-    People,
-    Product,
-    ProductByPlant,
-    ViewSales,
-    Response,
-    SalesProducts,
-    Stock,
-    StockPlant,
-    ViewPlant,
-    ViewDetailsSales,
-    User
+    EntryProducts, People,
+    Product, ProductByPlant,
+    ViewSales, Response, SalesProducts,
+    Stock, StockPlant, ViewPlant,
+    ViewDetailsSales, User, ViewPrice,
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -84,7 +77,7 @@ class PriceController extends Controller
                 $peopleNew->update_date = gTrace::getDate('mysql');
                 $peopleNew->status = "1";
                 $peopleNew->save();
-                
+
                 $salesProduct->_client = $peopleNew->id;
             }else{
                 $salesProduct->_client = $peopleJpa->id;
@@ -123,6 +116,76 @@ class PriceController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginate(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'price', 'read')) {
+                throw new Exception('No tienes permisos para listar cotizaciones');
+            }
+
+            $query = ViewPrice::select(['*'])
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'doc_type' || $column == '*') {
+                    $q->orWhere('client__doc_type', $type, $value);
+                }
+                if ($column == 'doc_number' || $column == '*') {
+                    $q->orWhere('client__doc_number', $type, $value);
+                }
+                if ($column == 'name' || $column == '*') {
+                    $q->orWhere('client__name', $type, $value);
+                }
+                if ($column == 'lastname' || $column == '*') {
+                    $q->orWhere('client__lastname', $type, $value);
+                }
+            });
+
+            $iTotalDisplayRecords = $query->count();
+
+            $productsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $products = array();
+            foreach ($productsJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewPrice::count());
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
