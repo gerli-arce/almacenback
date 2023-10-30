@@ -291,7 +291,6 @@ class PriceController extends Controller
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
-              
                 $details[] = $detail;
             }
 
