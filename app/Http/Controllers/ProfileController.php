@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gvalidate;
+use App\gLibraries\gValidate;
+use App\Models\People;
 use App\Models\User;
 use App\Models\Response;
 use Illuminate\Http\Request;
@@ -113,7 +114,7 @@ class ProfileController extends Controller
     {
         $response = new Response();
         try {
-            [$status, $message, $role, $userid] = gValidate::get($request);
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -171,7 +172,6 @@ class ProfileController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Usuario actualizado correctamente');
-            $response->setData($request->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -187,7 +187,7 @@ class ProfileController extends Controller
     {
         $response = new Response();
         try {
-            [$status, $message, $role, $userid] = gValidate::get($request);
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -226,8 +226,7 @@ class ProfileController extends Controller
             $userJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Usuario actualizado correctamente');
-            $response->setData($request->toArray());
+            $response->setMessage('Contraseña actualizada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -243,7 +242,7 @@ class ProfileController extends Controller
     {
         $response = new Response();
         try {
-            [$status, $message, $role, $userid] = gValidate::get($request);
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
@@ -264,24 +263,19 @@ class ProfileController extends Controller
                 throw new Exception('Error: Contraseña de confirmación incorrecta');
             }
 
-            $userJpa->lastname = $request->lastname;
-            $userJpa->name = $request->name;
-            if (
-                isset($request->phone_prefix) &&
-                isset($request->phone_number)
-            ) {
-                $userJpa->phone_prefix = $request->phone_prefix;
-                $userJpa->phone_number = $request->phone_number;
-            }
+            $PeopleJpa = People::find($request->person_id);
+            $PeopleJpa->lastname = $request->lastname;
+            $PeopleJpa->name = $request->name;
+            $PeopleJpa->phone = $request->phone_number;
+
             if (isset($request->email)) {
-                $userJpa->email = $request->email;
+                $PeopleJpa->email = $request->email;
             }
 
-            $userJpa->save();
+            $PeopleJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Usuario actualizado correctamente');
-            $response->setData($request->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

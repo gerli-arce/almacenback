@@ -6,22 +6,22 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-use App\Models\{
-    Branch,
-    People,
-    Product,
-    ProductByTechnical,
-    RecordProductByTechnical,
-    Response,
-    Stock,
-    SalesProducts,
-    ViewPeople,
-    ViewProductByTechnical,
-    DetailSale,
-    ViewSales,
-    ViewDetailsSales,
-};
-
+use App\Models\Branch;
+use App\Models\DetailSale;
+use App\Models\People;
+use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\RecordProductByTechnical;
+use App\Models\Response;
+use App\Models\SalesProducts;
+use App\Models\Stock;
+use App\Models\ViewDetailsSales;
+use App\Models\ViewPeople;
+use App\Models\ViewProductByTechnical;
+use App\Models\ViewSales;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -179,71 +179,71 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function registerProductByTechnical(Request $request)
-    {
-        $response = new Response();
-        try {
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
+    // public function registerProductByTechnical(Request $request)
+    // {
+    //     $response = new Response();
+    //     try {
+    //         [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+    //         if ($status != 200) {
+    //             throw new Exception($message);
+    //         }
 
-            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
-                throw new Exception('No tienes permisos para crear productos');
-            }
+    //         if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+    //             throw new Exception('No tienes permisos para crear productos');
+    //         }
 
-            if (
-                !isset($request->id) ||
-                !isset($request->details)
-            ) {
-                throw new Exception("Error: No deje campos vaciós");
-            }
+    //         if (
+    //             !isset($request->id) ||
+    //             !isset($request->details)
+    //         ) {
+    //             throw new Exception("Error: No deje campos vaciós");
+    //         }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+    //         $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            foreach ($request->details as $product) {
+    //         foreach ($request->details as $product) {
 
-                $recordProductByTechnicalJpa = new RecordProductByTechnical();
-                $recordProductByTechnicalJpa->_user = $userid;
-                $recordProductByTechnicalJpa->_technical = $request->id;
-                $recordProductByTechnicalJpa->_product = $product['product']['id'];
-                $recordProductByTechnicalJpa->type_operation = "AGREGADO";
-                $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
-                $recordProductByTechnicalJpa->mount = $product['mount'];
-                $recordProductByTechnicalJpa->description = $product['description'];
-                $recordProductByTechnicalJpa->save();
+    //             $recordProductByTechnicalJpa = new RecordProductByTechnical();
+    //             $recordProductByTechnicalJpa->_user = $userid;
+    //             $recordProductByTechnicalJpa->_technical = $request->id;
+    //             $recordProductByTechnicalJpa->_product = $product['product']['id'];
+    //             $recordProductByTechnicalJpa->type_operation = "AGREGADO";
+    //             $recordProductByTechnicalJpa->date_operation = gTrace::getDate('mysql');
+    //             $recordProductByTechnicalJpa->mount = $product['mount'];
+    //             $recordProductByTechnicalJpa->description = $product['description'];
+    //             $recordProductByTechnicalJpa->save();
 
-                $productJpa = Product::find($product['product']['id']);
+    //             $productJpa = Product::find($product['product']['id']);
 
-                $mount = $productJpa->mount - $product['mount'];
-                $productJpa->mount = $mount;
+    //             $mount = $productJpa->mount - $product['mount'];
+    //             $productJpa->mount = $mount;
 
-                $stock = Stock::where('_model', $productJpa->_model)
-                    ->where('_branch', $branch_->id)
-                    ->first();
-                $stock->mount_new = $mount;
-                $stock->save();
-                $productJpa->save();
+    //             $stock = Stock::where('_model', $productJpa->_model)
+    //                 ->where('_branch', $branch_->id)
+    //                 ->first();
+    //             $stock->mount_new = $mount;
+    //             $stock->save();
+    //             $productJpa->save();
 
-                $productByTechnicalJpa = new ProductByTechnical();
-                $productByTechnicalJpa->_technical = $request->id;
-                $productByTechnicalJpa->_product = $product['product']['id'];
-                $productByTechnicalJpa->mount = $product['mount'];
-                $productByTechnicalJpa->description = $product['description'];
-                $productByTechnicalJpa->save();
-            }
-            $response->setStatus(200);
-            $response->setMessage('Productos agregados correctamente al stock del técnico');
-        } catch (\Throwable $th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
+    //             $productByTechnicalJpa = new ProductByTechnical();
+    //             $productByTechnicalJpa->_technical = $request->id;
+    //             $productByTechnicalJpa->_product = $product['product']['id'];
+    //             $productByTechnicalJpa->mount = $product['mount'];
+    //             $productByTechnicalJpa->description = $product['description'];
+    //             $productByTechnicalJpa->save();
+    //         }
+    //         $response->setStatus(200);
+    //         $response->setMessage('Productos agregados correctamente al stock del técnico');
+    //     } catch (\Throwable $th) {
+    //         $response->setStatus(400);
+    //         $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+    //     } finally {
+    //         return response(
+    //             $response->toArray(),
+    //             $response->getStatus()
+    //         );
+    //     }
+    // }
 
     public function addStockTechnicalByProduct(Request $request)
     {
@@ -286,13 +286,15 @@ class TechnicalsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])->first();
-
+                ->whereNot('type', 'LEND')
+                ->whereNotNull('status')
+                ->where('_model', $request->product['model']['id'])->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
             $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
@@ -300,14 +302,101 @@ class TechnicalsController extends Controller
 
             $productJpa = Product::find($request->product['id']);
 
-            $mount = $productJpa->mount - $request->mount;
-            $productJpa->mount = $mount;
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
+            $stock->mount_new = $stock->mount_new - $request->mount_new;
+            $stock->mount_second = $stock->mount_second - $request->mount_second;
+            $stock->mount_ill_fated = $stock->mount_ill_fated - $request->mount_ill_fated;
+            $stock->save();
+
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+
+            $productJpa->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function addEPPTechnicalByProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear productos');
+            }
+
+            if (
+                !isset($request->product) ||
+                !isset($request->technical)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])->first();
+
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
+
+            $productJpa = Product::find($request->product['id']);
 
             $stock = Stock::where('_model', $productJpa->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount_new = $mount;
+
+            $stock->mount_new = $stock->mount_new - $request->mount_new;
+            $stock->mount_second = $stock->mount_second - $request->mount_second;
+            $stock->mount_ill_fated = $stock->mount_ill_fated - $request->mount_ill_fated;
             $stock->save();
+
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
 
             $productJpa->save();
 
@@ -347,7 +436,9 @@ class TechnicalsController extends Controller
             }
 
             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->where('_product', $request->product['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])
                 ->first();
 
             $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
@@ -368,6 +459,100 @@ class TechnicalsController extends Controller
             $salesProduct->update_date = gTrace::getDate('mysql');
             $salesProduct->status = "1";
 
+            $productJpa = Product::find($request->product['id']);
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+            if ($request->reazon == "ILLFATED") {
+                $salesProduct->status_sale = "MALOGRADO";
+                $stock->mount_ill_fated = $request->mount_new + $request->mount_second + $request->mount_ill_fated;
+            } else if ($request->reazon == "STORE") {
+                $salesProduct->status_sale = "USO EN ALMACEN";
+            } else if ($request->reazon == "RETURN") {
+                $salesProduct->status_sale = "DEVOLUCION";
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
+            } else if ($request->reazon == "DISCOUNT") {
+                $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
+            }
+
+            $stock->save();
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+            $productJpa->disponibility = 'DISPONIBLE';
+            $productJpa->save();
+            $salesProduct->save();
+
+            $detailSale = new DetailSale();
+            $detailSale->_product = $request->product['id'];
+            $detailSale->mount_new = $request->mount_new;
+            $detailSale->mount_second = $request->mount_second;
+            $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
+            $detailSale->_sales_product = $salesProduct->id;
+            $detailSale->status = '1';
+            $detailSale->save();
+
+            $productByTechnicalJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Salida de productos registrados correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function recordTakeOutEPPByTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para actualizar productos de técnico');
+            }
+
+            if (
+                !isset($request->product) ||
+                !isset($request->technical) ||
+                !isset($request->reazon)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])
+                ->first();
+
+            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $request->mount_new;
+            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $request->mount_ill_fated;
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->technical['id'];
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "SACADO_DE_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+
             if ($request->reazon == "ILLFATED") {
                 $salesProduct->status_sale = "MALOGRADO";
             } else if ($request->reazon == "STORE") {
@@ -378,11 +563,12 @@ class TechnicalsController extends Controller
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
                     ->first();
-                $stock->mount_new = $stock->mount_new +  $request->mount_new;
-                $stock->mount_second = $stock->mount_second +  $request->mount_second;
-                $stock->mount_ill_fated = $stock->mount_ill_fated +  $request->mount_ill_fated;
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
                 $stock->save();
                 $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                $productJpa->disponibility = 'DISPONIBLE';
                 $productJpa->save();
             } else if ($request->reazon == "DISCOUNT") {
                 $salesProduct->status_sale = "DESCUENTO MALOGRADO-NO-JUSTIFICCADO";
@@ -394,6 +580,7 @@ class TechnicalsController extends Controller
             $detailSale->mount_new = $request->mount_new;
             $detailSale->mount_second = $request->mount_second;
             $detailSale->mount_ill_fated = $request->mount_ill_fated;
+            $detailSale->description = $request->description;
             $detailSale->_sales_product = $salesProduct->id;
             $detailSale->status = '1';
             $detailSale->save();
@@ -421,11 +608,12 @@ class TechnicalsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')
+                ->whereNot('type', 'LEND')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -455,11 +643,14 @@ class TechnicalsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'PRODUCTO')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('type', 'PRODUCTO')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -492,11 +683,14 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'EPP')->get();
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('type', 'EPP')->get();
 
             $products = array();
             foreach ($productsJpa as $productJpa) {
@@ -537,8 +731,6 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
-
             $query = RecordProductByTechnical::select([
                 'record_product_by_technical.id as id',
                 'users.id as user__id',
@@ -556,7 +748,6 @@ class TechnicalsController extends Controller
                 ->join('users', 'record_product_by_technical._user', 'users.id')
                 ->join('products', 'record_product_by_technical._product', 'products.id')
                 ->join('models', 'products._model', 'models.id');
-
 
             $query = $query->orderBy('id', 'desc')
                 ->where('record_product_by_technical._technical', $request->id);
@@ -579,11 +770,7 @@ class TechnicalsController extends Controller
                 }
             }
 
-
             $recordProducts = $query->get();
-
-
-
 
             $records = array();
             foreach ($recordProducts as $recordJpa) {
@@ -929,7 +1116,7 @@ class TechnicalsController extends Controller
             }
 
             if ($request->status == 1) {
-                $ProductByTechnicalJpa->status = null;
+                $ProductByTechnicalJpa->status = 0;
             } else {
                 $ProductByTechnicalJpa->status = 1;
             }
@@ -949,7 +1136,42 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function registersOperationByTechnicals(Request $request)
+    public function deleteStockTechnical(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete')) {
+                throw new Exception('No tienes permisos para eliminar estado de productos');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $ProductByTechnicalJpa = ProductByTechnical::find($request->id);
+            $ProductByTechnicalJpa->status = null;
+            $ProductByTechnicalJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Stock eliminado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function registersPrductsByTechnicals(Request $request)
     {
         $response = new Response();
         try {
@@ -991,28 +1213,58 @@ class TechnicalsController extends Controller
                     ->where('_branch', $branch_->id)
                     ->first();
 
-                $stock->mount_new = $stock->mount_new - $product['mount_new'];
-                $stock->mount_second = $stock->mount_second - $product['mount_second'];
-                $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+                if ($productJpa->type == 'MATERIAL') {
+                    $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                    $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
 
-                $productJpa->mount =  $stock->mount_new + $stock->mount_second;
-                $stock->save();
-                $productJpa->save();
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                    $stock->save();
+                    $productJpa->save();
 
-                $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)->where('_product', $productJpa->id)->first();
-                if ($productByTechnicalJpa) {
-                    $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
-                    $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
-                    $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
-                    $productByTechnicalJpa->save();
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
+                        ->where('_model', $product['product']['model']['id'])->first();
+                    if ($productByTechnicalJpa) {
+                        $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
+                        $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
+                        $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->save();
+                    } else {
+                        $productByTechnicalJpaNew = new ProductByTechnical();
+                        $productByTechnicalJpaNew->_technical = $request->id;
+                        $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
+                        $productByTechnicalJpaNew->type = $request->type;
+                        $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                        $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                        $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->status = 1;
+
+                        $productByTechnicalJpaNew->save();
+                    }
                 } else {
+                    $productJpa->disponibility = "En stok de: " . $request->name . ' ' . $request->lastname;
+                    $productJpa->save();
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new - 1;
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second - 1;
+                    }
+                    $stock->save();
                     $productByTechnicalJpaNew = new ProductByTechnical();
                     $productByTechnicalJpaNew->_technical = $request->id;
                     $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->_model = $productJpa->_model;
                     $productByTechnicalJpaNew->type = $request->type;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                    $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->status = 1;
+
                     $productByTechnicalJpaNew->save();
                 }
 
@@ -1021,6 +1273,7 @@ class TechnicalsController extends Controller
                 $detailSale->mount_new = $product['mount_new'];
                 $detailSale->mount_second = $product['mount_second'];
                 $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->description = $product['description'];
                 $detailSale->_sales_product = $salesProduct->id;
                 $detailSale->status = '1';
                 $detailSale->save();
@@ -1038,7 +1291,128 @@ class TechnicalsController extends Controller
         }
     }
 
-    public function  paginateRecords(Request $request)
+    public function registersEPPsByTechnicals(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+                throw new Exception('No tienes permisos para crear agregar productos a stock de técnicos');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->details)
+            ) {
+                throw new Exception("Error: No deje campos vaciós");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $salesProduct = new SalesProducts();
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_technical = $request->id;
+            $salesProduct->_type_operation = "10";
+            $salesProduct->type_intallation = "AGREGADO_A_STOCK";
+            $salesProduct->date_sale = gTrace::getDate('mysql');
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->type_products = "EPP";
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
+            foreach ($request->details as $product) {
+                $productJpa = Product::find($product['product']['id']);
+                $stock = Stock::where('_model', $productJpa->_model)
+                    ->where('_branch', $branch_->id)
+                    ->first();
+
+                if ($productJpa->type == 'MATERIAL') {
+                    $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                    $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                    $stock->save();
+                    $productJpa->save();
+
+                    $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->id)
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
+                        ->where('_model', $product['product']['model']['id'])->first();
+                    if ($productByTechnicalJpa) {
+                        $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
+                        $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
+                        $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->save();
+                    } else {
+                        $productByTechnicalJpaNew = new ProductByTechnical();
+                        $productByTechnicalJpaNew->_technical = $request->id;
+                        $productByTechnicalJpaNew->_product = $productJpa->id;
+                        $productByTechnicalJpaNew->_model = $productJpa->_model;
+                        $productByTechnicalJpaNew->type = $request->type;
+                        $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                        $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                        $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByTechnicalJpaNew->description = $product['description'];
+                        $productByTechnicalJpaNew->status = 0;
+
+                        $productByTechnicalJpaNew->save();
+                    }
+                } else {
+                    $productJpa->disponibility = "En stok de: " . $request->name . ' ' . $request->lastname;
+                    $productJpa->save();
+                    if ($productJpa->product_status == "NUEVO") {
+                        $stock->mount_new = $stock->mount_new - 1;
+                    } else if ($productJpa->product_status == "SEMINUEVO") {
+                        $stock->mount_second = $stock->mount_second - 1;
+                    }
+                    $stock->save();
+                    $productByTechnicalJpaNew = new ProductByTechnical();
+                    $productByTechnicalJpaNew->_technical = $request->id;
+                    $productByTechnicalJpaNew->_product = $productJpa->id;
+                    $productByTechnicalJpaNew->_model = $productJpa->_model;
+                    $productByTechnicalJpaNew->type = $request->type;
+                    $productByTechnicalJpaNew->mount_new = $product['mount_new'];
+                    $productByTechnicalJpaNew->mount_second = $product['mount_second'];
+                    $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
+                    $productByTechnicalJpaNew->description = $product['description'];
+                    $productByTechnicalJpaNew->status = 0;
+
+                    $productByTechnicalJpaNew->save();
+                }
+
+                $detailSale = new DetailSale();
+                $detailSale->_product = $productJpa->id;
+                $detailSale->mount_new = $product['mount_new'];
+                $detailSale->mount_second = $product['mount_second'];
+                $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->description = $product['description'];
+                $detailSale->_sales_product = $salesProduct->id;
+                $detailSale->status = '1';
+                $detailSale->save();
+            }
+            $response->setStatus(200);
+            $response->setMessage('Productos agregados correctamente al stock del técnico');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateRecords(Request $request)
     {
         $response = new Response();
         try {
@@ -1048,20 +1422,70 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
             $query = ViewSales::select([
-                '*',
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
             ])
-                ->orderBy($request->order['column'], $request->order['dir'])
-                ->whereNotNUll('status')
-                ->where('branch__correlative', $branch)
+                ->distinct()
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
-                ->where('type_intallation', 'AGREGADO_A_STOCK')
-                ->orWhere('type_intallation', 'SACADO_DE_STOCK')
-                ->where('type_operation__id', '10');
+                ->whereNotNUll('view_sales.status')
+            // ->where('branch__correlative', $branch)
+            ;
+
+            if (isset($request->search['model'])) {
+                $query
+                    ->where('view_details_sales.product__model__id', $request->search['model'])
+                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere(function ($q) use ($request) {
+
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                            ->where('technical_id', $request->search['technical'])
+                            ->where('type_intallation', 'AGREGADO_A_STOCK');
+                    })
+                    ->where('technical_id', $request->search['technical'])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('view_details_sales.product__model__id', $request->search['model'])
+                            ->where('technical_id', $request->search['technical'])
+                            ->where('type_intallation', 'SACADO_DE_STOCK');
+                    })
+                    ->where('technical_id', $request->search['technical']);
+            } else {
+                $query->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere('type_intallation', 'SACADO_DE_STOCK')
+                    ->where('technical_id', $request->search['technical']);
+            }
+
+            $query->where('type_operation__id', '10');
 
             if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
                 $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
@@ -1083,7 +1507,7 @@ class TechnicalsController extends Controller
                 $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
                 $details = array();
                 foreach ($detailSalesJpa as $detailJpa) {
-                    $detail =  gJSON::restore($detailJpa->toArray(), '__');
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
                 $sale['details'] = $details;
@@ -1095,15 +1519,571 @@ class TechnicalsController extends Controller
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->whereNotNUll('status')
-                ->where('branch__correlative', $branch)
-                ->where('technical_id', $request->id)
-                ->where('type_intallation', 'AGREGADO_A_STOCK')
-                ->where('type_operation__id', '10')->count());
+                    ->where('branch__correlative', $branch)
+                    ->where('technical_id', $request->id)
+                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->where('type_operation__id', '10')->count());
             $response->setData($sales);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateRecordsEpp(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar las salidas');
+            }
+
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+            ])
+                ->distinct()
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
+                ->where('technical_id', $request->search['technical'])
+                ->whereNotNUll('view_sales.status')
+            // ->where('branch__correlative', $branch)
+                ->where('type_products', 'EPP');
+
+            $query->where('type_operation__id', '10');
+
+            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+                $query->where('date_sale', '>=', $dateStart)
+                    ->where('date_sale', '<=', $dateEnd);
+            }
+
+            $iTotalDisplayRecords = $query->count();
+
+            $salesJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->whereNotNUll('status')
+                    ->where('branch__correlative', $branch)
+                    ->where('technical_id', $request->id)
+                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->where('type_operation__id', '10')->count());
+            $response->setData($sales);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportBySearch(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar registros de técnicos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportRecordsTechnicals.html');
+
+            if (
+                !isset($request->date_start) ||
+                !isset($request->date_end)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+            $dat_technical = People::find($request->technical);
+
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+            ])
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.id', 'desc')
+                ->where('view_sales.technical_id', $request->technical)
+                ->whereNotNUll('view_sales.status')
+                ->where('branch__correlative', $branch);
+
+            if (isset($request->model)) {
+                $query
+                    ->where('view_details_sales.product__model__id', $request->model)
+                    ->where('type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere(function ($q) use ($request) {
+
+                        $q->where('view_details_sales.product__model__id', $request->model)
+                            ->where('technical_id', $request->technical)
+                            ->where('type_intallation', 'AGREGADO_A_STOCK');
+                    })
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('view_details_sales.product__model__id', $request->model)
+                            ->where('technical_id', $request->technical)
+                            ->where('type_intallation', 'SACADO_DE_STOCK');
+                    });
+            } else {
+                $query->where('view_sales.type_intallation', 'AGREGADO_A_STOCK')
+                    ->orWhere('view_sales.type_intallation', 'SACADO_DE_STOCK');
+            }
+
+            $query->where('view_sales.type_operation__id', 10);
+
+            if (isset($request->date_start) || isset($request->date_end)) {
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd]);
+            }
+
+            $iTotalDisplayRecords = $query->count();
+
+            $salesJpa = $query->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $count = 1;
+            $view_details = '';
+            $sumary = '';
+            foreach ($sales as $sale) {
+
+                $technical_details = "";
+                $saleProductJpa = SalesProducts::select([
+                    'sales_products.id as id',
+                    'tech.id as technical__id',
+                    'tech.name as technical__name',
+                    'tech.lastname as technical__lastname',
+                    'sales_products.date_sale as date_sale',
+                    'sales_products.status_sale as status_sale',
+                    'sales_products.description as description',
+                    'sales_products.status as status',
+                ])
+                    ->join('people as tech', 'sales_products._technical', 'tech.id')
+                    ->where('sales_products.id', $sale['id'])->first();
+
+                $technical_details = "
+                    <div>
+                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+
+                $usuario = "
+                <div>
+                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
+                    <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
+                    <p>{$sale['date_sale']}</p>
+                </div>
+                ";
+
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
+                $datos = "
+                    <div>
+                        <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
+                        <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
+                        <p>Descripción: <strong>{$sale['description']}</strong></p>
+                    </div>
+                ";
+
+                $sumary .= "
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$usuario}</td>
+                    <td>{$datos}</td>
+                </tr>
+                ";
+
+                $view_details .= "
+                <div style='margin-top:8px;'>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <div style='margin-buttom: 12px;margin-left:20px;'>
+                        {$technical_details}
+                    </div>
+                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+
+                foreach ($sale['details'] as $detailJpa) {
+                    $details_equipment = 'display:none;';
+                    if ($detailJpa['product']['type'] == 'EQUIPO') {
+                        $details_equipment = '';
+                    }
+                    $view_details .= "
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                                <center>
+                                    <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
+                                    <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
+                                    <div style='{$details_equipment}'>
+                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
+                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                    </div>
+                                    <div>
+                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                    </div>
+                                </center>
+                            </div>
+                        ";
+                }
+
+                $view_details .= "
+                            </div>
+                        </div>
+                    ";
+
+                $count = $count + 1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_interaction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{people}',
+                    '{people_names}',
+                    '{date_start_str}',
+                    '{date_end_str}',
+                    '{summary}',
+                    '{details}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    'TÉCNICO',
+                    $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $request->date_start_str,
+                    $request->date_end_str,
+                    $sumary,
+                    $view_details,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportBySearchEPP(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar registros de técnicos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportRecordsTechnicals.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+            $dat_technical = People::find($request->technical);
+
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+            ])
+                ->distinct()
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.id', 'DESC')
+                ->where('technical_id', $request->technical)
+                ->whereNotNUll('view_sales.status')
+                ->where('branch__correlative', $branch)
+                ->where('type_products', 'EPP');
+
+            $query->where('type_operation__id', '10');
+
+            if (isset($request->date_start) || isset($request->date_end)) {
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd]);
+            }
+
+            $salesJpa = $query->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $count = 1;
+            $view_details = '';
+            $sumary = '';
+            foreach ($sales as $sale) {
+
+                $technical_details = "";
+                $saleProductJpa = SalesProducts::select([
+                    'sales_products.id as id',
+                    'tech.id as technical__id',
+                    'tech.name as technical__name',
+                    'tech.lastname as technical__lastname',
+                    'sales_products.date_sale as date_sale',
+                    'sales_products.status_sale as status_sale',
+                    'sales_products.description as description',
+                    'sales_products.status as status',
+                ])
+                    ->join('people as tech', 'sales_products._technical', 'tech.id')
+                    ->where('sales_products.id', $sale['id'])->first();
+
+                $technical_details = "
+                    <div>
+                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+
+                $usuario = "
+                <div>
+                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
+                    <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
+                    <p>{$sale['date_sale']}</p>
+                </div>
+                ";
+
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
+                $datos = "
+                    <div>
+                        <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
+                        <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
+                        <p>Descripción: <strong>{$sale['description']}</strong></p>
+                    </div>
+                ";
+
+                $sumary .= "
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$usuario}</td>
+                    <td>{$datos}</td>
+                </tr>
+                ";
+
+                $view_details .= "
+                <div style='margin-top:8px;'>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <div style='margin-buttom: 12px;margin-left:20px;'>
+                        {$technical_details}
+                    </div>
+                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+
+                foreach ($sale['details'] as $detailJpa) {
+                    $details_equipment = 'display:none;';
+                    if ($detailJpa['product']['type'] == 'EQUIPO') {
+                        $details_equipment = '';
+                    }
+                    $view_details .= "
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                                <center>
+                                    <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
+                                    <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
+                                    <div style='{$details_equipment}'>
+                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
+                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                    </div>
+                                    <div>
+                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                    </div>
+                                </center>
+                            </div>
+                        ";
+                }
+
+                $view_details .= "
+                            </div>
+                        </div>
+                    ";
+
+                $count = $count + 1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_interaction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{people}',
+                    '{people_names}',
+                    '{date_start_str}',
+                    '{date_end_str}',
+                    '{summary}',
+                    '{details}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    'TÉCNICO',
+                    $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $request->date_start_str,
+                    $request->date_end_str,
+                    $sumary,
+                    $view_details,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
@@ -1120,7 +2100,7 @@ class TechnicalsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete_restore')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception('No tienes permisos para eliminar técnicos');
             }
 
@@ -1130,7 +2110,10 @@ class TechnicalsController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])->where('_product', $request->product['id'])->first();
+            $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('_model', $request->product['model']['id'])->first();
 
             $response->setData([$ProductByTechnical]);
             $response->setStatus(200);

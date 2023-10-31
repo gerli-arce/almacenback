@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     KeysesController, EjecutivesController, RecordsController, HomeController,
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
-    SalesController, connect, SaleController,
+    SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
+    PriceController,
 };
 
 /*
@@ -37,13 +38,15 @@ Route::group(['middleware' => 'user.auth.check','prefix' => 'user'],function () 
     Route::get('logout',[UserLoginController::class,'logout'])->name('logout');
 });
 
+Route::post('/admin/paginate', [AdminController::class, 'paginate']);
+Route::post('/admin/get/stocks/model', [AdminController::class, 'getStocksByModel']);
+
 // QR
 Route::get('/installation/qr/{id}', [SalesProductsController::class, 'imageQR']);
 
 
 // PDF
 Route::get('/pdf/data', [PDFController::class, 'pruebaRender']);
-
 
 // HOME
 Route::get('/technicals/count', [HomeController::class, 'countTechnicals']);
@@ -54,8 +57,6 @@ Route::get('/users/count', [HomeController::class, 'countUsers']);
 Route::get('/installations/count', [HomeController::class, 'countInstallations']);
 Route::get('/models/get/star', [HomeController::class, 'getModelsStar']);
 Route::get('/products/min', [HomeController::class, 'getProductsMin']);
-
-
 
 // SESSION
 Route::post('/session/login', [SessionController::class, 'login']);
@@ -108,6 +109,7 @@ Route::post('/people/restore', [PeopleController::class, 'restore']);
 Route::post('/people/paginate', [PeopleController::class, 'paginate']);
 Route::get('/people/search/{id}', [PeopleController::class, 'searchById']);
 Route::get('/image_person/{relative_id}/{zize}', [PeopleController::class, 'image']);
+Route::get('/people/type/{doc_type}/doc/{doc_number}', [PeopleController::class, 'searchByDocument']);
 
 // PROVIDERS
 Route::get('/providers', [ProvidersController::class, 'index']);
@@ -129,9 +131,12 @@ Route::post('/client/paginate', [ClientsController::class, 'paginate']);
 Route::post('/technicals', [TechnicalsController::class, 'store']);
 Route::patch('/technicals', [TechnicalsController::class, 'update']);
 Route::delete('/technicals', [TechnicalsController::class, 'delete']);
-Route::post('/technicals/add/products', [TechnicalsController::class, 'registersOperationByTechnicals']);
+Route::post('/technicals/add/products', [TechnicalsController::class, 'registersPrductsByTechnicals']);
+Route::post('/technicals/add/epp', [TechnicalsController::class, 'registersEPPsByTechnicals']);
 Route::post('/technicals/takeout/products', [TechnicalsController::class, 'recordTakeOutProductByTechnical']);
+Route::post('/technicals/takeout/epp', [TechnicalsController::class, 'recordTakeOutEPPByTechnical']);
 Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
+Route::post('/technicals/epp/add', [TechnicalsController::class, 'addEPPTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
@@ -141,8 +146,12 @@ Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
 Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);
 Route::post('/technicals/records/paginate', [TechnicalsController::class, 'paginateRecords']);
+Route::post('/technicals/records/epp/paginate', [TechnicalsController::class, 'paginateRecordsEpp']);
 Route::post('/technicals/stock/paginate', [TechnicalsController::class, 'paginateRecords']);
 Route::post('/technicals/search/stock', [TechnicalsController::class, 'getStockProductByModel']);
+Route::post('/technicals/report/records', [TechnicalsController::class, 'generateReportBySearch']);
+Route::post('/technicals/report/records/epp', [TechnicalsController::class, 'generateReportBySearchEPP']);
+Route::delete('/technicals/stock/delete', [TechnicalsController::class, 'deleteStockTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);
@@ -158,14 +167,12 @@ Route::post('/users/restore', [UserController::class, 'restore']);
 Route::get('/users/get/{username}', [UserController::class, 'getUser']);
 Route::post('/users/paginate', [UserController::class, 'paginate']);
 Route::post('/users/media', [UserController::class, 'searchByMedia']);
+Route::get('/users/{id}', [UserController::class, 'getUserById']);
 
 // PROFILE
 Route::get('/profile/{relative_id}/{zize}', [ProfileController::class, 'profile']);
-Route::put('/profile/account', [ProfileController::class, 'account']);
 Route::patch('/profile/account', [ProfileController::class, 'account']);
-Route::put('/profile/password', [ProfileController::class, 'password']);
 Route::patch('/profile/password', [ProfileController::class, 'password']);
-Route::put('/profile/personal', [ProfileController::class, 'personal']);
 Route::patch('/profile/personal', [ProfileController::class, 'personal']);
 
 // CATEGORIES
@@ -213,6 +220,7 @@ Route::post('/models/restore', [ModelsController::class, 'restore']);
 Route::post('/models/paginate', [ModelsController::class, 'paginate']);
 Route::get('/model/{relative_id}/{zize}', [ModelsController::class, 'image']);
 Route::post('/models/search', [ModelsController::class, 'search']);
+Route::post('/models/search/id', [ModelsController::class, 'searchModelById']);
 Route::post('/models/star', [ModelsController::class, 'changeStar']);
 
 // PRODUCTS
@@ -226,15 +234,18 @@ Route::post('/products/materials/paginate', [ProductsController::class, 'paginat
 Route::post('/products/equipment/paginate', [ProductsController::class, 'paginateEquipment']);
 Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
 Route::post('/products/epp/paginate', [ProductsController::class, 'paginateEPP']);
+Route::post('/products/search/guia', [ProductsController::class, 'getProductsByNumberGuia']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
-Route::get('/stock/regularize', [StockController::class, 'regularizar']);
+Route::post('/stock/regularize', [StockController::class, 'RegularizeMountsByModel']);
 Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
 Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
 Route::post('/stock/star', [StockController::class, 'changeStar']);
+Route::post('/stock/products/stock', [StockController::class, 'generateReportStock']);
+Route::delete('/stock', [StockController::class, 'delete']);
 
 
 
@@ -250,6 +261,7 @@ Route::post('/install/completed/paginate', [InstallationController::class, 'pagi
 Route::post('/install/completed/pending', [InstallationController::class, 'returnToPendient']);
 Route::post('/install/canseluse', [InstallationController::class, 'cancelUseProduct']);
 Route::post('/install/generate/report', [InstallationController::class, 'generateReportByInstallation']);
+Route::post('/install/client', [InstallationController::class, 'getInstallationByClient']);
 
 // FAULDS
 Route::post('/fauld', [FauldController::class, 'registerFauld']);
@@ -257,6 +269,7 @@ Route::get('/fauld/search/client/{idclient}', [FauldController::class, 'getSateB
 Route::post('/fauld/pending/paginate', [FauldController::class, 'paginateFauldsPending']);
 Route::get('/fauld/{id}', [FauldController::class, 'getSale']);
 Route::post('/fauld/completed/paginate', [FauldController::class, 'paginateFauldCompleted']);
+Route::post('/fauld/return/product', [FauldController::class, 'returnProduct']);
 Route::patch('/fauld', [FauldController::class, 'update']);
 Route::delete('/fauld', [FauldController::class, 'delete']);
 
@@ -267,6 +280,8 @@ Route::post('/parcels_created/paginate', [ParcelsCreatedController::class, 'pagi
 Route::post('/parcels_created/searchentry', [ParcelsCreatedController::class, 'getParcelsByPerson']);
 Route::post('/parcels_created/search', [ParcelsCreatedController::class, 'getParcelByPerson']);
 Route::post('/parcels_created/guia', [ParcelsCreatedController::class, 'generateGuia']);
+Route::post('/parcels_created/report/sends', [ParcelsCreatedController::class, 'generateReportParcelsSendsByBranchByMonth']);
+Route::post('/parcels_created/report/receiveds', [ParcelsCreatedController::class, 'generateReportParcelsReceivedsByBranchByMonth']);
 Route::post('/parcels_created/confirm', [ParcelsCreatedController::class, 'confirmArrival']);
 Route::delete('/parcels_created', [ParcelsCreatedController::class, 'delete']);
 Route::post('/parcels_created/restore', [ParcelsCreatedController::class, 'restore']);
@@ -282,6 +297,9 @@ Route::post('/parcels_register/paginate', [ParcelsRegistersController::class, 'p
 Route::delete('/parcels_register', [ParcelsRegistersController::class, 'delete']);
 Route::get('/parcelimg/{id}/{zize}', [ParcelsRegistersController::class, 'image']);
 Route::post('/parcels_register/restore', [ParcelsRegistersController::class, 'restore']);
+Route::post('/parcels_register/report', [ParcelsRegistersController::class, 'generateReport']);
+Route::post('/parcels_register/report/parcel', [ParcelsRegistersController::class, 'generateReportByParcel']);
+Route::post('/parcels_register/report/excel', [ParcelsRegistersController::class, 'exportDataToExcel']);
 
 
 // KEYS
@@ -337,8 +355,10 @@ Route::post('/plant_pending/products', [PlantPendingController::class, 'getProdu
 Route::post('/plant_pending/stock', [PlantPendingController::class, 'getProductsPlant']);
 Route::post('/plant_pending/report', [PlantPendingController::class, 'generateReportByLiquidation']);
 Route::post('/plant_pending/report/plant', [PlantPendingController::class, 'generateReportByPlant']);
+Route::post('/plant_pending/report/project', [PlantPendingController::class, 'generateReportByProject']);
 Route::post('/plant_pending/stock/plant', [PlantPendingController::class, 'generateReportByStockByPlant']);
 Route::post('/plant_pending/update/stock/product', [PlantPendingController::class, 'updateStokByProduct']);
+Route::post('/plant_pending/update/product/product', [PlantPendingController::class, 'updateProductByProduct']);
 Route::post('/plant_pending/change/complet', [PlantPendingController::class, 'projectCompleted']);
 Route::post('/plant_pending/change/pending', [PlantPendingController::class, 'projectPending']);
 Route::post('/plant_pending/is/finished', [PlantPendingController::class, 'liquidationFinished']);
@@ -346,6 +366,22 @@ Route::post('/plant_pending/completed/paginate', [PlantPendingController::class,
 Route::post('/plant_pending/stock/records', [PlantPendingController::class, 'getRegistersStockByPlant']);
 Route::post('/plant_pending/search', [PlantPendingController::class, 'searchMountsStockByPlant']);
 Route::post('/plant_pending/products/search', [PlantPendingController::class, 'searchProductPlant']);
+Route::get('/plant_pendingimg/{id}/{zize}', [PlantPendingController::class, 'image']);
+Route::get('/plant_pendingimgs/{id}/{zize}', [PlantPendingController::class, 'images']);
+Route::post('/plant_pending/image', [PlantPendingController::class, 'setImage']);
+Route::patch('/plant_pending/image', [PlantPendingController::class, 'updateImage']);
+Route::delete('/plant_pending/image/{id}', [PlantPendingController::class, 'deleteImage']);
+Route::get('/plant_pending/image/{id}', [PlantPendingController::class, 'getImages']);
+Route::post('/plant_pending/generate/report/details', [PlantPendingController::class, 'reportDetailsByPlant']);
+
+Route::post('/lend/paginate', [LendProductsController::class, 'paginate']);
+Route::post('/lend/mew/lend', [LendProductsController::class, 'setLendByPerson']);
+Route::post('/lend/add/lend', [LendProductsController::class, 'setLendProductByPerson']);
+Route::post('/lend/get/lends', [LendProductsController::class, 'getLendsByPerson']);
+Route::post('/lend/paginate/record', [LendProductsController::class, 'paginateRecordsLends']);
+Route::post('/lend/record/report', [LendProductsController::class, 'generateReportBySearch']);
+Route::post('/lend/takeout/lend', [LendProductsController::class, 'recordTakeOutByTechnical']);
+Route::post('/lend/search/stock', [LendProductsController::class, 'getStockProductByModel']);
 
 
 // TOWER
@@ -366,8 +402,14 @@ Route::post('/towers/stock', [TowerController::class, 'getStockTower']);
 Route::delete('/towers/liquidation/delete', [TowerController::class, 'delete_liquidation']);
 Route::post('/towers/search/product', [TowerController::class, 'searchProductsByTowerByModel']);
 Route::get('/towerimg/{relative_id}/{zize}', [TowerController::class, 'image']);
-
-
+Route::get('/towerimgcontract/{id}/{zize}', [TowerController::class, 'contract']);
+Route::get('/towerimgs/{id}/{zize}', [TowerController::class, 'images']);
+Route::post('/towers/image', [TowerController::class, 'setImage']);
+Route::patch('/towers/image', [TowerController::class, 'updateImage']);
+Route::delete('/towers/image/{id}', [TowerController::class, 'deleteImage']);
+Route::get('/towers/image/{id}', [TowerController::class, 'getImages']);
+Route::post('/towers/generate/report/details', [TowerController::class, 'reportDetailsByTower']);
+Route::post('/towers/generate/report/liquidation', [TowerController::class, 'generateReportByLiquidation']);
 
 // SALE
 Route::post('/sale', [SaleController::class, 'store']);
@@ -375,9 +417,15 @@ Route::patch('/sale', [SaleController::class, 'update']);
 Route::post('/sale/paginate', [SaleController::class, 'paginate']);
 Route::get('/sale/details/{id}', [SaleController::class, 'getSaleDetails']);
 Route::post('/sale/detail/canseluse', [SaleController::class, 'cancelUseProduct']);
+Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySale']);
 
 
+// PRICE
 
+Route::post('/price', [PriceController::class, 'store']);
+Route::post('/price/paginate', [PriceController::class, 'paginate']);
+Route::delete('/price', [PriceController::class, 'delete']);
+Route::get('/price/{id}', [PriceController::class, 'getDetailsPriceByID']);
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
@@ -385,19 +433,38 @@ Route::get('/record/product/{id}', [RecordsController::class, 'searchOperationsB
 Route::post('/record/product/return', [RecordsController::class, 'returnEqipment']);
 
 
-// ENTRYS 
-
+// ENTRYS
 Route::post('/entry/paginate', [EntrysController::class, 'paginate']);
 Route::get('/entry/{id}', [EntrysController::class, 'getProductsByEntry']);
 Route::get('/entry/products/{id}', [EntrysController::class, 'getProductsProductsByEntry']);
 Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 
 // SALES
-
 Route::post('/sales/paginate', [SalesController::class, 'paginate']);
 Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
+Route::post('/sales/report', [SalesController::class, 'generateReport']);
 
-
+// ROOM
+Route::post('/room', [RoomController::class, 'store']);
+Route::patch('/room', [RoomController::class, 'update']);
+Route::post('/room/paginate', [RoomController::class, 'paginate']);
+Route::post('/room/products', [RoomController::class, 'setProductsByRoom']);
+Route::get('/room/get/products/{id}', [RoomController::class, 'getProductsByRoom']);
+Route::post('/room/products/paginate', [RoomController::class, 'getRecordsByRoom']);
+Route::post('/room/stock/paginate', [RoomController::class, 'paginateProductsByRoom']);
+Route::post('/room/search/products', [RoomController::class, 'searchProductsByRoom']);
+Route::post('/room/return/products', [RoomController::class, 'retunProductsByRoom']);
+Route::get('/roomimg/{relative_id}/{zize}', [RoomController::class, 'image']);
+Route::post('/room/image', [RoomController::class, 'setImage']);
+Route::patch('/room/image', [RoomController::class, 'updateImage']);
+Route::get('/room/image/{id}', [RoomController::class, 'getImages']);
+Route::get('/roomimgs/{id}/{zize}', [RoomController::class, 'images']);
+Route::post('/room/generate/report/details', [RoomController::class, 'reportDetailsByTower']);
+Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
+Route::post('/excel', [connect::class, 'exportDataToExcel']);
+Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
+Route::get('/stock_plant', [connect::class, 'changeByProductForModelStokPlant']);
+Route::get('/products_plant', [connect::class, 'changeByProductForModelProductsPlant']);

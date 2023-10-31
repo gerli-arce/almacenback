@@ -5,23 +5,20 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\{
-    Branch,
-    DetailSale,
-    Product,
-    ProductByTechnical,
-    RecordProductByTechnical,
-    Response,
-    SalesProducts,
-    Stock,
-    viewInstallations,
-};
-
+use App\Models\Branch;
+use App\Models\DetailSale;
+use App\Models\People;
+use App\Models\Product;
+use App\Models\ProductByTechnical;
+use App\Models\Response;
+use App\Models\SalesProducts;
+use App\Models\Stock;
+use App\Models\viewInstallations;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class InstallationController extends Controller
 {
@@ -102,18 +99,19 @@ class InstallationController extends Controller
 
             $type_operation = '';
 
-
-
             $sumary = '';
-
 
             foreach ($details as $detail) {
 
                 $model = "
                 <div>
-                    <p style='font-size: 11px;'><strong>{$detail['product']['model']['model']}</strong></p>
-                    <img class='img-fluid img-thumbnail' 
-                        src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
+                    <center>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['model']}</strong></p>
+                        <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['category']['category']}</strong></p>
+                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini'
+                        style='background-color: #38414a; height:50px;'>
+                        <p> <strong style='font-size:10px; margin:0px;'>{$detail['description']}</strong></p>
+                    </center>
                 </div>
                 ";
 
@@ -131,7 +129,6 @@ class InstallationController extends Controller
                     </div>
                 ";
 
-
                 $sumary .= "
                 <tr>
                     <td><center >{$detail['id']}</center></td>
@@ -147,6 +144,17 @@ class InstallationController extends Controller
             $fecha = $parts_date[0];
             $hora = $parts_date[1];
 
+            $mounts_durability = '';
+
+            if (
+                $installJpa['type_intallation'] == 'FIBRA_OPTICA_(CONVENIO)' ||
+                $installJpa['type_intallation'] == 'ANTENA_(CONVENIO)' ||
+                $installJpa['type_intallation'] == 'FIBRA_OPTICA_(CONTRATO)' ||
+                $installJpa['type_intallation'] == 'ANTENA_(CONTRATO)'
+            ) {
+                $mounts_durability = ' POR ' . $installJpa['mount_dues'] . ' MESES';
+            }
+
             $template = str_replace(
                 [
                     '{num_operation}',
@@ -159,8 +167,10 @@ class InstallationController extends Controller
                     '{ejecutive}',
                     '{price}',
                     '{type}',
+                    '{description}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
+                    '{mounts_durability}',
                     '{summary}',
                 ],
                 [
@@ -174,8 +184,10 @@ class InstallationController extends Controller
                     $installJpa['user_issue']['people']['name'] . ' ' . $installJpa['user_issue']['people']['lastname'],
                     'S/.' . $installJpa['price_installation'],
                     $installJpa['type_intallation'],
+                    $installJpa['description'],
                     $branch_->name,
                     gTrace::getDate('long'),
+                    $mounts_durability,
                     $sumary,
                 ],
                 $template
@@ -234,8 +246,20 @@ class InstallationController extends Controller
             // $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
-            $salesProduct->type_pay = $request->type_pay;
-            $salesProduct->mount_dues = $request->mount_dues;
+
+            if (
+                $request->type_intallation == 'FIBRA_OPTICA_(CONVENIO)' ||
+                $request->type_intallation == "ANTENA_(CONVENIO)" ||
+                $request->type_intallation == "FIBRA_OPTICA_(CONTRATO)" ||
+                $request->type_intallation == "ANTENA_(CONTRATO)"
+            ) {
+                $salesProduct->type_pay = $request->type_intallation;
+                $salesProduct->mount_dues = $request->mount_dues;
+            } else {
+                $salesProduct->type_pay = $request->type_pay;
+                $salesProduct->mount_dues = $request->mount_dues;
+            }
+
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
@@ -252,7 +276,9 @@ class InstallationController extends Controller
                     $productJpa = Product::find($product['product']['id']);
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                        ->where('_product', $productJpa->id)->first();
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
+                        ->where('_model', $product['product']['model']['id'])->first();
 
                     if ($product['product']['type'] == "MATERIAL") {
                         if ($product['mount_new'] > 0) {
@@ -269,7 +295,6 @@ class InstallationController extends Controller
 
                         $productByTechnicalJpa->save();
                     } else {
-
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -536,7 +561,7 @@ class InstallationController extends Controller
                         ]
                     )
                         ->where('_technical', $InstallationJpa->technical__id)
-                        ->where('_product', $detail['product']['id'])
+                        ->where('_model', $detail['product']['model']['id'])
                         ->first();
 
                     $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
@@ -627,7 +652,9 @@ class InstallationController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $detailSale->_product)->first();
+                                ->whereNotNull('status')
+                                ->whereNot('type', 'LEND')
+                                ->where('_model', $product['product']['model']['id'])->first();
                             if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
@@ -667,9 +694,12 @@ class InstallationController extends Controller
                         $detailSale->save();
 
                         if (isset($request->status_sale)) {
+
+                            $PeopleJpa = People::where('id', $salesProduct->_client)->first();
+
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'VENDIDO';
+                                    $productJpa->disponibility = 'INSTALACION: ' . $PeopleJpa->name . ' ' . $PeopleJpa->lastname;
                                 }
                                 if (
                                     isset($request->image_qr)
@@ -688,7 +718,9 @@ class InstallationController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                                ->where('_product', $productJpa->id)->first();
+                                ->whereNotNull('status')
+                                ->whereNot('type', 'LEND')
+                                ->where('_model', $productJpa->_model)->first();
 
                             if ($product['mount_new'] > 0) {
                                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
@@ -829,6 +861,90 @@ class InstallationController extends Controller
         }
     }
 
+    public function getInstallationByClient(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar');
+            }
+
+            if (!isset($request->id)) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $viewInstallationsJpa = viewInstallations::where('client__id', $request->id)->first();
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'branches.id AS product__branch__id',
+                'branches.name AS product__branch__name',
+                'branches.correlative AS product__branch__correlative',
+                'brands.id AS product__model__brand__id',
+                'brands.correlative AS product__model__brand__correlative',
+                'brands.brand AS product__model__brand__brand',
+                'brands.relative_id AS product__model__brand__relative_id',
+                'categories.id AS product__model__category__id',
+                'categories.category AS product__model__category__category',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('branches', 'products._branch', 'branches.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $viewInstallationsJpa->id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $install = gJSON::restore($viewInstallationsJpa->toArray(), '__');
+            $install['details'] = $details;
+
+            $response->setStatus(200);
+            $response->setMessage('Instalación atualizada correctamente');
+            $response->setData(['data' => $install]);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function cancelUseProduct(Request $request)
     {
         $response = new Response();
@@ -839,7 +955,7 @@ class InstallationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'install_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
@@ -859,7 +975,9 @@ class InstallationController extends Controller
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
                 $productByTechnicalJpa = ProductByTechnical::where('_technical', $salesProduct->_technical)
-                    ->where('_product', $detailSale->_product)->first();
+                    ->whereNotNull('status')
+                    ->whereNot('type', 'LEND')
+                    ->where('_model', $productJpa->_model)->first();
                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
                 $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
                 $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
@@ -961,7 +1079,7 @@ class InstallationController extends Controller
             foreach ($detailsSalesJpa as $detail) {
                 $detailSale = DetailSale::find($detail['id']);
                 $detailSale->status = null;
-                $productJpa = Product::select('id', 'status', 'disponibility', 'mount', 'type')->find($detail['_product']);
+                $productJpa = Product::find($detail['_product']);
 
                 $stock = Stock::where('_model', $productJpa->_model)
                     ->where('_branch', $branch_->id)
@@ -970,7 +1088,9 @@ class InstallationController extends Controller
                 $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
-                        ->where('_product', $detail['_product'])->first();
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
+                        ->where('_model', $productJpa->_model)->first();
                     $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $detail['mount_new'];
                     $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $detail['mount_second'];
                     $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $detail['mount_ill_fated'];
@@ -978,7 +1098,7 @@ class InstallationController extends Controller
                 } else {
                     if ($productJpa->product_status == 'NUEVO') {
                         $stock->mount_new = $stock->mount_new + 1;
-                    }else if($productJpa->product_status == 'SEMINUEVO'){
+                    } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second = $stock->mount_second + 1;
                     }
                 }
@@ -994,7 +1114,7 @@ class InstallationController extends Controller
             $response->setMessage('La instalación se elimino correctamente.');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),

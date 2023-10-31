@@ -6,7 +6,27 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\{
-    Branch, DetailSale, EntryDetail, EntryProducts, Plant, Product, ProductByPlant, ViewSales, Response, SalesProducts, Stock, StockPlant, Parcel, ViewPlant, ViewProductsByPlant, ViewDetailsSales, ViewStockPlant, ViewStockProductsByPlant
+    Branch,
+    DetailSale,
+    EntryDetail,
+    EntryProducts,
+    Plant,
+    People,
+    Product,
+    ProductByPlant,
+    ViewSales,
+    Response,
+    SalesProducts,
+    Stock,
+    StockPlant,
+    Parcel,
+    ViewPlant,
+    ViewProductsByPlant,
+    ViewDetailsSales,
+    ViewStockPlant,
+    ViewStockProductsByPlant,
+    PhotographsByPlant,
+    User
 };
 use Exception;
 use Illuminate\Http\Request;
@@ -55,6 +75,27 @@ class PlantPendingController extends Controller
             if (isset($request->description)) {
                 $plantJpa->description = $request->description;
             }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $plantJpa->image_type = $request->image_type;
+                    $plantJpa->image_mini = base64_decode($request->image_mini);
+                    $plantJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $plantJpa->image_type = null;
+                    $plantJpa->image_mini = null;
+                    $plantJpa->image_full = null;
+                }
+            }
+            
             $plantJpa->plant_status = "EN EJECUCION";
             $plantJpa->_branch = $branch_->id;
             $plantJpa->creation_date = gTrace::getDate('mysql');
@@ -74,6 +115,52 @@ class PlantPendingController extends Controller
                 $response->toArray(),
                 $response->getStatus()
             );
+        }
+    }
+
+    public function image($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $plantJpa = Plant::select([
+                "plant.image_$size as image_content",
+                'plant.image_type',
+            ])->find($id);
+
+            if (!$plantJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+            if (!$plantJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+            $content = $plantJpa->image_content;
+            $type = $plantJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/png';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
         }
     }
 
@@ -100,9 +187,9 @@ class PlantPendingController extends Controller
             if (isset($request->name)) {
                 $plantValidate = Plant::where('name', $request->name)
                     ->where('id', '!=', $request->id)->first();
-                if ($plantValidate) {
-                    throw new Exception('Ya existe un proyecto con este nombre');
-                }
+                // if ($plantValidate) {
+                //     throw new Exception('Ya existe un proyecto con este nombre');
+                // }
                 $plantJpa->name = $request->name;
             }
 
@@ -120,6 +207,26 @@ class PlantPendingController extends Controller
 
             if (isset($request->description)) {
                 $plantJpa->description = $request->description;
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $plantJpa->image_type = $request->image_type;
+                    $plantJpa->image_mini = base64_decode($request->image_mini);
+                    $plantJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    $plantJpa->image_type = null;
+                    $plantJpa->image_mini = null;
+                    $plantJpa->image_full = null;
+                }
             }
 
             $plantJpa->update_date = gTrace::getDate('mysql');
@@ -261,6 +368,8 @@ class PlantPendingController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
+            $plantJpa = Plant::find($request->id);
+
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['product']['id']);
@@ -270,7 +379,9 @@ class PlantPendingController extends Controller
 
                     if ($product['product']['product']['type'] == "MATERIAL") {
 
-                        $StockPlant = StockPlant::select(['id', '_product', '_plant', 'mount_new', 'mount_second', 'mount_ill_fated'])->where('_product', $productJpa->id)->where('_plant', $request->id)->first();
+                        $StockPlant = StockPlant::select(['id', '_model', '_plant', 'mount_new', 'mount_second', 'mount_ill_fated'])
+                        ->where('_model', $productJpa->_model)
+                        ->where('_plant', $request->id)->first();
 
                         if ($StockPlant) {
                             $StockPlant->mount_new = intval($StockPlant->mount_new) + intval($product['mount_new']);
@@ -280,6 +391,7 @@ class PlantPendingController extends Controller
                         } else {
                             $stockPlantJpa = new StockPlant();
                             $stockPlantJpa->_product = $productJpa->id;
+                            $stockPlantJpa->_model = $productJpa->_model;
                             $stockPlantJpa->_plant = $request->id;
                             $stockPlantJpa->mount_new = $product['mount_new'];
                             $stockPlantJpa->mount_second = $product['mount_second'];
@@ -296,6 +408,7 @@ class PlantPendingController extends Controller
                     } else {
                         $stockPlantJpa = new StockPlant();
                         $stockPlantJpa->_product = $productJpa->id;
+                        $stockPlantJpa->_model = $productJpa->_model;
                         $stockPlantJpa->_plant = $request->id;
                         if ($productJpa->product_status == "NUEVO") {
                             $stockPlantJpa->mount_new = 1;
@@ -303,12 +416,12 @@ class PlantPendingController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stockPlantJpa->mount_second = 1;
                             $stock->mount_second = $stock->mount_second - 1;
-                        }else{
+                        } else {
                             $stockPlantJpa->mount_ill_fated = 1;
                         }
                         $stockPlantJpa->status = "1";
                         $stockPlantJpa->save();
-                        $productJpa->disponibility = "PLANTA";
+                        $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                     }
 
                     $stock->save();
@@ -319,6 +432,7 @@ class PlantPendingController extends Controller
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->mount_second = $product['mount_second'];
                     $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -369,7 +483,6 @@ class PlantPendingController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-               
             })->where('plant__id', $request->search['plant'])
                 ->where('product__disponibility', '!=', 'LIQUIDACION DE PLANTA');
 
@@ -468,7 +581,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function searchMountsStockByPlant(Request $request){
+    public function searchMountsStockByPlant(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -526,6 +640,8 @@ class PlantPendingController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $plantJpa = Plant::find($request->_plant);
+
             $salesProduct = new SalesProducts();
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -560,10 +676,10 @@ class PlantPendingController extends Controller
                     if ($product['product']['type'] == "MATERIAL") {
                         $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
                         $stockPlantJpa->mount_second = $stockPlantJpa->mount_second - $product['mount_second'];
-                        $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
+                        $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                     } else {
                         $stockPlantJpa->status = null;
-                        $productJpa->disponibility = "LIQUIDACION DE PLANTA";
+                        $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                     }
 
                     $productJpa->save();
@@ -574,6 +690,7 @@ class PlantPendingController extends Controller
                     $detailSale->mount_new = $product['mount_new'];
                     $detailSale->mount_second = $product['mount_second'];
                     $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                    $detailSale->description = $product['description'];
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -818,9 +935,10 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = SalesProducts::find($request->id);
+
+            $plantJpa = Plant::find($request->_plant);
 
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -882,6 +1000,7 @@ class PlantPendingController extends Controller
                             $detailSale->mount_new = $product['mount_new'];
                             $detailSale->mount_second = $product['mount_second'];
                             $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                            $detailSale->description = $product['description'];
                             $stockPlantJpa->save();
                         }
 
@@ -893,15 +1012,15 @@ class PlantPendingController extends Controller
                         $productJpa->save();
                     } else {
                         $productJpa = Product::find($product['product']['id']);
-                        $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->first();
+                        $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $plantJpa->id)->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
                             $stockPlantJpa->mount_new = $stockPlantJpa->mount_new  - $product['mount_new'];
                             $stockPlantJpa->mount_new = $stockPlantJpa->mount_new - $product['mount_second'];
-                            $stockPlantJpa->mount_ill_fated =$stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
+                            $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated - $product['mount_ill_fated'];
                         } else {
                             $stockPlantJpa->status = null;
-                            $productJpa->disponibility = "LIQUIDACION DE PLANTA";
+                            $productJpa->disponibility = "PLANTA: " . $plantJpa->name;
                         }
 
                         $stockPlantJpa->save();
@@ -912,6 +1031,7 @@ class PlantPendingController extends Controller
                         $detailSale->mount_new = $product['mount_new'];
                         $detailSale->mount_second = $product['mount_second'];
                         $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                        $detailSale->description = $product['description'];
                         $detailSale->_sales_product = $request->id;
                         $detailSale->status = '1';
                         $detailSale->save();
@@ -920,41 +1040,6 @@ class PlantPendingController extends Controller
             }
 
             $salesProduct->save();
-
-            // if (isset($request->status_sale)) {
-            //     if ($request->status_sale == 'CULMINADA') {
-            //         $saleProductJpa = SalesProducts::find($request->id);
-            //         $saleProductJpa->status_sale = 'CULMINADA';
-            //         $saleProductJpa->save();
-            //         $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
-            //             ->get();
-            //         foreach ($detailsSalesJpa as $detail) {
-            //             $productJpa = Product::find($detail['_product']);
-            //             if ($productJpa->type == "MATERIAL") {
-            //                 $productByPlantJpa = ProductByPlant::where('_product', $productJpa->id)
-            //                     ->where('_plant', $saleProductJpa->_plant)->first();
-            //                 if ($productByPlantJpa) {
-            //                     $productByPlantJpa->mount = $productByPlantJpa->mount + $detail['mount'];
-            //                     $productByPlantJpa->save();
-            //                 } else {
-            //                     $productByPlantJpa_new = new ProductByPlant();
-            //                     $productByPlantJpa_new->_product = $productJpa->id;
-            //                     $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-            //                     $productByPlantJpa_new->mount = $detail['mount'];
-            //                     $productByPlantJpa_new->status = '1';
-            //                     $productByPlantJpa_new->save();
-            //                 }
-            //             } else {
-            //                 $productByPlantJpa_new = new ProductByPlant();
-            //                 $productByPlantJpa_new->_product = $productJpa->id;
-            //                 $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-            //                 $productByPlantJpa_new->mount = $detail['mount'];
-            //                 $productByPlantJpa_new->status = '1';
-            //                 $productByPlantJpa_new->save();
-            //             }
-            //         }
-            //     }
-            // }
 
             $response->setStatus(200);
             $response->setMessage('Actualización correcta.');
@@ -990,9 +1075,45 @@ class PlantPendingController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
+
             $saleProductJpa = SalesProducts::find($request->id);
             $saleProductJpa->status_sale = 'CULMINADA';
             $saleProductJpa->save();
+            $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
+                ->get();
+            foreach ($detailsSalesJpa as $detail) {
+                $productJpa = Product::find($detail['_product']);
+                if ($productJpa->type == "MATERIAL") {
+                    $productByPlantJpa = ProductByPlant::where('_model', $productJpa->_model)
+                        ->where('_plant', $saleProductJpa->_plant)->first();
+                    if ($productByPlantJpa) {
+                        $productByPlantJpa->mount_new = $productByPlantJpa->mount_new + $detail['mount_new'];
+                        $productByPlantJpa->mount_second = $productByPlantJpa->mount_second + $detail['mount_second'];
+                        $productByPlantJpa->mount_ill_fated = $productByPlantJpa->mount_ill_fated + $detail['mount_ill_fated'];
+                        $productByPlantJpa->save();
+                    } else {
+                        $productByPlantJpa_new = new ProductByPlant();
+                        $productByPlantJpa_new->_product = $productJpa->id;
+                        $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                        $productByPlantJpa_new->_model = $productJpa->_model;
+                        $productByPlantJpa_new->mount_new = $detail['mount_new'];
+                        $productByPlantJpa_new->mount_second = $detail['mount_second'];
+                        $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
+                        $productByPlantJpa_new->status = '1';
+                        $productByPlantJpa_new->save();
+                    }
+                } else {
+                    $productByPlantJpa_new = new ProductByPlant();
+                    $productByPlantJpa_new->_product = $productJpa->id;
+                    $productByPlantJpa_new->_model = $productJpa->_model;
+                    $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
+                    $productByPlantJpa_new->mount_new = $detail['mount_new'];
+                    $productByPlantJpa_new->mount_second = $detail['mount_second'];
+                    $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
+                    $productByPlantJpa_new->status = '1';
+                    $productByPlantJpa_new->save();
+                }
+            }
 
             $response->setStatus(200);
             $response->setMessage('Liquidacion culminada.');
@@ -1067,6 +1188,8 @@ class PlantPendingController extends Controller
                 throw new Exception("Este reguistro no existe");
             }
 
+            $plantJpa = Plant::find($saleProductJpa->_plant);
+
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)->whereNotNull('status')
                 ->get();
 
@@ -1078,13 +1201,15 @@ class PlantPendingController extends Controller
                 $productJpa = Product::find($detail['_product']);
 
                 if ($productJpa->type == "MATERIAL") {
-                    $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $saleProductJpa->_plant)->first();
-                    $stockPlantJpa->mount = $stockPlantJpa->mount + $detail['mount'];
+                    $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $saleProductJpa->_plant)->first();
+                    $stockPlantJpa->mount_new = $stockPlantJpa->mount_new + $detail['mount_new'];
+                    $stockPlantJpa->mount_second = $stockPlantJpa->mount_second + $detail['mount_second'];
+                    $stockPlantJpa->mount_ill_fated = $stockPlantJpa->mount_ill_fated + $detail['mount_ill_fated'];
                     $stockPlantJpa->save();
                 } else {
-                    $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $saleProductJpa->_plant)->first();
+                    $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $saleProductJpa->_plant)->first();
                     $stockPlantJpa->status = "1";
-                    $productJpa->disponibility = "PLANTA";
+                    $productJpa->disponibility = "DEVUELTO DE PLANTA: ".$plantJpa->name;
                     $stockPlantJpa->save();
                 }
 
@@ -1171,7 +1296,8 @@ class PlantPendingController extends Controller
         }
     }
 
-    public function searchProductPlant(Request $request){
+    public function searchProductPlant(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1504,12 +1630,12 @@ class PlantPendingController extends Controller
 
             $productJpa = Product::find($request->product['id']);
             if ($productJpa->type == "MATERIAL") {
-                $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $salesProduct->_plant)->first();
+                $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $salesProduct->_plant)->first();
                 $stockPlantJpa->mount = $stockPlantJpa->mount + $detailSale->mount;
                 $stockPlantJpa->save();
             } else if ($productJpa->type == "EQUIPO") {
 
-                $stockPlantJpa = StockPlant::where('_product', $productJpa->id)->where('_plant', $salesProduct->_plant)->first();
+                $stockPlantJpa = StockPlant::where('_model', $productJpa->_model)->where('_plant', $salesProduct->_plant)->first();
                 $stockPlantJpa->status = "1";
                 $productJpa->disponibility = "PLANTA";
                 $stockPlantJpa->save();
@@ -1798,12 +1924,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -1941,12 +2068,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -2047,12 +2175,13 @@ class PlantPendingController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
-                        'unity' => $unity);
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
                 }
             }
             $count = 1;
@@ -2107,6 +2236,159 @@ class PlantPendingController extends Controller
         }
     }
 
+    public function generateReportByProject(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para generar reporte de proyectos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportProject.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $productByPlantJpa = ViewProductsByPlant::where('plant__id', $request->id)->whereNotNull('status')->get();
+
+            $stock_plant = [];
+
+            foreach ($productByPlantJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_plant[] = $product;
+            }
+
+            $models = array();
+            foreach ($stock_plant as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>Nu:{$detail['mount_new']} || Se:{$detail['mount_second']} || Ma:{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+
+
+            
+            $PlantJpa = Plant::find($request->id);
+            
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $PlantJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByPlant as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='https://almacen.fastnetperu.com.pe/api/plant_pendingimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto; margin-top:5px;border:solid 2px #000;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{project_name}',
+                    '{leader}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{description}',
+                    '{summary}',
+                    '{images}',
+                    '{id}'
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->name,
+                    $request->leader['name'] . ' ' . $request->leader['lastname'],
+                    $request->date_start,
+                    $request->date_end,
+                    $request->description,
+                    $sumary,
+                    $images,
+                    $PlantJpa->id,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function updateStokByProduct(Request $request)
     {
         $response = new Response();
@@ -2135,6 +2417,48 @@ class PlantPendingController extends Controller
             $stockPlantJpa->mount_second = $request->mount_second;
             $stockPlantJpa->mount_ill_fated = $request->mount_ill_fated;
             $stockPlantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El producto se actualizo correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateProductByProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $productPlantJpa = ProductByPlant::find($request->id);
+            if (!$productPlantJpa) {
+                throw new Exception('El producto no existe');
+            }
+
+            $productPlantJpa->mount_new = $request->mount_new;
+            $productPlantJpa->mount_second = $request->mount_second;
+            $productPlantJpa->mount_ill_fated = $request->mount_ill_fated;
+            $productPlantJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El producto se actualizo correctamente');
@@ -2350,10 +2674,10 @@ class PlantPendingController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status'
             ])->where('view_sales.type_intallation', 'AGREGADO_A_STOCK')
-            ->where('view_sales.branch__correlative',$branch)
-            ->where('view_sales.type_operation__operation', 'PLANTA')
-            ->where('view_sales.plant_id', $request->id)
-            ->join('plant', 'view_sales.plant_id', 'plant.id');
+                ->where('view_sales.branch__correlative', $branch)
+                ->where('view_sales.type_operation__operation', 'PLANTA')
+                ->where('view_sales.plant_id', $request->id)
+                ->join('plant', 'view_sales.plant_id', 'plant.id');
 
             $query = $query->orderBy('id', 'desc');
             if (isset($request->date_start) && isset($request->date_end)) {
@@ -2368,7 +2692,7 @@ class PlantPendingController extends Controller
                 $record = gJSON::restore($recordJpa->toArray(), '__');
                 $ViewDetailsSales = ViewDetailsSales::where('sale_product_id', $recordJpa['id'])->get();
                 $details = [];
-                foreach ($ViewDetailsSales as $detailJpa){
+                foreach ($ViewDetailsSales as $detailJpa) {
                     $detail = gJSON::restore($detailJpa->toArray(), '__');
                     $details[] = $detail;
                 }
@@ -2389,4 +2713,353 @@ class PlantPendingController extends Controller
             );
         }
     }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByPlantJpa = new PhotographsByPlant();
+            $PhotographsByPlantJpa->_plant = $request->id;
+            $PhotographsByPlantJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByPlantJpa->image_type = $request->image_type;
+                    $PhotographsByPlantJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByPlantJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByPlantJpa->_creation_user = $userid;
+            $PhotographsByPlantJpa->creation_date = gTrace::getDate('mysql');
+            $PhotographsByPlantJpa->_update_user = $userid;
+            $PhotographsByPlantJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByPlantJpa->status = "1";
+            $PhotographsByPlantJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByPlant = PhotographsByPlant::find($request->id);
+            $PhotographsByPlant->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByPlant->image_type = $request->image_type;
+                    $PhotographsByPlant->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByPlant->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $PhotographsByPlant->_update_user = $userid;
+            $PhotographsByPlant->update_date = gTrace::getDate('mysql');
+            $PhotographsByPlant->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByPlant->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = PhotographsByPlant::select([
+                "photographs_by_plant.image_$size as image_content",
+                'photographs_by_plant.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/antena-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByPlant = PhotographsByPlant::find($id);
+            $PhotographsByPlant->_update_user = $userid;
+            $PhotographsByPlant->update_date = gTrace::getDate('mysql');
+            $PhotographsByPlant->status = null;
+            $PhotographsByPlant->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    
+    public function reportDetailsByPlant(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByPlant.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+          
+
+            $PlantJpa = Plant::find($request->id);
+            
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $PlantJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByPlant as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='https://almacen.fastnetperu.com.pe/api/plant_pendingimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto; margin-top:5px;border:solid 2px #000;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{tower_name}',
+                    '{id}',
+                    '{description}',
+                    '{ejecutive}',
+                    '{images}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $PlantJpa->name,
+                    $PlantJpa->id,
+                    $PlantJpa->description,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $images,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Torre.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 }

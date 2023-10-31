@@ -57,8 +57,11 @@ class ModelsController extends Controller
             $modelJpa->price_buy = $request->price_buy;
             $modelJpa->mr_revenue = $request->mr_revenue;
             $modelJpa->price_sale = $request->price_sale;
-            if(isset($request->price_sale_second)){
+            if (isset($request->price_sale_second)) {
                 $modelJpa->price_sale_second = $request->price_sale_second;
+            }
+            if (isset($request->price_sale_client)) {
+                $modelJpa->price_sale_client = $request->price_sale_client;
             }
 
             if (
@@ -84,15 +87,13 @@ class ModelsController extends Controller
             if (isset($request->description)) {
                 $modelJpa->description = $request->description;
             }
-            
+
             $modelJpa->status = "1";
             $modelJpa->save();
 
-            // $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
             $branchesJpa = Branch::select('id')->get();
 
-            foreach($branchesJpa as $branch){
+            foreach ($branchesJpa as $branch) {
                 $stockJpa = new Stock();
                 $stockJpa->_model = $modelJpa->id;
                 $stockJpa->mount_new = '0';
@@ -102,18 +103,10 @@ class ModelsController extends Controller
                 $stockJpa->status = '1';
                 $stockJpa->save();
             }
-            
-            // $stockJpa = new Stock();
-            // $stockJpa->_model = $modelJpa->id;
-            // $stockJpa->mount = '0';
-            // $stockJpa->stock_min = '5';
-            // $stockJpa->_branch = $branch_->id;
-            // $stockJpa->status = '1';
-            // $stockJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('El modelo se a agregado correctamente en todas las sucursales');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -150,11 +143,42 @@ class ModelsController extends Controller
                 $model = gJSON::restore($modelJpa->toArray(), '__');
                 $models[] = $model;
             }
-            
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($models);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function searchModelById(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
+                throw new Exception('No tienes permisos para listar modelos');
+            }
+
+            $modelsJpa = ViewModels::find($request->id);
+
+            $model = gJSON::restore($modelsJpa->toArray(), '__');
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData(['data' => $model]);
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -186,7 +210,7 @@ class ModelsController extends Controller
                 $query->whereNotNull('status');
             }
 
-            if($request->star){
+            if ($request->star) {
                 $query->where('star', 1);
             }
 
@@ -227,7 +251,7 @@ class ModelsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewModels::count());
             $response->setData($models);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -270,15 +294,15 @@ class ModelsController extends Controller
             $content = $modelJpa->image_content;
             $type = $modelJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
-            $ruta = '../storage/images/brands-default.jpg';
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -330,27 +354,31 @@ class ModelsController extends Controller
                 $modelJpa->_category = $request->_category;
             }
 
-            if(isset($request->_unity)){
+            if (isset($request->_unity)) {
                 $modelJpa->_unity = $request->_unity;
             }
 
-            if(isset($request->currency)){
+            if (isset($request->currency)) {
                 $modelJpa->currency = $request->currency;
             }
 
-            if(isset($request->price_buy)){
+            if (isset($request->price_buy)) {
                 $modelJpa->price_buy = $request->price_buy;
             }
 
-            if(isset($request->price_sale)){
+            if (isset($request->price_sale)) {
                 $modelJpa->price_sale = $request->price_sale;
             }
 
-            if(isset($request->price_sale_second)){
+            if (isset($request->price_sale_second)) {
                 $modelJpa->price_sale_second = $request->price_sale_second;
             }
 
-            if(isset($request->mr_revenue)){
+            if (isset($request->price_sale_client)) {
+                $modelJpa->price_sale_client = $request->price_sale_client;
+            }
+
+            if (isset($request->mr_revenue)) {
                 $modelJpa->mr_revenue = $request->mr_revenue;
             }
 
@@ -386,7 +414,7 @@ class ModelsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El modelo ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -427,7 +455,7 @@ class ModelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('El modelo a sido eliminado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -467,7 +495,7 @@ class ModelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('El modelo a sido restaurado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -478,7 +506,8 @@ class ModelsController extends Controller
         }
     }
 
-    public function changeStar(Request $request){
+    public function changeStar(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -507,7 +536,7 @@ class ModelsController extends Controller
             $response->setStatus(200);
             $response->setMessage('El modelo a sido cambiado correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -517,6 +546,4 @@ class ModelsController extends Controller
             );
         }
     }
-
-
 }

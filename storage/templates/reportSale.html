@@ -61,6 +61,7 @@
             }
 
             #date {
+                font-weight: bolder;
                 text-align: right;
             }
 
@@ -92,15 +93,14 @@
             }
 
             table tbody td {
-                border: 1px solid #222222;
+                border-bottom: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #c4cddb;
-                color: #000000 !important;
-                border: 1px solid #222222;
+                background-color: #323a46;
+                color: #ffffff !important;
             }
 
             table td {
@@ -186,21 +186,12 @@
         </style>
     </head>
     <body>
-        <!-- <footer>
-            <div>
-                FASTNETPERU E.I.R.L<br />
-                Jr. 1 de Mayo 1085 PICHANAQUI<br />
-            </div>
-            <div class="issue-detail">
-                T: <a href="tel:51941415879">51 941 415 879</a>
-            </div>
-        </footer> -->
         <main>
             <div style="display: inline; font-size: 13px">
                 <div style="max-width: 50%; display: inline-block">
                     <img
                         style="width: 240px"
-                        src="https://almacen.fastnetperu.com.pe/img/logo-light.png"
+                        src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
                         alt="Logo fastnet"
                     />
                     <div>
@@ -223,7 +214,7 @@
                     <div
                         style="
                             height: 140px;
-                            width:250px;
+                            width: 250px;
                             background-color: rgb(234, 234, 234);
                             font-size: 24px;
                             font-weight: 600;
@@ -233,40 +224,76 @@
                             border: solid 2px #000;
                         "
                     >
-                <span>RUC 20602791816</span>
-                <span>SALIDAS</span>
-                <span>{branch_interaction} </span>
-                <br>
-                </div>
+                        <p style="margin: 0px; padding: 0px">RUC 20602791816</p>
+                        <p style="margin: 0px; padding: 0px">
+                            R. DE VENTA
+                        </p>
+                        <p style="margin: 0px; padding: 0px">
+                            VEN-{num_operation}
+                        </p>
+                        <br />
+                    </div>
                 </div>
             </div>
             <br />
-            <p id="date">{branch_interaction}, {issue_long_date}</p>
-            <p>Usiario generación: <strong>{user_generate}</strong></p>
-            <p>Fecha inicio: <strong>{date_start_str}</strong></p>
-            <p>Fecha fin: <strong>{date_end_str}</strong></p>
+            <br />
+            <div style="display: inline; font-size: 15px">
+                <div style="max-width: 50%; display: inline-block">
+                    <p>Cliente</p>
+                    <p><strong style="margin-bottom: 10px">{client}</strong></p>
+                    <p>Fecha</p>
+                    <p>
+                        <strong style="margin-bottom: 10px">{date_sale}</strong>
+                    </p>
+                    <p>Ejecutivo</p>
+                    <p>
+                        <strong style="margin-bottom: 10px">{ejecutive}</strong>
+                    </p>
+                </div>
+                <div
+                    style="
+                        max-width: 50%;
+                        display: inline-block;
+                        margin-left: 60px;
+                    "
+                >
+                    <p>Fecha de emisión</p>
+                    <p>
+                        <strong style="margin-bottom: 10px"
+                            >{issue_date}</strong
+                        >
+                    </p>
+                    <p>Hora de emisión</p>
+                    <p>
+                        <strong style="margin-bottom: 10px"
+                            >{issue_hour}</strong
+                        >
+                    </p>
+                    <p>Precio</p>
+                    <p><strong style="margin-bottom: 10px">{price}</strong></p>
+                </div>
+            </div>
+
+            <p><strong>Descripción:</strong> {description}</p>
+
+            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <!-- <p>Nombre del proyecto: <strong>{project_name}</strong></p> -->
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table style="height: 370px; font-size: 14px;">
+            <table style="height: 370px">
                 <thead>
                     <tr>
-                        <td>#</td>
-                        <td style="width: 250px;">Usuario</td>
-                        <td>Datos</td>
+                        <td>ID</td>
+                        <td style="width: 200px;">MODELO</td>
+                        <td>MEDIDA</td>
+                        <td>MAC-SERIE</td>
                     </tr>
                 </thead>
                 <tbody>
                     {summary}
                 </tbody>
             </table>
-            <div style="margin-top: 12px;">
-                <center>
-                    <h3>DETALLES</h3>
-                </center>
-            </div>
-            <div style="margin-top: 50px; font-size: 14px;">
-                {details}
-            </div>
+            <!-- <img style="margin-top: 10px; height: 170px;" src="https://almacen.fastnetperu.com.pe/api/installation/qr/{id_qr}"  alt=""> -->
         </main>
     </body>
 </html>

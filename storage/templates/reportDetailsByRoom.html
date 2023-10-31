@@ -16,7 +16,7 @@
 
             @page {
                 margin-top: 1.5cm;
-                margin-bottom: 1.5cm;
+                margin-bottom: 3cm;
                 margin-left: 1.5cm;
                 margin-right: 1.5cm;
             }
@@ -61,6 +61,7 @@
             }
 
             #date {
+                font-weight: bolder;
                 text-align: right;
             }
 
@@ -92,15 +93,14 @@
             }
 
             table tbody td {
-                border: 1px solid #222222;
+                border-bottom: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #c4cddb;
-                color: #000000 !important;
-                border: 1px solid #222222;
+                background-color: #323a46;
+                color: #ffffff !important;
             }
 
             table td {
@@ -186,7 +186,7 @@
         </style>
     </head>
     <body>
-        <!-- <footer>
+        <footer>
             <div>
                 FASTNETPERU E.I.R.L<br />
                 Jr. 1 de Mayo 1085 PICHANAQUI<br />
@@ -194,13 +194,13 @@
             <div class="issue-detail">
                 T: <a href="tel:51941415879">51 941 415 879</a>
             </div>
-        </footer> -->
+        </footer>
         <main>
             <div style="display: inline; font-size: 13px">
                 <div style="max-width: 50%; display: inline-block">
                     <img
                         style="width: 240px"
-                        src="https://almacen.fastnetperu.com.pe/img/logo-light.png"
+                        src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
                         alt="Logo fastnet"
                     />
                     <div>
@@ -223,7 +223,7 @@
                     <div
                         style="
                             height: 140px;
-                            width:250px;
+                            width: 250px;
                             background-color: rgb(234, 234, 234);
                             font-size: 24px;
                             font-weight: 600;
@@ -233,40 +233,27 @@
                             border: solid 2px #000;
                         "
                     >
-                <span>RUC 20602791816</span>
-                <span>SALIDAS</span>
-                <span>{branch_interaction} </span>
-                <br>
-                </div>
+                        <span>RUC 20602791816</span>
+                        <span>DETALLES DE</span>
+                        <span>CENTRAL</span>
+                    </div>
                 </div>
             </div>
             <br />
-            <p id="date">{branch_interaction}, {issue_long_date}</p>
-            <p>Usiario generación: <strong>{user_generate}</strong></p>
-            <p>Fecha inicio: <strong>{date_start_str}</strong></p>
-            <p>Fecha fin: <strong>{date_end_str}</strong></p>
-
-            <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table style="height: 370px; font-size: 14px;">
-                <thead>
-                    <tr>
-                        <td>#</td>
-                        <td style="width: 250px;">Usuario</td>
-                        <td>Datos</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {summary}
-                </tbody>
-            </table>
-            <div style="margin-top: 12px;">
-                <center>
-                    <h3>DETALLES</h3>
-                </center>
+            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <div style="margin-top: 12px">
+                <p>Nombre: <strong>{tower_name}</strong></p>
+                <p>Descripción: <strong>{description}</strong></p>
+                <p>Ejecutivo: <strong>{ejecutive}</strong></p>
             </div>
-            <div style="margin-top: 50px; font-size: 14px;">
-                {details}
-            </div>
+            <center style="margin-top: 12px">
+                <img
+                    style="width: 500px"
+                    src="https://almacen.fastnetperu.com.pe/api/roomimg/{relative_id}/full"
+                    alt="Imagen Torre"
+                />
+            </center>
+            {images}
         </main>
     </body>
 </html>

@@ -92,15 +92,14 @@
             }
 
             table tbody td {
-                border: 1px solid #222222;
+                border-bottom: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #c4cddb;
-                color: #000000 !important;
-                border: 1px solid #222222;
+                background-color: #323a46;
+                color: #ffffff !important;
             }
 
             table td {
@@ -234,8 +233,8 @@
                         "
                     >
                 <span>RUC 20602791816</span>
-                <span>SALIDAS</span>
-                <span>{branch_interaction} </span>
+                <span>REGISTROS</span>
+                <span>DE {people}</span>
                 <br>
                 </div>
                 </div>
@@ -243,6 +242,7 @@
             <br />
             <p id="date">{branch_interaction}, {issue_long_date}</p>
             <p>Usiario generación: <strong>{user_generate}</strong></p>
+            <p>{people}: <strong>{people_names}</strong></p>
             <p>Fecha inicio: <strong>{date_start_str}</strong></p>
             <p>Fecha fin: <strong>{date_end_str}</strong></p>
 
@@ -250,8 +250,8 @@
             <table style="height: 370px; font-size: 14px;">
                 <thead>
                     <tr>
-                        <td>#</td>
-                        <td style="width: 250px;">Usuario</td>
+                        <td>ITEM</td>
+                        <td>Usuario.</td>
                         <td>Datos</td>
                     </tr>
                 </thead>

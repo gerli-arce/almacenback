@@ -16,11 +16,15 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\Tower;
+use App\Models\User;
 use App\Models\ViewProductsByTower;
+use App\Models\PhotographsByTower;
 use App\Models\ViewStockTower;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class TowerController extends Controller
 {
@@ -54,8 +58,12 @@ class TowerController extends Controller
             $towerJpa = new Tower();
             $towerJpa->name = $request->name;
             $towerJpa->description = $request->description;
-            $towerJpa->coordenates = $request->coordenates;
-            $towerJpa->address = $request->address;
+            $towerJpa->contract_date_start = $request->contract_date_start;
+            $towerJpa->contract_date_end = $request->contract_date_end;
+            $towerJpa->price_month = $request->price_month;
+            $towerJpa->camera = $request->camera;
+            $towerJpa->longitude = $request->longitude;
+            $towerJpa->latitude = $request->latitude;
             $towerJpa->relative_id = guid::short();
 
             if (
@@ -75,6 +83,26 @@ class TowerController extends Controller
                     $towerJpa->image_type = null;
                     $towerJpa->image_mini = null;
                     $towerJpa->image_full = null;
+                }
+            }
+
+            if (
+                isset($request->image_contract_type) &&
+                isset($request->image_contract_mini) &&
+                isset($request->image_contract_full)
+            ) {
+                if (
+                    $request->image_contract_type != "none" &&
+                    $request->image_contract_mini != "none" &&
+                    $request->image_contract_full != "none"
+                ) {
+                    $towerJpa->contract_img_type = $request->image_contract_type;
+                    $towerJpa->contract_img_mini = base64_decode($request->image_contract_mini);
+                    $towerJpa->contract_img_full = base64_decode($request->image_contract_full);
+                } else {
+                    $towerJpa->contract_img_type = null;
+                    $towerJpa->contract_img_mini = null;
+                    $towerJpa->contract_img_full = null;
                 }
             }
 
@@ -113,18 +141,29 @@ class TowerController extends Controller
             }
 
             $query = Tower::select([
-                'id',
-                'name',
-                'description',
-                'coordenates',
-                'address',
-                'relative_id',
-                'status',
+                'towers.id as id',
+                'towers.name as name',
+                'towers.description as description',
+                'towers.latitude as latitude',
+                'towers.longitude as longitude',
+                'towers.relative_id as relative_id',
+                'towers.camera as camera',
+                'towers.contract_date_start as contract_date_start',
+                'towers.contract_date_end as contract_date_end',
+                'towers.price_month as price_month',
+                'towers._creation_user as _creation_user',
+                'towers.creation_date as creation_date',
+                'towers.status as status',
+                'people.name as people__name',
+                'people.lastname as people__lastname',
+
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+            ->join('users', 'towers._creation_user', 'users.id')
+            ->join('people', 'users._person', 'people.id')
+                ->orderBy('towers.'.$request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
-                $query->whereNotNull('status');
+                $query->whereNotNull('towers.status');
             }
 
             $query->where(function ($q) use ($request) {
@@ -133,16 +172,16 @@ class TowerController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'name' || $column == '*') {
-                    $q->orWhere('name', $type, $value);
+                    $q->orWhere('towers.name', $type, $value);
                 }
-                if ($column == 'coordenates' || $column == '*') {
-                    $q->orWhere('coordenates', $type, $value);
+                if ($column == 'latitude' || $column == '*') {
+                    $q->orWhere('towers.latitude', $type, $value);
                 }
-                if ($column == 'address' || $column == '*') {
-                    $q->orWhere('address', $type, $value);
+                if ($column == 'longitude' || $column == '*') {
+                    $q->orWhere('towers.longitude', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
-                    $q->orWhere('description', $type, $value);
+                    $q->orWhere('towers.description', $type, $value);
                 }
             });
 
@@ -211,7 +250,58 @@ class TowerController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function contract($relative_id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($relative_id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = Tower::select([
+                "towers.contract_img_$size as image_content",
+                'towers.contract_img_type',
+
+            ])
+                ->where('relative_id', $relative_id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -255,13 +345,14 @@ class TowerController extends Controller
                 $towerJpa->name = $request->name;
             }
 
-            if (isset($request->coordenates)) {
-                $towerJpa->coordenates = $request->coordenates;
+            if (isset($request->latitude)) {
+                $towerJpa->latitude = $request->latitude;
             }
 
-            if (isset($request->address)) {
-                $towerJpa->address = $request->address;
+            if (isset($request->longitude)) {
+                $towerJpa->longitude = $request->longitude;
             }
+
 
             if (
                 isset($request->image_type) &&
@@ -283,7 +374,32 @@ class TowerController extends Controller
                 }
             }
 
+            
+            if (
+                isset($request->image_contract_type) &&
+                isset($request->image_contract_mini) &&
+                isset($request->image_contract_full)
+            ) {
+                if (
+                    $request->image_contract_type != "none" &&
+                    $request->image_contract_mini != "none" &&
+                    $request->image_contract_full != "none"
+                ) {
+                    $towerJpa->contract_img_type = $request->image_contract_type;
+                    $towerJpa->contract_img_mini = base64_decode($request->image_contract_mini);
+                    $towerJpa->contract_img_full = base64_decode($request->image_contract_full);
+                } else {
+                    $towerJpa->contract_img_type = null;
+                    $towerJpa->contract_img_mini = null;
+                    $towerJpa->contract_img_full = null;
+                }
+            }
+
             $towerJpa->description = $request->description;
+            $towerJpa->contract_date_start = $request->contract_date_start;
+            $towerJpa->contract_date_end = $request->contract_date_end;
+            $towerJpa->price_month = $request->price_month;
+            $towerJpa->camera = $request->camera;
 
             if (gValidate::check($role->permissions, $branch, 'towers', 'change_status')) {
                 if (isset($request->status)) {
@@ -331,6 +447,8 @@ class TowerController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $towerJpa = Tower::select(['id','name'])->where('id', $request->_tower)->first();
+
             $salesProduct = new SalesProducts();
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -369,7 +487,7 @@ class TowerController extends Controller
                         $stock->mount_ill_fated = $stock->mount_ill_fated -  $product['mount_ill_fated'];
                         $productJpa->mount = $stock->mount_new -   $stock->mount_second;
                     } else {
-                        $productJpa->disponibility = "TORRE";
+                        $productJpa->disponibility = "TORRE: ".$towerJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -697,6 +815,8 @@ class TowerController extends Controller
 
             $salesProduct = SalesProducts::find($request->id);
 
+            $towerJpa = Tower::select(['id','name'])->where('id', $salesProduct->_tower)->first();
+
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
             }
@@ -727,7 +847,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
                                     $stock->mount_new = $stock->mount_new + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
                                     $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
                                     $stock->mount_new = $stock->mount_new - $mount_dif;
                                 }
@@ -737,7 +857,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
                                     $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
                                     $stock->mount_second = $stock->mount_second + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
                                     $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
                                     $stock->mount_second = $stock->mount_second - $mount_dif;
                                 }
@@ -747,7 +867,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated - $mount_dif;
                                 }
@@ -779,7 +899,7 @@ class TowerController extends Controller
                             $stock->mount_ill_fated =  $stock->mount_ill_fated - $product['mount_ill_fated'];
                             $productJpa->mount = $stock->mount_new - $stock->mount_second;
                         } else {
-                            $productJpa->disponibility = "TORRE";
+                            $productJpa->disponibility = "TORRE: ".$towerJpa->name;
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -998,7 +1118,6 @@ class TowerController extends Controller
                 if ($column == 'product__serie' || $column == '*') {
                     $q->orWhere('product__serie', $type, $value);
                 }
-               
             })->where('tower__id', $request->search['tower']);
 
             $iTotalDisplayRecords = $query->count();
@@ -1030,7 +1149,8 @@ class TowerController extends Controller
         }
     }
 
-    public function searchProductsByTowerByModel(Request $request){
+    public function searchProductsByTowerByModel(Request $request)
+    {
         $response = new Response();
         try {
 
@@ -1079,7 +1199,7 @@ class TowerController extends Controller
 
             $towerJpa = Tower::find($request->_tower);
             if (!$towerJpa) {
-                throw new Exception('La torre que deseas eliminar no existe');
+                throw new Exception('La torre no existe');
             }
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
@@ -1128,7 +1248,7 @@ class TowerController extends Controller
 
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
-                    
+
                     $productJpa = Product::find($product['product']['id']);
                     $stock = Stock::where('_model', $productJpa->_model)
                         ->where('_branch', $branch_->id)
@@ -1187,7 +1307,7 @@ class TowerController extends Controller
             $response->setMessage('Operación correcta');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -1373,6 +1493,531 @@ class TowerController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = new PhotographsByTower();
+            $PhotographsByTowerJpa->_tower = $request->id;
+            $PhotographsByTowerJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByTowerJpa->image_type = $request->image_type;
+                    $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByTowerJpa->_creation_user = $userid;
+            $PhotographsByTowerJpa->creation_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->_update_user = $userid;
+            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->status = "1";
+            $PhotographsByTowerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByTowerJpa = PhotographsByTower::find($request->id);
+            $PhotographsByTowerJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByTowerJpa->image_type = $request->image_type;
+                    $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $PhotographsByTowerJpa->_update_user = $userid;
+            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_tower', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByTowerJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = PhotographsByTower::select([
+                "photographs_by_tower.image_$size as image_content",
+                'photographs_by_tower.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/antena-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+
+            $PhotographsByTowerJpa = PhotographsByTower::find($id);
+            $PhotographsByTowerJpa->_update_user = $userid;
+            $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByTowerJpa->status = null;
+            $PhotographsByTowerJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportByLiquidation(Request $request)
+    {
+        set_time_limit(120);
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportLiquidationTower.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'products.id AS product__id',
+                'products.type AS product__type',
+                'models.id AS product__model__id',
+                'models.model AS product__model__model',
+                'models.relative_id AS product__model__relative_id',
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'products.relative_id AS product__relative_id',
+                'products.mac AS product__mac',
+                'products.serie AS product__serie',
+                'products.price_sale AS product__price_sale',
+                'products.currency AS product__currency',
+                'products.num_guia AS product__num_guia',
+                'products.condition_product AS product__condition_product',
+                'products.disponibility AS product__disponibility',
+                'products.product_status AS product__product_status',
+                'branches.id AS sale_product__branch__id',
+                'branches.name AS sale_product__branch__name',
+                'branches.correlative AS sale_product__branch__correlative',
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('products', 'detail_sales._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->join('sales_products', 'detail_sales._sales_product', 'sales_products.id')
+                ->join('branches', 'sales_products._branch', 'branches.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $request->id)
+                ->get();
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+            $models = array();
+            $details_product = '';
+            foreach ($details as $product) {
+                $details_equipment = 'display:none;';
+                if ($product['product']['type'] == 'EQUIPO') {
+                    $details_equipment = '';
+                }
+                $details_product .="
+                    <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                        <center>
+                            <p><strong>{$product['product']['model']['model']}</strong></p>
+                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:5px;border:solid 2px #000;'></img>
+                            <div style='{$details_equipment}'>
+                                <p>Mac: <strong>{$product['product']['mac']}</strong><p>
+                                <p>Serie: <strong>{$product['product']['serie']}</strong></p>                                 
+                            </div>
+                            <div>
+                                <p style='font-size:20px; color:#2f6593'>Nu:{$product['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                            </div>
+                        </center>
+                    </div>
+                ";
+
+
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model, 
+                        'mount_new' => $mount_new, 
+                        'mount_second' => $mount_second, 
+                        'mount_ill_fated' => $mount_ill_fated, 
+                        'relative_id' => $relativeId, 
+                        'unity' => $unity);
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td>
+                        <center style='font-size:12px;color:green;'>
+                            Nu:{$detail['mount_new']} | 
+                            Se:{$detail['mount_second']} | 
+                            Ma:{$detail['mount_ill_fated']}
+                        </center>
+                    </td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{project_name}',
+                    '{technical}',
+                    '{date_sale}',
+                    '{description}',
+                    '{summary}',
+                    '{details}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->tower['name'],
+                    $request->technical['name'].' '.$request->technical['lastname'],
+                    $request->date_sale,
+                    $request->description,
+                    $sumary,
+                    $details_product,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function reportDetailsByTower(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByTower.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+          
+
+            $TowerJpa = Tower::find($request->id);
+
+            $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_tower', $TowerJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByTowerJpa as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px #000;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{tower_name}',
+                    '{description}',
+                    '{relative_id}',
+                    '{latitude}',
+                    '{longitude}',
+                    '{ejecutive}',
+                    '{images}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $TowerJpa->name,
+                    $TowerJpa->description,
+                    $TowerJpa->relative_id,
+                    $TowerJpa->latitude,
+                    $TowerJpa->longitude,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $images,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Torre.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
