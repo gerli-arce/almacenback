@@ -102,6 +102,8 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->search['column'] == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
+                } else if($request->search['column'] == 'SALES'){
+                    $query->where('type_operation__operation', 'VENTA');
                 }
             }
 
