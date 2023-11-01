@@ -10,7 +10,6 @@ use App\Models\DetailSale;
 use App\Models\People;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
-use App\Models\RecordProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
@@ -81,6 +80,8 @@ class FauldController extends Controller
                     $productJpa = Product::find($product['product']['id']);
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
                         ->where('_model', $product['product']['model']['id'])->first();
 
                     if ($product['product']['type'] == "MATERIAL") {
@@ -286,7 +287,9 @@ class FauldController extends Controller
                         ]
                     )
                         ->where('_technical', $InstallationJpa->technical__id)
-                        ->where('_product', $detail['product']['id'])
+                        ->where('_model', $detail['product']['model']['id'])
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
                         ->first();
 
                     $detail['max_new'] = $productByTechnicalJpa->mount_new + $detail['mount_new'];
@@ -378,7 +381,9 @@ class FauldController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_model', $product['product']['model']['id'])->first();
+                                ->whereNotNull('status')
+                                ->whereNot('type', 'LEND')
+                                ->where('_model', $product['product']['model']['id'])->first();
                             if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
@@ -442,7 +447,9 @@ class FauldController extends Controller
                         if ($product['product']['type'] == "MATERIAL") {
 
                             $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
-                            ->where('_model', $product['product']['model']['id'])->first();
+                                ->whereNotNull('status')
+                                ->whereNot('type', 'LEND')
+                                ->where('_model', $product['product']['model']['id'])->first();
 
                             if ($product['mount_new'] > 0) {
                                 $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
@@ -524,10 +531,10 @@ class FauldController extends Controller
             $ProductJpa->save();
 
             $stock = Stock::where('_model', $ProductJpa->_model)
-            ->where('_branch', $branch_->id)
-            ->first();
+                ->where('_branch', $branch_->id)
+                ->first();
 
-            $stock->mount_second = $stock->mount_second +1;
+            $stock->mount_second = $stock->mount_second + 1;
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -712,7 +719,7 @@ class FauldController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'faulds_pending', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar instalaciones pendientes');
+                throw new Exception('No tienes permisos para eliminar averia pendientes');
             }
             if (
                 !isset($request->id)
@@ -738,10 +745,11 @@ class FauldController extends Controller
                     ->where('_branch', $branch_->id)
                     ->first();
 
-                $productJpa->status_product = "DISPONIBLE";
+                $productJpa->disponibility = "DISPONIBLE";
                 if ($productJpa->type == "MATERIAL") {
-
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $saleProductJpa->_technical)
+                        ->whereNotNull('status')
+                        ->whereNot('type', 'LEND')
                         ->where('_model', $productJpa->_model)->first();
                     $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $detail['mount_new'];
                     $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $detail['mount_second'];
@@ -752,6 +760,8 @@ class FauldController extends Controller
                         $stock->mount_new = $stock->mount_new + 1;
                     } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second = $stock->mount_second + 1;
+                    }else{
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
                 }
                 $stock->save();

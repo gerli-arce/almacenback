@@ -847,7 +847,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);
                                     $stock->mount_new = $stock->mount_new + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_new) < intval($product['mount_new'])) {
                                     $mount_dif = intval($product['mount_new']) - intval($detailSale->mount_new);
                                     $stock->mount_new = $stock->mount_new - $mount_dif;
                                 }
@@ -857,7 +857,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_second) > intval($product['mount_second'])) {
                                     $mount_dif = intval($detailSale->mount_second) - intval($product['mount_second']);
                                     $stock->mount_second = $stock->mount_second + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_second) < intval($product['mount_second'])) {
                                     $mount_dif = intval($product['mount_second']) - intval($detailSale->mount_second);
                                     $stock->mount_second = $stock->mount_second - $mount_dif;
                                 }
@@ -867,7 +867,7 @@ class TowerController extends Controller
                                 if (intval($detailSale->mount_ill_fated) > intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($detailSale->mount_ill_fated) - intval($product['mount_ill_fated']);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
-                                } else if (intval($detailSale->mount) < intval($product['mount'])) {
+                                } else if (intval($detailSale->mount_ill_fated) < intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($product['mount_ill_fated']) - intval($detailSale->mount_ill_fated);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated - $mount_dif;
                                 }
@@ -1977,7 +1977,7 @@ class TowerController extends Controller
                     <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
                     <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                     <center>
-                        <img src='https://almacendev.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px #000;'>
+                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px #000;'>
                     </center>
                 </div>
                 ";

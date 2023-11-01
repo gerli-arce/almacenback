@@ -102,6 +102,42 @@ class PeopleController extends Controller
         }
     }
 
+    public function searchByDocument(Request $request,$doc_type, $doc_number){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'people', 'read')) {
+                throw new Exception('No tienes permisos para listar personas');
+            }
+
+            $peopleJpa = ViewPeople::select('*')
+                ->whereNotNull('status')
+                ->where("doc_type", $doc_type)
+                ->where("doc_number", $doc_number)
+                ->first();
+
+            if(empty($peopleJpa)){
+                throw new Exception('No se encontro el registro');
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData([$peopleJpa]);
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function searchById(Request $request, $id)
     {
         $response = new Response();

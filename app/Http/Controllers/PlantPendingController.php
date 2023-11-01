@@ -1095,7 +1095,7 @@ class PlantPendingController extends Controller
                         $productByPlantJpa_new = new ProductByPlant();
                         $productByPlantJpa_new->_product = $productJpa->id;
                         $productByPlantJpa_new->_plant = $saleProductJpa->_plant;
-                        $productByPlantJpa_new->_model = $saleProductJpa->_model;
+                        $productByPlantJpa_new->_model = $productJpa->_model;
                         $productByPlantJpa_new->mount_new = $detail['mount_new'];
                         $productByPlantJpa_new->mount_second = $detail['mount_second'];
                         $productByPlantJpa_new->mount_ill_fated = $detail['mount_ill_fated'];
@@ -2219,6 +2219,159 @@ class PlantPendingController extends Controller
                     $request->date_end,
                     $request->description,
                     $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportByProject(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para generar reporte de proyectos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportProject.html');
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $productByPlantJpa = ViewProductsByPlant::where('plant__id', $request->id)->whereNotNull('status')->get();
+
+            $stock_plant = [];
+
+            foreach ($productByPlantJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_plant[] = $product;
+            }
+
+            $models = array();
+            foreach ($stock_plant as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity =  $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity
+                    );
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>Nu:{$detail['mount_new']} || Se:{$detail['mount_second']} || Ma:{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+
+
+            
+            $PlantJpa = Plant::find($request->id);
+            
+            $PhotographsByPlant = PhotographsByPlant::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_plant', $PlantJpa->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images = '';
+
+
+            $count = 1;
+
+            foreach($PhotographsByPlant as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='https://almacen.fastnetperu.com.pe/api/plant_pendingimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto; margin-top:5px;border:solid 2px #000;'>
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{project_name}',
+                    '{leader}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{description}',
+                    '{summary}',
+                    '{images}',
+                    '{id}'
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->name,
+                    $request->leader['name'] . ' ' . $request->leader['lastname'],
+                    $request->date_start,
+                    $request->date_end,
+                    $request->description,
+                    $sumary,
+                    $images,
+                    $PlantJpa->id,
                 ],
                 $template
             );

@@ -249,8 +249,7 @@
                             border: solid 2px #000;
                         ">
                     <p>RUC 20602791816</p>
-                    <p>GUIA DEL MES DE</p>
-                    <p>{month}</p>
+                    <p>ENVIOS Y RECEPCION DE ENCOMIENDAS</p>
                 </div>
             </div>
         </div>
@@ -258,14 +257,43 @@
         <p id="date">{branch_onteraction}, {issue_long_date}</p>
         <div>
             <p>SUCURSAL: <strong>{branch_selected}</strong></p>
-            <p>ENCOMIENDAS ENVIADAS: <strong>{parcels_send}</strong></p>
-            <p>ENCOMIENDAS RECIBIDAS: <strong>{parcel_received}</strong></p>
+            <p>ENCOMIENDAS: <strong>{parcels}</strong></p>
             <p>FECHA INICIO: <strong>{date_start}</strong></p>
             <p>FECHA FIN: <strong>{date_end}</strong></p>
         </div>
 
+      
+
         <center class="text-bold" style="margin-top: 8px">PRODUCTOS ENVIADOS</center>
-        <table style="height: 370px">
+        <h3>Estado de equipos</h3>
+        <table>
+            <thead style="background-color: yellow;">
+                <tr>
+                    <td>MODELO</td>
+                    <td>CANTIDAD</td>
+                    <td>DISPONIBLE</td>
+                    <td>LIQUIDADO</td>
+                </tr>
+            </thead>
+            <tbody>
+                {details_send}
+                <!-- <tr>
+                    <td>
+                        fastnet
+                    </td>
+                    <td>
+                        12
+                    </td>
+                    <td>
+                        3
+                    </td>
+                    <td>9</td>
+                </tr> -->
+            </tbody>
+        </table>
+        <br>
+        <h3>Productos</h3>
+        <table>
             <thead>
                 <tr>
                     <td>#</td>
@@ -277,28 +305,10 @@
                 </tr>
             </thead>
             <tbody>
-                {summary_send}
+                {summary}
             </tbody>
         </table>
 
-        <center class="text-bold" style="margin-top: 8px">PRODUCTOS RECIBIDOS</center>
-        <table style="height: 370px">
-            <thead>
-                <tr>
-                    <td>#</td>
-                    <td>DESCRIPCIÓN</td>
-                    <td>NU</td>
-                    <td>SE</td>
-                    <td>MA</td>
-                    <td>UNID.</td>
-                </tr>
-            </thead>
-            <tbody>
-                {summary_received}
-            </tbody>
-        </table>
-       
-       
     </main>
 </body>
 

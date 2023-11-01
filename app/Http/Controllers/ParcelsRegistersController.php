@@ -14,13 +14,17 @@ use App\Models\Parcel;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
-use App\Models\ViewUsers;
 use App\Models\ViewParcelsRegisters;
+use App\Models\ViewProducts;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+
+use App\Models\ExcelExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ParcelsRegistersController extends Controller
 {
@@ -178,7 +182,7 @@ class ParcelsRegistersController extends Controller
                         if ($productValidation) {
                             if ($productValidation->mac == $product['mac']) {
                                 $is_duplicate = true;
-                                $message_error .=  "Ya existe un produto con el número MAC: " . $product['mac'];
+                                $message_error .= "Ya existe un produto con el número MAC: " . $product['mac'];
                             }
                             if ($productValidation->serie == $product['serie']) {
                                 $is_duplicate = true;
@@ -286,15 +290,12 @@ class ParcelsRegistersController extends Controller
                     ->first();
 
                 if (isset($productJpa)) {
-                    $mount_old = $productJpa->mount;
-                    $mount_new = $mount_old + $request->mount_product;
-
                     $productJpa->type = $request->type;
                     $productJpa->_branch = $branch_->id;
                     $productJpa->relative_id = guid::short();
                     $productJpa->_model = $request->_model;
                     $productJpa->_provider = $request->_provider;
-                    $productJpa->mount = $mount_new;
+                    $productJpa->mount = $productJpa->mount + $request->mount_product;
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
                         $productJpa->price_buy = $request->value_unity;
@@ -399,6 +400,14 @@ class ParcelsRegistersController extends Controller
                     $entryDetailJpa->status = "1";
                     $entryDetailJpa->save();
                 }
+            }
+
+            if ($request->update_price_sale == "NEW") {
+                $model_->currency = $request->currency;
+                $model_->price_buy = $request->value_unity;
+                $model_->price_sale = $request->price_buy;
+                $model_->mr_revenue = $request->mr_revenue;
+                $model_->save();
             }
 
             $stock = Stock::where('_model', $request->_model)
@@ -884,17 +893,16 @@ class ParcelsRegistersController extends Controller
                 'id',
                 'username',
                 'person__name',
-                'person__lastname'
+                'person__lastname',
             ])->where('id', $userid)->first();
 
-
             $parcelsJpa = ViewParcelsRegisters::select(['*'])
-                ->orderBy('id', 'desc')
+                ->orderBy('date_entry', 'desc')
                 ->whereNotNull('status')
                 ->where('branch__correlative', $branch)
                 ->where('date_entry', '<=', $request->date_end)
                 ->where('date_entry', '>=', $request->date_start)
-                ->get();;
+                ->get();
 
             $parcels = array();
             foreach ($parcelsJpa as $parcelJpa) {
@@ -909,7 +917,7 @@ class ParcelsRegistersController extends Controller
                 $model = "
                 <div>
                     <p style='font-size: 9px;'><strong>{$parcel['model']['model']}</strong></p>
-                    <img class='img-fluid img-thumbnail' 
+                    <img class='img-fluid img-thumbnail'
                         src='https://almacen.fastnetperu.com.pe/api/model/{$parcel['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin:0px;'>
                 </div>
                 ";
@@ -956,7 +964,6 @@ class ParcelsRegistersController extends Controller
                 </div>
                 ";
 
-
                 $sumary .= "
                 <tr>
                     <td><center >{$count}</center></td>
@@ -968,18 +975,16 @@ class ParcelsRegistersController extends Controller
                 </tr>
                 ";
 
-
                 $bills .= "
                 <div style='page-break-before: always;'>
                     <p><strong>{$count}) {$parcel['model']['model']}</strong></p>
                     <center>
-                        <img 
+                        <img
                             src='https://almacen.fastnetperu.com.pe/api/parcelimg/{$parcel['id']}/full' alt='-' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:500px;'>
-                    
+
                     </center>
                 </div>
                 ";
-
 
                 $count += 1;
             }
@@ -1018,4 +1023,264 @@ class ParcelsRegistersController extends Controller
             );
         }
     }
+
+    public function generateReportByParcel(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'parcels_registers', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiendas registradas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('enable_html5_parser', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportParcelRegisterByParcel.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            
+            $productJpa = ViewProducts::select(['*'])
+            ->orderBy('id', 'desc')->where('num_guia', $request->num_guia)->where('model__id', $request->model['id'])->get();
+            
+            $sumary = '';
+            $user_creation = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $request->creation_user)->first();
+            $products = array();
+
+            $count = 1;
+
+            foreach ($productJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+
+                $datos = "
+                <div>
+                    <p>Mac: <strong>{$product['mac']}</strong></p>
+                    <p>Serie: <strong>{$product['serie']}</strong></p>
+                </div>
+                ";
+                $estado = "
+                <div>
+                    <p>Estado: <strong>{$product['product_status']}</strong></p>
+                    <p>Disponibilidad: <strong>{$product['disponibility']}</strong></p>
+                </div>
+                ";
+                $sucursal = "
+                <div>
+                    <strong>{$product['branch']['name']}</strong>
+                </div>
+                ";
+                $sumary.="
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$datos}</td>
+                    <td>{$estado}</td>
+                    <td>{$sucursal}</td>
+                </tr>
+                ";
+                $count +=1;
+                $products[] = $product;
+            }
+
+
+            $parts = explode(" ", $request->date_entry);
+            $date = $parts[0];
+            $dateFormater = date("Y-m-d", strtotime($date));
+
+            $template = str_replace(
+                [
+                    '{id_parcel}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{date_entry}',
+                    '{num_bill}',
+                    '{num_guia}',
+                    '{user_register}',
+                    '{model}',
+                    '{category}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $dateFormater,
+                    $request->num_bill,
+                    $request->num_guia,
+                    $user_creation->person__name.' '.$user_creation->person__lastname,
+                    $request->model['model'],
+                    $request->model['category']['category'],
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Detalles de encomienda - '.str_pad($request->id, 6, "0", STR_PAD_LEFT).'.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('OPeracion correcta');
+            // $response->setData($products);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function exportDataToExcel(Request $request)
+    {
+
+        try {
+
+            $month = [
+                '1' => 'ENERO',
+                '2' => 'FEBRERO',
+                '3' => 'MARZO',
+                '4' => 'ABRIL',
+                '5' => 'MAYO',
+                '6' => 'JUNIO',
+                '7' => 'JULIO',
+                '8' => 'AGOSTO',
+                '9' => 'SEPTIEMBRE',
+                '10' => 'OCTUBRE',
+                '11' => 'NOVIEMBRE',
+                '12' => 'DICIEMBRE',
+            ];
+
+            $query = ViewParcelsRegisters::select(['*'])
+                ->whereNotNull('status')
+                ->orderBy('id', 'desc');
+
+            if (isset($request->date_start) && isset($request->date_end)) {
+                // Convertir las fechas al formato de la base de datos (Y-m-d)
+                $dateStart = \DateTime::createFromFormat('d/m/Y', $request->date_start)->format('Y-m-d');
+                $dateEnd = \DateTime::createFromFormat('d/m/Y', $request->date_end)->format('Y-m-d');
+
+                $query->where('date_entry', '<=', $dateEnd)
+                    ->where('date_entry', '>=', $dateStart);
+            }
+
+            $parcelsJpa = $query->get();
+
+            $parcels = array();
+
+            foreach ($parcelsJpa as $parcelJpa) {
+
+                $currency = '$';
+
+                if ($parcelJpa->currency == 'SOLES') {
+                    $currency = 'S/';
+                }
+
+                $parcel['date_send'] = $parcelJpa->date_send;
+                $parcel['num_voucher'] = $parcelJpa->num_voucher;
+                $parcel['business_transport__name'] = $parcelJpa->business_transport__name;
+                $parcel['price_transport'] = $parcelJpa->price_transport;
+                $parcel['date_entry'] = $parcelJpa->date_entry;
+                $parcel['num_guia'] = $parcelJpa->num_guia;
+                $parcel['provider__name'] = $parcelJpa->provider__name;
+                $parcel['model__model'] = $parcelJpa->model__model;
+                $parcel['description'] = $parcelJpa->description;
+                $parcel['model__unity__name'] = $parcelJpa->model__unity__name;
+                $parcel['mount_product'] = $parcelJpa->mount_product;
+                $parcel['num_bill'] = $parcelJpa->num_bill;
+                $parcel['business_designed__name'] = $parcelJpa->business_designed__name;
+                if ($parcelJpa->value_unity != 0) {
+                    $parcel['value_unity'] = $parcelJpa->value_unity;
+                } else {
+                    $parcel['value_unity'] = '0';
+                }
+                if ($parcelJpa->amount != 0) {
+                    $parcel['amount'] = $parcelJpa->amount;
+                } else {
+                    $parcel['amount'] = '0';
+                }
+                if ($parcelJpa->igv != 0) {
+                    $parcel['igv'] = $parcelJpa->igv;
+                } else {
+                    $parcel['igv'] = '0';
+                }
+                if ($parcelJpa->price_unity != 0) {
+                    $parcel['price_unity'] = $parcelJpa->price_unity;
+                } else {
+                    $parcel['price_unity'] = '0';
+                }
+                if ($parcel['amount'] != '0' || $parcel['igv'] != '0') {
+                    $parcel['price'] = round($parcelJpa->amount + $parcelJpa->igv, 2);
+                } else {
+                    $parcel['price'] = '0';
+                }
+                if ($parcel['price'] != '0' && $parcel['mount_product'] != '0') {
+                    $parcel['price_with_igv'] = round($parcel['price'] / $parcel['mount_product'], 2);
+                    $parcel['35%'] = round($parcel['price_with_igv'] * 0.35, 2);
+                    $parcel['price_all'] = round($parcel['price_with_igv'] + $parcel['35%'], 2);
+                } else {
+                    $parcel['price_with_igv'] = '0';
+                    $parcel['35%'] = '0';
+                    $parcel['price_all'] = '0';
+                }
+
+                $parcel['value_unity'] = $currency . $parcel['value_unity'];
+                $parcel['amount'] = $currency . $parcel['amount'];
+                $parcel['igv'] = $currency . $parcel['igv'];
+                $parcel['price_unity'] = $currency . $parcel['price_unity'];
+                $parcel['price'] = $currency . $parcel['price'];
+                $parcel['price_with_igv'] = $currency . $parcel['price_with_igv'];
+                $parcel['35%'] = $currency . $parcel['35%'];
+                $parcel['price_all'] = $currency . $parcel['price_all'];
+
+                $parcels[] = $parcel;
+            }
+
+            if (!isset($request->date_start) && !isset($request->date_end)) {
+                $export = new ExcelExport($parcels, 'ESTE AÑO');
+            } else {
+                $export = new ExcelExport($parcels, $month[$request->month]);
+            }
+
+            $tempFilePath = 'public/temp/archivo_excel.xlsx';
+            Excel::store($export, $tempFilePath);
+            $tempFilePath = storage_path('app/' . $tempFilePath);
+            $excelContent = file_get_contents($tempFilePath);
+            $base64Content = base64_encode($excelContent);
+            return response()->json(['base64' => $base64Content]);
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
+    }
+
 }

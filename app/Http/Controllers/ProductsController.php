@@ -159,13 +159,13 @@ class ProductsController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($request->product_status == "SEMINUEVO") {
-                        $entryDetail->mount_second = $productJpa->mount_second;
+                        $entryDetail->mount_second = 1;
                         $stock->mount_second = intval($stock->mount_second) + 1;
                     } else if ($request->product_status == "NUEVO") {
-                        $entryDetail->mount_new = $productJpa->mount_new;
+                        $entryDetail->mount_new = 1;
                         $stock->mount_new = intval($stock->mount_new) + 1;
-                    } else if ($request->product_status == "MALOGRADO") {
-                        $entryDetail->mount_ill_fated = $productJpa->mount_ill_fated;
+                    } else {
+                        $entryDetail->mount_ill_fated = 1;
                         $stock->mount_ill_fated = intval($stock->mount_ill_fated) + 1;
                     }
 
@@ -383,6 +383,10 @@ class ProductsController extends Controller
 
                 if ($column == 'id' || $column == '*') {
                     $q->orWhere('id', $type, $value);
+                }
+
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
                 }
                 if ($column == 'model__brand__brand' || $column == '*') {
                     $q->orWhere('model__brand__brand', $type, $value);
@@ -689,6 +693,9 @@ class ProductsController extends Controller
                 if ($column == 'serie' || $column == '*') {
                     $q->orWhere('serie', $type, $value);
                 }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
                 if ($column == 'price_buy' || $column == '*') {
                     $q->orWhere('price_buy', $type, $value);
                 }
@@ -774,8 +781,10 @@ class ProductsController extends Controller
                 }
                 if (isset($request->serie)) {
                     $productValidation = Product::select(['id', 'serie'])
-                        ->orWhere('serie', $request->serie)
+                        ->where('serie', $request->serie)
                         ->where('id', '!=', $request->id)
+                        ->where('mac', '!=', "")
+                        ->whereNotNull('mac')
                         ->first();
 
                     if ($productValidation->serie == $request->serie) {
