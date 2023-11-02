@@ -289,11 +289,7 @@ class SalesController extends Controller
             $view_details = '';
             foreach ($sales as $sale) {
 
-                $instalation_details = "";
-                $plant_details = "";
-                $tower_details = "";
-                $fauld_details = "";
-                $parcel_details = "";
+                $instalation_details =  $sale_details = $plant_details = $tower_details = $fauld_details = $parcel_details = "";
 
                 if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'INSTALACION' || $sale['type_operation']['operation'] == 'AVERIA') {
                     $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
@@ -301,9 +297,22 @@ class SalesController extends Controller
 
                     $instalation_details = "
                     <div>
-                        <p>Cliente: <strong>{$install['client']['name']} {$install['client']['lastname']}</strong></p>
-                        <p>Técnico: <strong>{$install['technical']['name']} {$install['technical']['lastname']}</strong></p>
-                        <p>Fecha: <strong>{$install['date_sale']}</strong></p>
+                        <table class='table_details'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>CLIENTE</td>
+                                    <td>{$install['client']['name']} {$install['client']['lastname']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>TECNICO</td>
+                                    <td>{$install['technical']['name']} {$install['technical']['lastname']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$install['date_sale']}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'PLANTA') {
@@ -328,9 +337,9 @@ class SalesController extends Controller
                         $plant_details = "
                         <div>
                             <p>Tipo: LIQUIDACION</p>
-                            <p>Proyecto:{$viewPlant->id}) <strong>{$viewPlant->plant__name}</strong></p>
-                            <p>Técnico: <strong>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</strong></p>
-                            <p>Fecha: <strong>{$viewPlant->date_sale}</strong></p>
+                            <p><strong>Proyecto:{$viewPlant->id})</strong> {$viewPlant->plant__name}</p>
+                            <p><strong>Técnico:</strong> {$viewPlant->technical__name} {$viewPlant->technical__lastname}</p>
+                            <p><strong>Fecha:</strong> {$viewPlant->date_sale}</p>
                         </div>
                         ";
                     } else {
@@ -340,8 +349,8 @@ class SalesController extends Controller
                             $plant_details = "
                               <div>
                                     <p>Tipo: AGREGADO A STOCK</p>
-                                    <p>Proyecto: {$PlantJpa->id}) <strong>{$PlantJpa->name}</strong></p>
-                                    <p>Fecha: <strong>{$sale['date_sale']}</strong></p>
+                                    <p><strong>Proyecto:</strong> {$PlantJpa->id}) {$PlantJpa->name}</p>
+                                    <p><strong>Fecha:</strong> {$sale['date_sale']}</p>
                               </div>
                               ";
                         }
@@ -367,9 +376,9 @@ class SalesController extends Controller
 
                     $tower_details = "
                     <div>
-                        <p>Torre: <strong>{$saleProductJpa->tower__name}</strong></p>
-                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
-                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                        <p><strong>Torre:</strong> {$saleProductJpa->tower__name}</p>
+                        <p><strong>Técnico:</strong> {$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</p>
+                        <p><strong>Fecha:</strong> {$saleProductJpa->date_sale}</p>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'PARA TECNICO') {
@@ -388,8 +397,8 @@ class SalesController extends Controller
 
                     $tower_details = "
                     <div>
-                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
-                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                        <p><strong>Técnico:</strong> {$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</p>
+                        <p><strong>Fecha:</strong> {$saleProductJpa->date_sale}</p>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'ENCOMIENDA') {
@@ -411,8 +420,8 @@ class SalesController extends Controller
 
                     $sale_details = "
                     <div>
-                        <p>Cliente: <strong>{$saleJpa['client']['name']} {$saleJpa['client']['lastname']}</strong></p>
-                        <p>Fecha: <strong>{$saleJpa['date_sale']}</strong></p>
+                        <p><strong>Cliente:</strong> {$saleJpa['client']['name']} {$saleJpa['client']['lastname']}</p>
+                        <p><strong>Fecha:</strong> {$saleJpa['date_sale']}</p>
                     </div>
                     ";
                 }
@@ -429,9 +438,9 @@ class SalesController extends Controller
 
                 $datos = "
                     <div>
-                        <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
-                        <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
-                        <p>Descripción: <strong>{$sale['description']}</strong></p>
+                        <p><strong>Tipo operación:</strong> {$sale['type_operation']['operation']}</p>
+                        <p><strong>Tipo salida:</strong> {$tipo_instalacion}</p>
+                        <p><strong>Descripción:</strong> {$sale['description']}</p>
                     </div>
                 ";
 
