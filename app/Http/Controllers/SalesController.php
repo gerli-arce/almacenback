@@ -14,6 +14,7 @@ use App\Models\ViewDetailsSales;
 use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
+use App\Models\Sale;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -231,7 +232,7 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
-                }else if($request->search['column'] == 'SALES'){
+                }else if($request->filter == 'SALES'){
                     $query->where('type_operation__operation', 'VENTA');
                 }
             }
