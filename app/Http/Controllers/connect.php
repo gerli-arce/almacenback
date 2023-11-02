@@ -70,6 +70,13 @@ class connect extends Controller
                 ->orderBy('id', 'desc');
 
             if (isset($request->date_start) && isset($request->date_end)) {
+<<<<<<< HEAD
+                $query->where('date_entry', '<=', $request->date_end)
+                    ->where('date_entry', '>=', $request->date_start);
+            }
+
+            
+=======
                 // Convertir las fechas al formato de la base de datos (Y-m-d)
                 $dateStart = \DateTime::createFromFormat('d/m/Y', $request->date_start)->format('Y-m-d');
                 $dateEnd = \DateTime::createFromFormat('d/m/Y', $request->date_end)->format('Y-m-d');
@@ -77,6 +84,7 @@ class connect extends Controller
                 $query->where('date_entry', '<=', $dateEnd)
                     ->where('date_entry', '>=', $dateStart);
             }
+>>>>>>> 0fc012505142ac1e92d55a318dcf6b7de17b5cfc
 
             $parcelsJpa = $query->get();
 
@@ -149,11 +157,22 @@ class connect extends Controller
                 $parcels[] = $parcel;
             }
 
+<<<<<<< HEAD
+            // if (!isset($request->date_start) && !isset($request->date_end)) {
+            //     $export = new ExcelExport($parcels, 'ESTE AÑO' );
+            // }else{
+                // $export = new ExcelExport($parcels,$month[$request->month] );
+            // }
+            
+            $export = new ExcelExport($parcels, 'INFORME');
+
+=======
             if (!isset($request->date_start) && !isset($request->date_end)) {
                 $export = new ExcelExport($parcels, 'ESTE AÑO');
             } else {
                 $export = new ExcelExport($parcels, $month[$request->month]);
             }
+>>>>>>> 0fc012505142ac1e92d55a318dcf6b7de17b5cfc
 
             $tempFilePath = 'public/temp/archivo_excel.xlsx';
             Excel::store($export, $tempFilePath);
