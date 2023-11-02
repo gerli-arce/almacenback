@@ -102,6 +102,8 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->search['column'] == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
+                } else if($request->search['column'] == 'SALES'){
+                    $query->where('type_operation__operation', 'VENTA');
                 }
             }
 
@@ -229,6 +231,8 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
+                }else if($request->search['column'] == 'SALES'){
+                    $query->where('type_operation__operation', 'VENTA');
                 }
             }
 
@@ -367,6 +371,16 @@ class SalesController extends Controller
                         <p>Fecha de recojo: {$ParcelJpa->date_entry}</p>
                     </div>
                     ";
+                } else if ($sale['type_operation']['operation'] == 'VENTA'){
+                    $viewSale = Sale::where('id', $sale['id'])->first();
+                    $saleJpa = gJSON::restore($viewSale->toArray(), '__');
+
+                    $sale_details = "
+                    <div>
+                        <p>Cliente: <strong>{$saleJpa['client']['name']} {$saleJpa['client']['lastname']}</strong></p>
+                        <p>Fecha: <strong>{$saleJpa['date_sale']}</strong></p>
+                    </div>
+                    ";
                 }
 
                 $usuario = "
@@ -399,6 +413,7 @@ class SalesController extends Controller
                 <div style='margin-top:8px;'>
                     <p style='margin-buttom: 12px;'><strong>{$count}){$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
+                        {$sale_details}
                         {$instalation_details}
                         {$plant_details}
                         {$tower_details}
@@ -575,6 +590,8 @@ class SalesController extends Controller
                     //         ->where('view_sales.type_products', '=', 'PRODUCTS');
                     // })
                     ;
+                }else if($request->filter == 'SALES'){
+                    $query->where('view_sales.type_operation__operation', 'VENTA');
                 }
             }
 

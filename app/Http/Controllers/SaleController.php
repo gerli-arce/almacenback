@@ -273,7 +273,7 @@ class SaleController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
-                        $productJpa->disponibility = 'INSTALACION: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
+                        $productJpa->disponibility = 'VENDIDO A: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
                     }
                     $stock->save();
                     $productJpa->save();
