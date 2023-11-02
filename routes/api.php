@@ -443,6 +443,7 @@ Route::post('/entry/report', [EntrysController::class, 'generateReportByDate']);
 Route::post('/sales/paginate', [SalesController::class, 'paginate']);
 Route::post('/sales/report/date', [SalesController::class, 'generateReportBydate']);
 Route::post('/sales/report', [SalesController::class, 'generateReport']);
+Route::get('/sales/details/{id}', [SalesController::class, 'getDetailsSaleById']);
 
 // ROOM
 Route::post('/room', [RoomController::class, 'store']);

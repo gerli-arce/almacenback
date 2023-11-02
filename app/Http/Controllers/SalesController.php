@@ -9,17 +9,16 @@ use App\Models\Branch;
 use App\Models\Parcel;
 use App\Models\Plant;
 use App\Models\Response;
+use App\Models\Sale;
 use App\Models\SalesProducts;
 use App\Models\ViewDetailsSales;
 use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
-use App\Models\Sale;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Database\Query\Builder;
 
 class SalesController extends Controller
 {
@@ -71,42 +70,40 @@ class SalesController extends Controller
                 'view_sales.update_user_id as update_user_id',
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
-
             ])
-                ->distinct()
-                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+            // ->distinct()
+            // ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
                 ->where('view_sales.branch__correlative', $branch)
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir']);
 
-            if (isset($request->search['model'])) {
-                $query
-                    ->where('view_details_sales.product__model__id', $request->search['model']);
-            }
+            // if (isset($request->search['model'])) {
+            //     $query
+            //         ->where('view_details_sales.product__model__id', $request->search['model']);
+            // }
 
-            if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
-                $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
-                $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+            // if (isset($request->search['date_start']) || isset($request->search['date_end'])) {
+            //     $dateStart = date('Y-m-d', strtotime($request->search['date_start']));
+            //     $dateEnd = date('Y-m-d', strtotime($request->search['date_end']));
+            //     $query->where('date_sale', '>=', $dateStart)
+            //         ->where('date_sale', '<=', $dateEnd);
+            // }
 
-                $query->where('date_sale', '>=', $dateStart)
-                    ->where('date_sale', '<=', $dateEnd);
-            }
-
-            if ($request->search['column'] != '*') {
-                if ($request->search['column'] == 'INSTALLATION') {
-                    $query->where('type_operation__operation', 'INSTALACIÓN');
-                } else if ($request->search['column'] == 'FAULD') {
-                    $query->where('type_operation__operation', 'AVERIA');
-                } else if ($request->search['column'] == 'TOWER') {
-                    $query->where('type_operation__operation', 'TORRE');
-                } else if ($request->search['column'] == 'PLANT') {
-                    $query->where('type_operation__operation', 'PLANTA');
-                } else if ($request->search['column'] == 'TECHNICAL') {
-                    $query->where('type_operation__operation', 'PARA TECNICO');
-                } else if($request->search['column'] == 'SALES'){
-                    $query->where('type_operation__operation', 'VENTA');
-                }
-            }
+            // if ($request->search['column'] != '*') {
+            //     if ($request->search['column'] == 'INSTALLATION') {
+            //         $query->where('type_operation__operation', 'INSTALACIÓN');
+            //     } else if ($request->search['column'] == 'FAULD') {
+            //         $query->where('type_operation__operation', 'AVERIA');
+            //     } else if ($request->search['column'] == 'TOWER') {
+            //         $query->where('type_operation__operation', 'TORRE');
+            //     } else if ($request->search['column'] == 'PLANT') {
+            //         $query->where('type_operation__operation', 'PLANTA');
+            //     } else if ($request->search['column'] == 'TECHNICAL') {
+            //         $query->where('type_operation__operation', 'PARA TECNICO');
+            //     } else if($request->search['column'] == 'SALES'){
+            //         $query->where('type_operation__operation', 'VENTA');
+            //     }
+            // }
 
             $iTotalDisplayRecords = $query->count();
 
@@ -118,13 +115,13 @@ class SalesController extends Controller
             $sales = array();
             foreach ($salesJpa as $saleJpa) {
                 $sale = gJSON::restore($saleJpa->toArray(), '__');
-                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
-                $details = array();
-                foreach ($detailSalesJpa as $detailJpa) {
-                    $detail = gJSON::restore($detailJpa->toArray(), '__');
-                    $details[] = $detail;
-                }
-                $sale['details'] = $details;
+                // $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                // $details = array();
+                // foreach ($detailSalesJpa as $detailJpa) {
+                //     $detail = gJSON::restore($detailJpa->toArray(), '__');
+                //     $details[] = $detail;
+                // }
+                // $sale['details'] = $details;
                 $sales[] = $sale;
             }
 
@@ -134,6 +131,42 @@ class SalesController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewSales::where('branch__correlative', $branch)->count());
             $response->setData($sales);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getDetailsSaleById(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
+                throw new Exception('No tienes permisos para listar detalles de las salidas');
+            }
+            $details = array(); 
+
+            $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $id)->get();
+            foreach ($detailSalesJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $response->setMessage('Operacion Correcta');
+            $response->setData($details);
+            $response->setStatus(200);
+
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -232,7 +265,7 @@ class SalesController extends Controller
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
                     $query->where('type_operation__operation', 'PARA TECNICO');
-                }else if($request->filter == 'SALES'){
+                } else if ($request->filter == 'SALES') {
                     $query->where('type_operation__operation', 'VENTA');
                 }
             }
@@ -372,7 +405,7 @@ class SalesController extends Controller
                         <p>Fecha de recojo: {$ParcelJpa->date_entry}</p>
                     </div>
                     ";
-                } else if ($sale['type_operation']['operation'] == 'VENTA'){
+                } else if ($sale['type_operation']['operation'] == 'VENTA') {
                     $viewSale = Sale::where('id', $sale['id'])->first();
                     $saleJpa = gJSON::restore($viewSale->toArray(), '__');
 
@@ -591,12 +624,10 @@ class SalesController extends Controller
                     //         ->where('view_sales.type_products', '=', 'PRODUCTS');
                     // })
                     ;
-                }else if($request->filter == 'SALES'){
+                } else if ($request->filter == 'SALES') {
                     $query->where('view_sales.type_operation__operation', 'VENTA');
                 }
             }
-
-
 
             $salesJpa = $query->get();
             $detailsJpa = [];
