@@ -297,7 +297,7 @@ class SalesController extends Controller
 
                     $instalation_details = "
                     <div>
-                        <table class='table_details'>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
                             <tbody>
                                 <tr>
                                     <td class='n'>CLIENTE</td>
@@ -336,10 +336,26 @@ class SalesController extends Controller
                     if ($viewPlant) {
                         $plant_details = "
                         <div>
-                            <p>Tipo: LIQUIDACION</p>
-                            <p><strong>Proyecto:{$viewPlant->id})</strong> {$viewPlant->plant__name}</p>
-                            <p><strong>Técnico:</strong> {$viewPlant->technical__name} {$viewPlant->technical__lastname}</p>
-                            <p><strong>Fecha:</strong> {$viewPlant->date_sale}</p>
+                            <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                                <tbody>
+                                    <tr>
+                                        <td class='n'>TIPO</td>
+                                        <td>LIQUIDACION</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>PROYECTO</td>
+                                        <td>{$viewPlant->plant__name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>TECNICO</td>
+                                        <td>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>FECHA</td>
+                                        <td>{$viewPlant->date_sale}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         ";
                     } else {
@@ -348,9 +364,22 @@ class SalesController extends Controller
                         if ($PlantJpa) {
                             $plant_details = "
                               <div>
-                                    <p>Tipo: AGREGADO A STOCK</p>
-                                    <p><strong>Proyecto:</strong> {$PlantJpa->id}) {$PlantJpa->name}</p>
-                                    <p><strong>Fecha:</strong> {$sale['date_sale']}</p>
+                                <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                                    <tbody>
+                                        <tr>
+                                            <td class='n'>TIPO</td>
+                                            <td>AGREGADO A STOCK</td>
+                                        </tr>
+                                        <tr>
+                                            <td class='n'>PROYECTO</td>
+                                            <td>{$PlantJpa->name}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class='n'>FECHA</td>
+                                            <td>{$sale['date_sale']}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                               </div>
                               ";
                         }
@@ -376,9 +405,22 @@ class SalesController extends Controller
 
                     $tower_details = "
                     <div>
-                        <p><strong>Torre:</strong> {$saleProductJpa->tower__name}</p>
-                        <p><strong>Técnico:</strong> {$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</p>
-                        <p><strong>Fecha:</strong> {$saleProductJpa->date_sale}</p>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>TORRE</td>
+                                    <td>{$saleProductJpa->tower__name}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>TECNICO</td>
+                                    <td>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</td>
+                                </tr>
+                                <td>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$saleProductJpa->date_sale}</td>
+                                </td>
+                            </tbody>
+                        </table>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'PARA TECNICO') {
@@ -397,8 +439,18 @@ class SalesController extends Controller
 
                     $tower_details = "
                     <div>
-                        <p><strong>Técnico:</strong> {$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</p>
-                        <p><strong>Fecha:</strong> {$saleProductJpa->date_sale}</p>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>TECNICO</td>
+                                    <td>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$saleProductJpa->date_sale}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'ENCOMIENDA') {
@@ -408,10 +460,26 @@ class SalesController extends Controller
 
                     $parcel_details = "
                     <div>
-                        <p>Sucursal de envio: {$branch_send->name}</p>
-                        <p>Sucursal de recepcion: {$branch_received->name}</p>
-                        <p>Fecha de envio: {$ParcelJpa->date_send}</p>
-                        <p>Fecha de recojo: {$ParcelJpa->date_entry}</p>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>SUCURSAL DE ENVIO</td>
+                                    <td>{$branch_send->name}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>SUCURSAL DE RECEPCION</td>
+                                    <td>{$branch_received->name}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA DE ENVIO</td>
+                                    <td>{$ParcelJpa->date_send}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA DE RECOJO</td>
+                                    <td>{$ParcelJpa->date_entry}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
                 } else if ($sale['type_operation']['operation'] == 'VENTA') {
@@ -420,8 +488,18 @@ class SalesController extends Controller
 
                     $sale_details = "
                     <div>
-                        <p><strong>Cliente:</strong> {$saleJpa['client']['name']} {$saleJpa['client']['lastname']}</p>
-                        <p><strong>Fecha:</strong> {$saleJpa['date_sale']}</p>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>CLIENTE</td>
+                                    <td>{$saleJpa['client']['name']} {$saleJpa['client']['lastname']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$saleJpa['date_sale']}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
                 }
@@ -454,7 +532,7 @@ class SalesController extends Controller
 
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'><strong>{$count}){$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <p style='margin-buttom: 12px;'><strong>{$count}){$sale['type_operation']['operation']}</strong> REGISTRADO POR: <strong>{$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']}</strong></p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$sale_details}
                         {$instalation_details}
@@ -463,7 +541,7 @@ class SalesController extends Controller
                         {$fauld_details}
                         {$parcel_details}
                     </div>
-                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+                    <div style='display: flex;margin-top: 50px;'>";
 
                 foreach ($sale['details'] as $detailJpa) {
                     $details_equipment = 'display:none;';
@@ -471,16 +549,44 @@ class SalesController extends Controller
                         $details_equipment = '';
                     }
                     $view_details .= "
-                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 300px; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
-                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
-                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                        <table class='table_details'>
+                                            <tbody>
+                                                <tr>
+                                                    <td class='n'>MAC</td>
+                                                    <td>{$detailJpa['product']['mac']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class='n'>SERIE</td>
+                                                    <td>{$detailJpa['product']['serie']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div>
-                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                        <table class='table_details'>
+                                            <thead>
+                                                <tr>
+                                                    <td>NUEVOS</td>
+                                                    <td>SEMINUEVOS</td>
+                                                    <td>MALOGRADOS</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>{$detailJpa['mount_new']}</td>
+                                                    <td>{$detailJpa['mount_second']}</td>
+                                                    <td>{$detailJpa['mount_ill_fated']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <p><strong>Descripción:</strong>{$detailJpa['description']}</p>
                                     </div>
                                 </center>
                             </div>
