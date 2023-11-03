@@ -75,6 +75,7 @@ class SalesController extends Controller
             // ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
                 ->where('view_sales.branch__correlative', $branch)
+                ->whereNot('view_sales.type_operation__id', 13)
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir']);
 
             // if (isset($request->search['model'])) {
@@ -244,6 +245,7 @@ class SalesController extends Controller
                 ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
+                ->whereNot('view_sales.type_operation__id', 13)
                 ->where('view_sales.branch__correlative', $branch)
                 ->orderBy('view_sales.date_sale', 'desc')
                 ->where('view_sales.date_sale', '>=', $dateStart)
@@ -415,10 +417,10 @@ class SalesController extends Controller
                                     <td class='n'>TECNICO</td>
                                     <td>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</td>
                                 </tr>
-                                <td>
+                                <tr>
                                     <td class='n'>FECHA</td>
                                     <td>{$saleProductJpa->date_sale}</td>
-                                </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -704,6 +706,7 @@ class SalesController extends Controller
                 ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->whereNotNull('view_sales.status')
+                ->whereNot('view_sales.type_operation__id', 13)
                 ->where('view_sales.branch__correlative', $branch)
                 ->whereNot(function ($q1) {
                     $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
