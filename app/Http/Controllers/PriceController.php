@@ -310,4 +310,168 @@ class PriceController extends Controller
             );
         }
     }
+
+    public function generateReportByPrice(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'price', 'read')) {
+                throw new Exception('No tienes permisos para generar informe');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportPrice.html');
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $priceJpa = ViewPrice::find($request->id);
+
+            $detailSaleJpa = DetailSale::select([
+                'detail_sales.id as id',
+                'brands.id AS brand__id',
+                'brands.correlative AS brand__correlative',
+                'brands.brand AS brand__brand',
+                'brands.relative_id AS brand__relative_id',
+                'categories.id AS category__id',
+                'categories.category AS category__category',
+                'models.id AS model__id',
+                'models.model AS model__model',
+                'models.relative_id AS model__relative_id',
+                'unities.id as unity__id', 
+                'unities.name as unity__name', 
+                'detail_sales.mount_new as mount_new',
+                'detail_sales.mount_second as mount_second',
+                'detail_sales.mount_ill_fated as mount_ill_fated',
+                'detail_sales.price_unity as price_unity',
+                'detail_sales.description as description',
+                'detail_sales._sales_product as _sales_product',
+                'detail_sales.status as status',
+            ])
+                ->join('models', 'detail_sales._model', 'models.id')
+                ->join('brands', 'models._brand', 'brands.id')
+                ->join('categories', 'models._category', 'categories.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->whereNotNull('detail_sales.status')
+                ->where('_sales_product', $request->id)
+                ->get();
+
+            $details = array();
+            foreach ($detailSaleJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $price = gJSON::restore($priceJpa->toArray(), '__');
+            $price['products'] = $details;
+
+
+            $type_operation = '';
+
+            $sumary = '';
+
+            // foreach ($details as $detail) {
+
+            //     $model = "
+            //     <div>
+            //         <center>
+            //             <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['model']}</strong></p>
+            //             <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['category']['category']}</strong></p>
+            //             <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' 
+            //             style='background-color: #38414a; height:50px;'>
+            //             <p> <strong style='font-size:10px; margin:0px;'>{$detail['description']}</strong></p>
+            //         </center>
+            //     </div>
+            //     ";
+
+            //     $medida = "
+            //     <div>
+            //         <p>{$detail['product']['model']['unity']['name']}</p>
+            //         <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
+            //     </div>
+            //     ";
+
+            //     $mac_serie = "
+            //         <div>
+            //             <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
+            //             <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
+            //         </div>
+            //     ";
+
+            //     $sumary .= "
+            //     <tr>
+            //         <td><center >{$detail['id']}</center></td>
+            //         <td><center >{$model}</center></td>
+            //         <td><center >{$medida}</center></td>
+            //         <td><center >{$mac_serie}</center></td>
+            //     </tr>
+            //     ";
+            // }
+
+            // $fecha_hora = $installJpa['issue_date'];
+            // $parts_date = explode(" ", $fecha_hora);
+            // $fecha = $parts_date[0];
+            // $hora = $parts_date[1];
+
+            // $mounts_durability = '';
+          
+            // $template = str_replace(
+            //     [
+            //         '{num_operation}',
+            //         '{client}',
+            //         '{issue_date}',
+            //         '{issue_hour}',
+            //         '{date_sale}',
+            //         '{ejecutive}',
+            //         '{price}',
+            //         '{description}',
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{mounts_durability}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
+            //         $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
+            //         $fecha,
+            //         $hora,
+            //         $installJpa['date_sale'],
+            //         $installJpa['creation_user']['person']['name'] . ' ' . $installJpa['creation_user']['person']['lastname'],
+            //         'S/.' . $installJpa['price_installation'],
+            //         $installJpa['description'],
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $mounts_durability,
+            //         $sumary,
+            //     ],
+            //     $template
+            // );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+            // $response = new Response();
+            // $response->setData($price);
+            // $response->setMessage('Operacion correcta crack');
+            // $response->setStatus(200);
+
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 }
