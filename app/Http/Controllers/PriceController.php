@@ -324,7 +324,7 @@ class PriceController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportPrice.html');
+            $template = file_get_contents('../storage/templates/reportPriceMe.html');
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
