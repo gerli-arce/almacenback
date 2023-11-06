@@ -1758,52 +1758,72 @@ class TechnicalsController extends Controller
                     'sales_products.date_sale as date_sale',
                     'sales_products.status_sale as status_sale',
                     'sales_products.description as description',
+                    'sales_products.creation_date as creation_date',
                     'sales_products.status as status',
                 ])
                     ->join('people as tech', 'sales_products._technical', 'tech.id')
                     ->where('sales_products.id', $sale['id'])->first();
 
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
                 $technical_details = "
                     <div>
-                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
-                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+
+                        <table class='table_details'  style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>Técnico</td>
+                                    <td>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha</td>
+                                    <td>{$saleProductJpa->date_sale}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Operación</td>
+                                    <td>{$sale['status_sale']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$saleProductJpa->creation_date}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
-
                 $usuario = "
                 <div>
-                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
                     <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
                     <p>{$sale['date_sale']}</p>
                 </div>
                 ";
 
-                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
-                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
-
                 $datos = "
                     <div>
                         <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
                         <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
-                        <p>Descripción: <strong>{$sale['description']}</strong></p>
                     </div>
                 ";
 
                 $sumary .= "
-                <tr>
-                    <td>{$count}</td>
+                <tr style='font-size:12px;'>
+                    <td><center>{$count}</center></td>
                     <td>{$usuario}</td>
                     <td>{$datos}</td>
                 </tr>
                 ";
-
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> REGISTRADO POR: {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$technical_details}
                     </div>
-                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+                    <div style='style='display: flex;margin-top: 50px;'>";
 
                 foreach ($sale['details'] as $detailJpa) {
                     $details_equipment = 'display:none;';
@@ -1811,16 +1831,44 @@ class TechnicalsController extends Controller
                         $details_equipment = '';
                     }
                     $view_details .= "
-                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 300px; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
-                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
-                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                        <table class='table_details'>
+                                            <tbody>
+                                                <tr>
+                                                    <td class='n'>MAC</td>
+                                                    <td>{$detailJpa['product']['mac']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class='n'>SERIE</td>
+                                                    <td>{$detailJpa['product']['serie']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div>
-                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                        <table class='table_details'>
+                                            <thead>
+                                                <tr>
+                                                    <td>NUEVOS</td>
+                                                    <td>SEMINUEVOS</td>
+                                                    <td>MALOGRADOS</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>{$detailJpa['mount_new']}</td>
+                                                    <td>{$detailJpa['mount_second']}</td>
+                                                    <td>{$detailJpa['mount_ill_fated']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <p><strong>Descripción:</strong>{$detailJpa['description']}</p>
                                     </div>
                                 </center>
                             </div>
@@ -1973,40 +2021,62 @@ class TechnicalsController extends Controller
                     'sales_products.date_sale as date_sale',
                     'sales_products.status_sale as status_sale',
                     'sales_products.description as description',
+                    'sales_products.creation_date as creation_date',
                     'sales_products.status as status',
                 ])
                     ->join('people as tech', 'sales_products._technical', 'tech.id')
                     ->where('sales_products.id', $sale['id'])->first();
 
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
                 $technical_details = "
                     <div>
-                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
-                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+
+                        <table class='table_details'  style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>Técnico</td>
+                                    <td>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha</td>
+                                    <td>{$saleProductJpa->date_sale}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Operación</td>
+                                    <td>{$sale['status_sale']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$saleProductJpa->creation_date}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     ";
 
                 $usuario = "
                 <div>
-                    <p style='color:#71b6f9;'>{$sale['user_creation']['username']}</p>
                     <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
                     <p>{$sale['date_sale']}</p>
                 </div>
                 ";
 
-                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
-                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
-
                 $datos = "
                     <div>
                         <p>Tipo operación <strong>{$sale['type_operation']['operation']}</strong></p>
                         <p>Tipo salida: <strong>{$tipo_instalacion}</strong></p>
-                        <p>Descripción: <strong>{$sale['description']}</strong></p>
                     </div>
                 ";
 
                 $sumary .= "
-                <tr>
-                    <td>{$count}</td>
+                <tr style='font-size:12px;'>
+                    <td><center>{$count}</center></td>
                     <td>{$usuario}</td>
                     <td>{$datos}</td>
                 </tr>
@@ -2014,11 +2084,11 @@ class TechnicalsController extends Controller
 
                 $view_details .= "
                 <div style='margin-top:8px;'>
-                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$sale['type_operation']['operation']}</strong> REGISTRADO POR: {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
                     <div style='margin-buttom: 12px;margin-left:20px;'>
                         {$technical_details}
                     </div>
-                    <div style='display: flex; flex-wrap: wrap; justify-content: space-between;margin-top: 50px;'>";
+                    <div style='style='display: flex;margin-top: 50px;'>";
 
                 foreach ($sale['details'] as $detailJpa) {
                     $details_equipment = 'display:none;';
@@ -2026,16 +2096,44 @@ class TechnicalsController extends Controller
                         $details_equipment = '';
                     }
                     $view_details .= "
-                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 300px; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                                 <center>
                                     <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
                                     <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
                                     <div style='{$details_equipment}'>
-                                        <p>Mac: <strong>{$detailJpa['product']['mac']}</strong><p>
-                                        <p>Serie: <strong>{$detailJpa['product']['serie']}</strong></p>
+                                        <table class='table_details'>
+                                            <tbody>
+                                                <tr>
+                                                    <td class='n'>MAC</td>
+                                                    <td>{$detailJpa['product']['mac']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class='n'>SERIE</td>
+                                                    <td>{$detailJpa['product']['serie']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div>
-                                        <p style='font-size:20px; color:#2f6593'>Nu:{$detailJpa['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
+                                        <table class='table_details'>
+                                            <thead>
+                                                <tr>
+                                                    <td>NUEVOS</td>
+                                                    <td>SEMINUEVOS</td>
+                                                    <td>MALOGRADOS</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>{$detailJpa['mount_new']}</td>
+                                                    <td>{$detailJpa['mount_second']}</td>
+                                                    <td>{$detailJpa['mount_ill_fated']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <p><strong>Descripción:</strong>{$detailJpa['description']}</p>
                                     </div>
                                 </center>
                             </div>

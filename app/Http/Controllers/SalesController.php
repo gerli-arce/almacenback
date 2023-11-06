@@ -293,6 +293,9 @@ class SalesController extends Controller
 
                 $instalation_details =  $sale_details = $plant_details = $tower_details = $fauld_details = $parcel_details = "";
 
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
                 if ($sale['type_operation']['operation'] == 'INSTALACIÓN' || $sale['type_operation']['operation'] == 'INSTALACION' || $sale['type_operation']['operation'] == 'AVERIA') {
                     $viewInstallations = viewInstallations::where('id', $sale['id'])->first();
                     $install = gJSON::restore($viewInstallations->toArray(), '__');
@@ -312,6 +315,14 @@ class SalesController extends Controller
                                 <tr>
                                     <td class='n'>FECHA</td>
                                     <td>{$install['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -353,8 +364,12 @@ class SalesController extends Controller
                                         <td>{$viewPlant->technical__name} {$viewPlant->technical__lastname}</td>
                                     </tr>
                                     <tr>
-                                        <td class='n'>FECHA</td>
-                                        <td>{$viewPlant->date_sale}</td>
+                                    <td class='n'>Tipo</td>
+                                        <td>{$tipo_instalacion}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>Fecha emisión</td>
+                                        <td>{$sale['creation_date']}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -379,6 +394,14 @@ class SalesController extends Controller
                                         <tr>
                                             <td class='n'>FECHA</td>
                                             <td>{$sale['date_sale']}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class='n'>Tipo</td>
+                                            <td>{$tipo_instalacion}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class='n'>Fecha emisión</td>
+                                            <td>{$sale['creation_date']}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -421,11 +444,19 @@ class SalesController extends Controller
                                     <td class='n'>FECHA</td>
                                     <td>{$saleProductJpa->date_sale}</td>
                                 </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                     ";
-                } else if ($sale['type_operation']['operation'] == 'PARA TECNICO') {
+                } else if ($sale['type_operation']['operation'] == 'TECNICO') {
                     $saleProductJpa = SalesProducts::select([
                         'sales_products.id as id',
                         'tech.id as technical__id',
@@ -434,6 +465,7 @@ class SalesController extends Controller
                         'sales_products.date_sale as date_sale',
                         'sales_products.status_sale as status_sale',
                         'sales_products.description as description',
+                        'sales_products.creation_date as creation_date',
                         'sales_products.status as status',
                     ])
                         ->join('people as tech', 'sales_products._technical', 'tech.id')
@@ -450,6 +482,18 @@ class SalesController extends Controller
                                 <tr>
                                     <td class='n'>FECHA</td>
                                     <td>{$saleProductJpa->date_sale}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Operación</td>
+                                    <td>{$sale['status_sale']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -480,6 +524,14 @@ class SalesController extends Controller
                                     <td class='n'>FECHA DE RECOJO</td>
                                     <td>{$ParcelJpa->date_entry}</td>
                                 </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$tipo_instalacion}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -499,6 +551,14 @@ class SalesController extends Controller
                                 <tr>
                                     <td class='n'>FECHA</td>
                                     <td>{$saleJpa['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                <td class='n'>Tipo</td>
+                                <td>{$tipo_instalacion}</td>
+                            </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -526,7 +586,7 @@ class SalesController extends Controller
 
                 $sumary .= "
                 <tr style='font-size:12px;'>
-                    <td>{$count}</td>
+                    <td><center>{$count}</center></td>
                     <td>{$usuario}</td>
                     <td>{$datos}</td>
                 </tr>
