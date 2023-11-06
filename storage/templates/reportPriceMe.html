@@ -186,7 +186,6 @@
                         <strong>Web:</strong> www.fastnetperu.com.pe
                     </p>
                     <p>Jr. 1 de Mayo 1085 PICHANAQUI</p>
-
                 </div>
             </div>
             <div style="
@@ -223,7 +222,7 @@
                         font-size: 40px; background-color: rgb(254, 0, 0);color: white;
                          border-bottom-left-radius: 18px;
                      border-bottom-right-radius: 40px;">
-                        <strong style="color: white;">12-2023</strong>
+                        <strong style="color: white;">{num_cot}</strong>
                     </p>
                     <br>
                 </div>
@@ -232,17 +231,19 @@
 
         <div style="display: inline; font-size: 12px; margin-top: -25px;">
             <div style="width: 60%; display: inline-block">
-                <p><strong>Cliente:</strong>YON GERLI INFANTE ARCE</p>
-                <p><strong>Dirección:</strong> La bombonera</p>
+                <p><strong>Cliente:</strong>{client}</p>
+                <p><strong>Dirección:</strong>{address}</p>
+                <p><strong>Descripción:</strong></p>
             </div>
             <div style="width: 30%; display: inline-block">
-                <p><strong>Email:</strong>yoninfantearce@gmail.com</p>
-                <p><strong>Teléfono:</strong>940781831</p>
+                <p><strong>Email:</strong> {email} </p>
+                <p><strong>Teléfono:</strong> {phone}</p>
+                <p><strong>Emisión:</strong> {issue_date} </p>
             </div>
             <br>
-            <p><strong>Descripción:</strong></p>
-            <p>
-                Esta es una cotizacion de prueba Lorem ipsum dolor, sit amet consectdi!
+           
+            <p style="margin-top: -10px;">
+                {description}
             </p>
         </div>
 
@@ -256,15 +257,10 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>router</td>
-                    <td style="text-align: center;">2</td>
-                    <td style="text-align: center;">S/20</td>
-                    <td style="text-align: center;"><strong>S/40</strong></td>
-                </tr>
+               {summary}
                 <tr>
                     <td colspan="3" style="text-align: center; background-color: #6c757d41;"><strong>TOTAL</strong></td>
-                    <td style="text-align: center; background-color: #ddff00e2; font-size: 15px;"><strong style="color: #000;">S/54</strong></td>
+                    <td style="text-align: center; background-color: #ddff00e2; font-size: 15px;"><strong style="color: #000;">S/{price_all}</strong></td>
                 </tr>
             </tbody>
         </table>

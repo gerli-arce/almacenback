@@ -3,24 +3,20 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
-use App\gLibraries\gValidate;
 use App\gLibraries\guid;
-use App\Models\{
-    Branch,
-    DetailSale,
-    EntryDetail,
-    EntryProducts, People,
-    Product, ProductByPlant,
-    ViewSales, Response, SalesProducts,
-    Stock, StockPlant, ViewPlant,
-    ViewDetailsSales, User, ViewPrice,
-};
+use App\gLibraries\gValidate;
+
+use App\Models\Branch;
+use App\Models\DetailSale;
+use App\Models\People;
+use App\Models\Response;
+use App\Models\SalesProducts;
+use App\Models\ViewPrice;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-
 
 class PriceController extends Controller
 {
@@ -48,25 +44,28 @@ class PriceController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $peopleJpa = People::where('doc_type', $request->doc_type)->where('doc_number', $request->doc_number)->first();
-        
 
             $salesProduct = new SalesProducts();
-            if(empty($peopleJpa)){
+            if (empty($peopleJpa)) {
                 $peopleNew = new People();
                 $peopleNew->doc_type = $request->doc_type;
                 $peopleNew->doc_number = $request->doc_number;
-                if(isset($request->name)){
+                if (isset($request->name)) {
                     $peopleNew->name = $request->name;
                 }
-                if(isset($request->lastname)){
+                if (isset($request->lastname)) {
                     $peopleNew->lastname = $request->lastname;
                 }
-                if(isset($request->email)){
+                if (isset($request->email)) {
                     $peopleNew->email = $request->email;
                 }
-                if(isset($request->phone)){
+                if (isset($request->phone)) {
                     $peopleNew->phone = $request->phone;
                 }
+                if(isset($request->address)){
+                    $peopleNew->address = $request->address;
+                }
+
 
                 $peopleNew->relative_id = guid::short();
                 $peopleNew->type = 'CLIENT';
@@ -79,18 +78,42 @@ class PriceController extends Controller
                 $peopleNew->save();
 
                 $salesProduct->_client = $peopleNew->id;
-            }else{
+            } else {
+
+                if (isset($request->name)) {
+                    $peopleJpa->name = $request->name;
+                }
+                if (isset($request->lastname)) {
+                    $peopleJpa->lastname = $request->lastname;
+                }
+                if (isset($request->email)) {
+                    $peopleJpa->email = $request->email;
+                }
+                if (isset($request->phone)) {
+                    $peopleJpa->phone = $request->phone;
+                }
+                if(isset($request->address)){
+                    $peopleJpa->address = $request->address;
+                }
+
+                $peopleJpa->_update_user = $userid;
+                $peopleJpa->update_date = gTrace::getDate('mysql');
+                $peopleJpa->save();
                 $salesProduct->_client = $peopleJpa->id;
             }
-               
+
             $salesProduct->_branch = $branch_->id;
             $salesProduct->_type_operation = 13;
             $salesProduct->type_intallation = "COTIZACION";
-            
+
             $salesProduct->status_sale = "PENDIENTE";
             $salesProduct->_issue_user = $userid;
-            $salesProduct->type_pay = "GASTOS INTERNOS";
+            $salesProduct->type_pay = "NO GASTO";
             $salesProduct->price_all = $request->price_all;
+             
+            if(isset($request->description)){
+                $salesProduct->description = $request->description;
+            }
 
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
@@ -124,7 +147,8 @@ class PriceController extends Controller
         }
     }
 
-    public function paginate(Request $request){
+    public function paginate(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -142,7 +166,6 @@ class PriceController extends Controller
             if (!$request->all) {
                 $query->whereNotNull('status');
             }
-
 
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
@@ -242,7 +265,8 @@ class PriceController extends Controller
         }
     }
 
-    public function getDetailsPriceByID(Request $request, $id){
+    public function getDetailsPriceByID(Request $request, $id)
+    {
         $response = new Response();
         try {
 
@@ -270,8 +294,8 @@ class PriceController extends Controller
                 'models.id AS model__id',
                 'models.model AS model__model',
                 'models.relative_id AS model__relative_id',
-                'unities.id as unity__id', 
-                'unities.name as unity__name', 
+                'unities.id as unity__id',
+                'unities.name as unity__name',
                 'detail_sales.mount_new as mount_new',
                 'detail_sales.mount_second as mount_second',
                 'detail_sales.mount_ill_fated as mount_ill_fated',
@@ -341,8 +365,8 @@ class PriceController extends Controller
                 'models.id AS model__id',
                 'models.model AS model__model',
                 'models.relative_id AS model__relative_id',
-                'unities.id as unity__id', 
-                'unities.name as unity__name', 
+                'unities.id as unity__id',
+                'unities.name as unity__name',
                 'detail_sales.mount_new as mount_new',
                 'detail_sales.mount_second as mount_second',
                 'detail_sales.mount_ill_fated as mount_ill_fated',
@@ -368,48 +392,26 @@ class PriceController extends Controller
             $price = gJSON::restore($priceJpa->toArray(), '__');
             $price['products'] = $details;
 
-
             $type_operation = '';
 
             $sumary = '';
 
-            // foreach ($details as $detail) {
+            foreach ($details as $detail) {
 
-            //     $model = "
-            //     <div>
-            //         <center>
-            //             <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['model']}</strong></p>
-            //             <p style='font-size: 11px; padding:1px;margin:1px;'><strong>{$detail['product']['model']['category']['category']}</strong></p>
-            //             <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['model']['relative_id']}/mini' 
-            //             style='background-color: #38414a; height:50px;'>
-            //             <p> <strong style='font-size:10px; margin:0px;'>{$detail['description']}</strong></p>
-            //         </center>
-            //     </div>
-            //     ";
+             $service = "
+                <p>{$detail['category']['category']} {$detail['brand']['brand']} {$detail['model']['model']}</p>
+             ";
 
-            //     $medida = "
-            //     <div>
-            //         <p>{$detail['product']['model']['unity']['name']}</p>
-            //         <p>N: {$detail['mount_new']} | S: {$detail['mount_second']} | M: {$detail['mount_ill_fated']}</p>
-            //     </div>
-            //     ";
 
-            //     $mac_serie = "
-            //         <div>
-            //             <p style='font-size: 13px;'>Mac: {$detail['product']['mac']}</p>
-            //             <p style='font-size: 13px;'>Serie: {$detail['product']['serie']}</p>
-            //         </div>
-            //     ";
-
-            //     $sumary .= "
-            //     <tr>
-            //         <td><center >{$detail['id']}</center></td>
-            //         <td><center >{$model}</center></td>
-            //         <td><center >{$medida}</center></td>
-            //         <td><center >{$mac_serie}</center></td>
-            //     </tr>
-            //     ";
-            // }
+                $sumary .= "
+                <tr>
+                    <td>{$service}</td>
+                    <td style='text-align: center;'>{$detail['mount_new']}</td>
+                    <td style='text-align: center;'>S/".number_format($detail['price_unity'],2)."</td>
+                    <td style='text-align: center;'>S/".number_format(($detail['mount_new'] * $detail['price_unity']), 2)."</td>
+                </tr>
+                ";
+            }
 
             // $fecha_hora = $installJpa['issue_date'];
             // $parts_date = explode(" ", $fecha_hora);
@@ -417,41 +419,35 @@ class PriceController extends Controller
             // $hora = $parts_date[1];
 
             // $mounts_durability = '';
-          
-            // $template = str_replace(
-            //     [
-            //         '{num_operation}',
-            //         '{client}',
-            //         '{issue_date}',
-            //         '{issue_hour}',
-            //         '{date_sale}',
-            //         '{ejecutive}',
-            //         '{price}',
-            //         '{description}',
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{mounts_durability}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         str_pad($installJpa['id'], 6, "0", STR_PAD_LEFT),
-            //         $installJpa['client']['name'] . ' ' . $installJpa['client']['lastname'],
-            //         $fecha,
-            //         $hora,
-            //         $installJpa['date_sale'],
-            //         $installJpa['creation_user']['person']['name'] . ' ' . $installJpa['creation_user']['person']['lastname'],
-            //         'S/.' . $installJpa['price_installation'],
-            //         $installJpa['description'],
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $mounts_durability,
-            //         $sumary,
-            //     ],
-            //     $template
-            // );
+
+            $template = str_replace(
+                [
+                    '{num_cot}',
+                    '{client}',
+                    '{phone}',
+                    '{email}',
+                    '{address}',
+                    '{description}',
+                    '{issue_date}',
+                    '{summary}',
+                    '{price_all}',
+                ],
+                [
+                    str_pad($price['id'], 6, "0", STR_PAD_LEFT),
+                    $price['client']['name'] . ' ' . $price['client']['lastname'],
+                    $price['client']['phone'] !== null ? $price['client']['phone'] : '-',
+                    $price['client']['email'] !== null ? $price['client']['email'] : '-',
+                    $price['client']['address'] !== null ? $price['client']['address'] : '-',
+                    $price['description'] !== null ? $price['description'] : '-',
+                    $price['creation_date'],
+                    $sumary,
+                    number_format($price['price_all'], 2)
+                ],
+                $template
+            );
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Instlación.pdf');
+            return $pdf->stream('Cotización.pdf');
 
             // $response = new Response();
             // $response->setData($price);
