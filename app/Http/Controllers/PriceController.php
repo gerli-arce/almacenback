@@ -12,6 +12,7 @@ use App\Models\People;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\ViewPrice;
+use App\Models\Stock;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -294,8 +295,10 @@ class PriceController extends Controller
                 'models.id AS model__id',
                 'models.model AS model__model',
                 'models.relative_id AS model__relative_id',
-                'unities.id as unity__id',
-                'unities.name as unity__name',
+                'models.price_sale AS model__price_sale',
+                'models.currency AS model__currency',
+                'unities.id as  model__unity__id',
+                'unities.name as model__unity__name',
                 'detail_sales.mount_new as mount_new',
                 'detail_sales.mount_second as mount_second',
                 'detail_sales.mount_ill_fated as mount_ill_fated',
@@ -315,6 +318,8 @@ class PriceController extends Controller
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $stockJpa = Stock::where('_model', $detail['model']['id'])->where('_branch',$branch_->id)->whereNotNull('status')->first();
+                $detail['max_new'] = $stockJpa->mount_new;
                 $details[] = $detail;
             }
 
