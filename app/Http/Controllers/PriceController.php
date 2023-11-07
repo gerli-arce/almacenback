@@ -5,14 +5,13 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
-
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\People;
 use App\Models\Response;
 use App\Models\SalesProducts;
-use App\Models\ViewPrice;
 use App\Models\Stock;
+use App\Models\ViewPrice;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -63,10 +62,9 @@ class PriceController extends Controller
                 if (isset($request->phone)) {
                     $peopleNew->phone = $request->phone;
                 }
-                if(isset($request->address)){
+                if (isset($request->address)) {
                     $peopleNew->address = $request->address;
                 }
-
 
                 $peopleNew->relative_id = guid::short();
                 $peopleNew->type = 'CLIENT';
@@ -93,7 +91,7 @@ class PriceController extends Controller
                 if (isset($request->phone)) {
                     $peopleJpa->phone = $request->phone;
                 }
-                if(isset($request->address)){
+                if (isset($request->address)) {
                     $peopleJpa->address = $request->address;
                 }
 
@@ -111,8 +109,8 @@ class PriceController extends Controller
             $salesProduct->_issue_user = $userid;
             $salesProduct->type_pay = "NO GASTO";
             $salesProduct->price_all = $request->price_all;
-             
-            if(isset($request->description)){
+
+            if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
 
@@ -137,6 +135,128 @@ class PriceController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La cotizacion se ha gurdado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function update(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'price', 'update')) {
+                throw new Exception('No tienes permisos para crear cotizaciones');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->doc_number) ||
+                !isset($request->details)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $peopleJpa = People::where('doc_type', $request->doc_type)->where('doc_number', $request->doc_number)->first();
+
+            $salesProduct = SalesProducts::find($request->id);
+            if (empty($peopleJpa)) {
+                $peopleNew = new People();
+                $peopleNew->doc_type = $request->doc_type;
+                $peopleNew->doc_number = $request->doc_number;
+                if (isset($request->name)) {
+                    $peopleNew->name = $request->name;
+                }
+                if (isset($request->lastname)) {
+                    $peopleNew->lastname = $request->lastname;
+                }
+                if (isset($request->email)) {
+                    $peopleNew->email = $request->email;
+                }
+                if (isset($request->phone)) {
+                    $peopleNew->phone = $request->phone;
+                }
+                if (isset($request->address)) {
+                    $peopleNew->address = $request->address;
+                }
+
+                $peopleNew->relative_id = guid::short();
+                $peopleNew->type = 'CLIENT';
+                $peopleNew->_branch = $branch_->id;
+                $peopleNew->_creation_user = $userid;
+                $peopleNew->creation_date = gTrace::getDate('mysql');
+                $peopleNew->_update_user = $userid;
+                $peopleNew->update_date = gTrace::getDate('mysql');
+                $peopleNew->status = "1";
+                $peopleNew->save();
+                $salesProduct->_client = $peopleNew->id;
+            } else {
+                if (isset($request->name)) {
+                    $peopleJpa->name = $request->name;
+                }
+                if (isset($request->lastname)) {
+                    $peopleJpa->lastname = $request->lastname;
+                }
+                if (isset($request->email)) {
+                    $peopleJpa->email = $request->email;
+                }
+                if (isset($request->phone)) {
+                    $peopleJpa->phone = $request->phone;
+                }
+                if (isset($request->address)) {
+                    $peopleJpa->address = $request->address;
+                }
+                $peopleJpa->_update_user = $userid;
+                $peopleJpa->update_date = gTrace::getDate('mysql');
+                $peopleJpa->save();
+                $salesProduct->_client = $peopleJpa->id;
+            }
+
+            $salesProduct->type_intallation = "COTIZACION";
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->price_all = $request->price_all;
+            if (isset($request->description)) {
+                $salesProduct->description = $request->description;
+            }
+
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->save();
+
+            if (isset($request->details)) {
+                foreach ($request->details as $product) {
+                    if (isset($product['id'])) {
+                        $detailSale = DetailSale::find($product['id']);
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->price_unity = $product['price_unity'];
+                        $detailSale->status = '1';
+                        $detailSale->save();
+                    } else {
+                        $detailSale = new DetailSale();
+                        $detailSale->_model = $product['model']['id'];
+                        $detailSale->mount_new = $product['mount_new'];
+                        $detailSale->price_unity = $product['price_unity'];
+                        $detailSale->_sales_product = $salesProduct->id;
+                        $detailSale->status = '1';
+                        $detailSale->save();
+                    }
+                }
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('La cotizacion se a actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
@@ -266,6 +386,41 @@ class PriceController extends Controller
         }
     }
 
+    public function deleteProduct(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'price', 'update')) {
+                throw new Exception('No tienes permisos eliminar producto');
+            }
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+
+            $detailsSalesJpa = DetailSale::find($request->id);
+            $detailsSalesJpa->status = null;
+            $detailsSalesJpa->save();
+           
+            $response->setStatus(200);
+            $response->setMessage('Producto eliminado correctamente.');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getDetailsPriceByID(Request $request, $id)
     {
         $response = new Response();
@@ -318,7 +473,7 @@ class PriceController extends Controller
             $details = array();
             foreach ($detailSaleJpa as $detailJpa) {
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
-                $stockJpa = Stock::where('_model', $detail['model']['id'])->where('_branch',$branch_->id)->whereNotNull('status')->first();
+                $stockJpa = Stock::where('_model', $detail['model']['id'])->where('_branch', $branch_->id)->whereNotNull('status')->first();
                 $detail['max_new'] = $stockJpa->mount_new;
                 $details[] = $detail;
             }
@@ -403,17 +558,16 @@ class PriceController extends Controller
 
             foreach ($details as $detail) {
 
-             $service = "
+                $service = "
                 <p>{$detail['category']['category']} {$detail['brand']['brand']} {$detail['model']['model']}</p>
              ";
-
 
                 $sumary .= "
                 <tr>
                     <td>{$service}</td>
                     <td style='text-align: center;'>{$detail['mount_new']}</td>
-                    <td style='text-align: center;'>S/".number_format($detail['price_unity'],2)."</td>
-                    <td style='text-align: center;'>S/".number_format(($detail['mount_new'] * $detail['price_unity']), 2)."</td>
+                    <td style='text-align: center;'>S/" . number_format($detail['price_unity'], 2) . "</td>
+                    <td style='text-align: center;'>S/" . number_format(($detail['mount_new'] * $detail['price_unity']), 2) . "</td>
                 </tr>
                 ";
             }
@@ -446,7 +600,7 @@ class PriceController extends Controller
                     $price['description'] !== null ? $price['description'] : '-',
                     $price['creation_date'],
                     $sumary,
-                    number_format($price['price_all'], 2)
+                    number_format($price['price_all'], 2),
                 ],
                 $template
             );

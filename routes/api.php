@@ -423,10 +423,13 @@ Route::post('/sale/generate/report', [SaleController::class, 'generateReportBySa
 // PRICE
 
 Route::post('/price', [PriceController::class, 'store']);
+Route::patch('/price', [PriceController::class, 'update']);
 Route::post('/price/paginate', [PriceController::class, 'paginate']);
 Route::delete('/price', [PriceController::class, 'delete']);
 Route::get('/price/{id}', [PriceController::class, 'getDetailsPriceByID']);
 Route::post('/price/report', [PriceController::class, 'generateReportByPrice']);
+Route::post('/price/delete/product', [PriceController::class, 'deleteProduct']);
+
 
 // RECORDS
 Route::post('/equipment/paginate', [RecordsController::class, 'paginateEquipment']);
