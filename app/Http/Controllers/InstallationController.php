@@ -235,6 +235,12 @@ class InstallationController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $SalesProductsJpa = SalesProducts::where('_client', $request->_client)->where('_type_operation', $request->_type_operation)->whereNotNull('status')->first();
+
+            if($SalesProductsJpa){
+                throw new Exception('Error: Este cliente ya tiene una instalacion registrada');
+            }
+
             $salesProduct = new SalesProducts();
             $salesProduct->_client = $request->_client;
             $salesProduct->_technical = $request->_technical;
@@ -323,7 +329,7 @@ class InstallationController extends Controller
             $response->setMessage('Instalación agregada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage() . ', ln:' . $th->getLine());
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
