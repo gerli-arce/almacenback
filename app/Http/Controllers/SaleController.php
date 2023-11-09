@@ -243,9 +243,15 @@ class SaleController extends Controller
             }else{
                 $salesProduct->mount_dues = 1;
             }
+
             if (isset($request->description)) {
                 $salesProduct->description = $request->description;
             }
+
+             if (isset($request->price_work_technical)) {
+                $salesProduct->price_work_technical = $request->price_work_technical;
+            }
+
 
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
@@ -444,9 +450,6 @@ class SaleController extends Controller
             if (isset($request->_client)) {
                 $salesProduct->_client = $request->_client;
             }
-            if (isset($request->_technical)) {
-                $salesProduct->_technical = $request->_technical;
-            }
             if (isset($request->date_sale)) {
                 $salesProduct->date_sale = $request->date_sale;
             }
@@ -456,16 +459,14 @@ class SaleController extends Controller
             if (isset($request->discount)) {
                 $salesProduct->discount = $request->discount;
             }
-            if (isset($request->price_installation)) {
-                $salesProduct->price_installation = $request->price_installation;
+            if (isset($request->price_sale)) {
+                $salesProduct->price_installation = $request->price_sale;
             }
             if (isset($request->mount_dues)) {
                 $salesProduct->mount_dues = $request->mount_dues;
             }
-
-
-            if (isset($request->type_intallation)) {
-                $salesProduct->type_intallation = $request->type_intallation;
+            if (isset($request->price_work_technical)) {
+                $salesProduct->price_work_technical = $request->price_work_technical;
             }
 
             $salesProduct->description = $request->description;
