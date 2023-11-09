@@ -235,11 +235,11 @@ class InstallationController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $SalesProductsJpa = SalesProducts::where('_client', $request->_client)->where('_type_operation', $request->_type_operation)->whereNotNull('status')->first();
+            // $SalesProductsJpa = SalesProducts::where('_client', $request->_client)->where('_type_operation', $request->_type_operation)->whereNotNull('status')->first();
 
-            if($SalesProductsJpa){
-                throw new Exception('Error: Este cliente ya tiene una instalacion registrada');
-            }
+            // if($SalesProductsJpa){
+            //     throw new Exception('Error: Este cliente ya tiene una instalacion registrada');
+            // }
 
             $salesProduct = new SalesProducts();
             $salesProduct->_client = $request->_client;
@@ -309,6 +309,8 @@ class InstallationController extends Controller
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
                         }
+
+                        $productJpa->disponibility = "EN INSTALACION";
 
                         $stock->save();
                         $productJpa->save();
@@ -742,7 +744,7 @@ class InstallationController extends Controller
 
                             $productByTechnicalJpa->save();
                         } else {
-                            $productJpa->disponibility = "VENDIENDO";
+                            $productJpa->disponibility = "EN INSTALACION";
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
