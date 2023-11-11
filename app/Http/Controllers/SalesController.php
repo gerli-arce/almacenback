@@ -156,7 +156,7 @@ class SalesController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'record_sales', 'read')) {
                 throw new Exception('No tienes permisos para listar detalles de las salidas');
             }
-            $details = array(); 
+            $details = array();
 
             $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $id)->get();
             foreach ($detailSalesJpa as $detailJpa) {
@@ -256,18 +256,26 @@ class SalesController extends Controller
                     ->where('view_details_sales.product__model__id', $request->model);
             }
 
+            $type_sales = "GENERAL";
+
             if ($request->filter != '*') {
                 if ($request->filter == 'INSTALLATION') {
+                     $type_sales = "INSTALACIONES";
                     $query->where('type_operation__operation', 'INSTALACIÓN');
                 } else if ($request->filter == 'FAULD') {
+                    $type_sales = "AVERIAS";
                     $query->where('type_operation__operation', 'AVERIA');
                 } else if ($request->filter == 'TOWER') {
+                     $type_sales = "TORRES";
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->filter == 'PLANT') {
+                    $type_sales = "PLANTA";
                     $query->where('type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
+                    $type_sales = "TECNICOS";
                     $query->where('type_operation__operation', 'PARA TECNICO');
                 } else if ($request->filter == 'SALES') {
+                    $type_sales = "VENTAS";
                     $query->where('type_operation__operation', 'VENTA');
                 }
             }
@@ -291,7 +299,7 @@ class SalesController extends Controller
             $view_details = '';
             foreach ($sales as $sale) {
 
-                $instalation_details =  $sale_details = $plant_details = $tower_details = $fauld_details = $parcel_details = "";
+                $instalation_details = $sale_details = $plant_details = $tower_details = $fauld_details = $parcel_details = "";
 
                 $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
                 $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
@@ -665,6 +673,7 @@ class SalesController extends Controller
 
             $template = str_replace(
                 [
+                    '{type_sale}',
                     '{branch_interaction}',
                     '{issue_long_date}',
                     '{user_generate}',
@@ -674,6 +683,7 @@ class SalesController extends Controller
                     '{details}',
                 ],
                 [
+                    $type_sales,
                     $branch_->name,
                     gTrace::getDate('long'),
                     $user->person__name . ' ' . $user->person__lastname,
@@ -782,16 +792,23 @@ class SalesController extends Controller
                     ->where('view_details_sales.product__model__id', $request->model);
             }
 
+            $type_sales = "GENERAL";
+
             if ($request->filter != '*') {
                 if ($request->filter == 'INSTALLATION') {
+                    $type_sales = "INSTALACIONES";
                     $query->where('view_sales.type_operation__operation', 'INSTALACIÓN');
                 } else if ($request->filter == 'FAULD') {
+                    $type_sales = "AVERIAS";
                     $query->where('view_sales.type_operation__operation', 'AVERIA');
                 } else if ($request->filter == 'TOWER') {
+                    $type_sales = "TORRES";
                     $query->where('view_sales.type_operation__operation', 'TORRE');
                 } else if ($request->filter == 'PLANT') {
+                    $type_sales = "PLANTA";
                     $query->where('view_sales.type_operation__operation', 'PLANTA');
                 } else if ($request->filter == 'TECHNICAL') {
+                    $type_sales = "TECNICOS";
                     $query->where('view_sales.type_operation__operation', 'PARA TECNICO')
                     // ->whereNot(function ($q1) {
                     //     $q1->where('view_sales.type_intallation', '=', 'AGREGADO_A_STOCK')
@@ -803,6 +820,7 @@ class SalesController extends Controller
                     // })
                     ;
                 } else if ($request->filter == 'SALES') {
+                    $type_sales = "VENTAS";
                     $query->where('view_sales.type_operation__operation', 'VENTA');
                 }
             }
@@ -895,6 +913,7 @@ class SalesController extends Controller
 
             $template = str_replace(
                 [
+                    '{type_sale}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{user}',
@@ -903,6 +922,7 @@ class SalesController extends Controller
                     '{summary}',
                 ],
                 [
+                    $type_sales,
                     $branch_->name,
                     gTrace::getDate('long'),
                     $user->person__name . ' ' . $user->person__lastname,

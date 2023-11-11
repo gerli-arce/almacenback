@@ -225,8 +225,8 @@
                             height: 140px;
                             width:250px;
                             background-color: rgb(234, 234, 234);
-                            font-size: 24px;
-                            font-weight: 600;
+                            font-size: 22px;
+                            font-weight: bold;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
@@ -234,18 +234,24 @@
                         ">
                     <p>RUC 20602791816</p>
                     <p>SALIDA DE PRODUCTOS</p>
+                    <p>{type_sale}</p>
                 </div>
             </div>
         </div>
         <br />
-        <p id="date">{branch_onteraction}, {issue_long_date}</p>
-        <div>
-            <p>GENERADO POR: <strong>{user}</strong></p>
-            <p>FECHA INICIO: <strong>{date_start}</strong></p>
-            <p>FECHA FIN: <strong>{date_end}</strong></p>
+        <div style="font-size: 13px;">
+            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <div>
+                <p><strong>GENERADO POR:</strong> {user}</p>
+                <p><strong>FECHA INICIO:</strong> {date_start}</p>
+                <p><strong>FECHA FIN:</strong> {date_end}</p>
+            </div>
         </div>
 
-        <center class="text-bold" style="margin-top: 8px">PRODUCTOS</center>
+        <center class="text-bold" style="margin-top: 8px">
+            <h3>PRODUCTOS</h3>
+            <hr>
+        </center>
         <table style="height: 370px">
             <thead>
                 <tr>
@@ -261,7 +267,7 @@
                 {summary}
             </tbody>
         </table>
-       
+
     </main>
 </body>
 
