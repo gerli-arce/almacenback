@@ -1510,7 +1510,7 @@ class ParcelsCreatedController extends Controller
 
             $parcelJpa->_entry_product = $entryProductJpa->id;
 
-            $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->get();
+            $detailsParcelJpa = DetailsParcel::where('_parcel', $request->id)->whereNotNull('status')->get();
 
             foreach ($detailsParcelJpa as $detailParcel) {
                 $EntryDetailJpa = new EntryDetail();
