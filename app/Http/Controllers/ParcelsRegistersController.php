@@ -123,9 +123,9 @@ class ParcelsRegistersController extends Controller
                 $parcelJpa->num_voucher = $request->num_voucher;
             }
 
-            if (isset($request->num_guia)) {
-                $parcelJpa->num_guia = $request->num_guia;
-            }
+                // if (isset($request->num_guia)) {
+                //     $parcelJpa->num_guia = $request->num_guia;
+                // }
 
             if (isset($request->num_bill)) {
                 $parcelJpa->num_bill = $request->num_bill;
