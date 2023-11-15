@@ -529,6 +529,8 @@ class InstallationController extends Controller
                 'models.id AS product__model__id',
                 'models.model AS product__model__model',
                 'models.relative_id AS product__model__relative_id',
+                'unities.id AS product__model__unity__id',
+                'unities.name AS product__model__unity__name',
                 'products.relative_id AS product__relative_id',
                 'products.mac AS product__mac',
                 'products.serie AS product__serie',
@@ -549,6 +551,7 @@ class InstallationController extends Controller
                 ->join('branches', 'products._branch', 'branches.id')
                 ->join('models', 'products._model', 'models.id')
                 ->join('brands', 'models._brand', 'brands.id')
+                ->join('unities', 'models._unity', 'unities.id')
                 ->join('categories', 'models._category', 'categories.id')
                 ->whereNotNull('detail_sales.status')
                 ->where('_sales_product', $id)
