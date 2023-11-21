@@ -165,7 +165,7 @@ class UserController extends Controller
                     $q->where('username', $type, $value);
                 }
                 if ($column == 'person__name' || $column == '*') {
-                    $q->where('person__name', $type, $value);
+                    $q->orWhere('person__name', $type, $value);
                 }
                 if ($column == 'person__lastname' || $column == '*') {
                     $q->orWhere('person__lastname', $type, $value);
