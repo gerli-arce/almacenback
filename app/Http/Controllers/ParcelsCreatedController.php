@@ -983,8 +983,8 @@ class ParcelsCreatedController extends Controller
                                 if (intval($detailParcel->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailParcel->mount_new) - intval($product['mount_new']);
                                     $stock->mount_new = $stock->mount_new + $mount_dif;
-                                } else if (intval($detailParcel->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailParcel->mount);
+                                } else if (intval($detailParcel->mount_new) < intval($product['mount_new'])) {
+                                    $mount_dif = intval($product['mount_new']) - intval($detailParcel->mount_new);
                                     $stock->mount_new = $stock->mount_new - $mount_dif;
                                 }
                             }
@@ -993,8 +993,8 @@ class ParcelsCreatedController extends Controller
                                 if (intval($detailParcel->mount_second) > intval($product['mount_second'])) {
                                     $mount_dif = intval($detailParcel->mount_second) - intval($product['mount_second']);
                                     $stock->mount_second = $stock->mount_second + $mount_dif;
-                                } else if (intval($detailParcel->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailParcel->mount);
+                                } else if (intval($detailParcel->mount_second) < intval($product['mount_second'])) {
+                                    $mount_dif = intval($product['mount_second']) - intval($detailParcel->mount_second);
                                     $stock->mount_second = $stock->mount_second - $mount_dif;
                                 }
                             }
@@ -1003,8 +1003,8 @@ class ParcelsCreatedController extends Controller
                                 if (intval($detailParcel->mount_ill_fated) > intval($product['mount_ill_fated'])) {
                                     $mount_dif = intval($detailParcel->mount_ill_fated) - intval($product['mount_ill_fated']);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated + $mount_dif;
-                                } else if (intval($detailParcel->mount) < intval($product['mount'])) {
-                                    $mount_dif = intval($product['mount']) - intval($detailParcel->mount);
+                                } else if (intval($detailParcel->mount_ill_fated) < intval($product['mount_ill_fated'])) {
+                                    $mount_dif = intval($product['mount_ill_fated']) - intval($detailParcel->mount_ill_fated);
                                     $stock->mount_ill_fated = $stock->mount_ill_fated - $mount_dif;
                                 }
                             }

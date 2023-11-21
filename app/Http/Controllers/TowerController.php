@@ -1822,7 +1822,7 @@ class TowerController extends Controller
                     <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                         <center>
                             <p><strong>{$product['product']['model']['model']}</strong></p>
-                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:5px;border:solid 2px #000;'></img>
+                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='object-fit: cover; object-position: center center; cursor: pointer; height:80px;margin-top:25px;border:solid 2px #2f3a599e;border-radius:8px; padding:5px;'></img>
                             <div style='{$details_equipment}'>
                                 <p>Mac: <strong>{$product['product']['mac']}</strong><p>
                                 <p>Serie: <strong>{$product['product']['serie']}</strong></p>                                 
@@ -1974,10 +1974,10 @@ class TowerController extends Controller
                 $images .= "
                 <div style='page-break-before: always;'>
                     <p><strong>{$count}) {$image->description}</strong></p>
-                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
-                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <p style='margin-left:18px'><strong>Fecha:</strong> {$image->creation_date}</p>
+                    <p style='margin-left:18px'><strong>Usuario:</strong> {$userCreation->username}</p>
                     <center>
-                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px #000;'>
+                        <img src='https://almacen.fastnetperu.com.pe/api/towerimgs/{$image->id}/full' alt='-' style='object-fit: contain; object-position: center center; max-width: 650px; max-height: 700px; width: auto; height: auto;margin-top:5px;border:solid 2px rgb(22, 31, 48);padding:5px;border-radius:12px;'>
                     </center>
                 </div>
                 ";
