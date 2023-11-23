@@ -612,7 +612,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar productos');
             }
 
-            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNotNull('status')
+            $productsJpa = ViewProductByTechnical::where('technical__id', $request->id)->whereNot('status', 0)->whereNotNull('status')
                 ->whereNot('type', 'LEND')->get();
 
             $products = array();
