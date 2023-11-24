@@ -467,6 +467,15 @@ Route::get('/roomimgs/{id}/{zize}', [RoomController::class, 'images']);
 Route::post('/room/generate/report/details', [RoomController::class, 'reportDetailsByTower']);
 Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
+// PARTS CAR
+Route::get('/unities', [UnityController::class, 'index']);
+Route::post('/unities', [UnityController::class, 'store']);
+Route::patch('/unities', [UnityController::class, 'update']);
+Route::delete('/unities', [UnityController::class, 'destroy']);
+Route::post('/unities/search', [UnityController::class, 'search']);
+Route::post('/unities/restore', [UnityController::class, 'restore']);
+Route::post('/unities/paginate', [UnityController::class, 'paginate']);
+
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
