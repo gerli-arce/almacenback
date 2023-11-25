@@ -468,13 +468,13 @@ Route::post('/room/generate/report/details', [RoomController::class, 'reportDeta
 Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
 
 // PARTS CAR
-Route::get('/part_car', [PartsCarsController::class, 'index']);
-Route::post('/part_car', [PartsCarsController::class, 'store']);
-Route::patch('/part_car', [PartsCarsController::class, 'update']);
-Route::delete('/part_car', [PartsCarsController::class, 'destroy']);
-Route::post('/part_car/search', [PartsCarsController::class, 'search']);
-Route::post('/part_car/restore', [PartsCarsController::class, 'restore']);
-Route::post('/part_car/paginate', [PartsCarsController::class, 'paginate']);
+Route::get('/car_part', [PartsCarsController::class, 'index']);
+Route::post('/car_part', [PartsCarsController::class, 'store']);
+Route::patch('/car_part', [PartsCarsController::class, 'update']);
+Route::delete('/car_part', [PartsCarsController::class, 'destroy']);
+Route::post('/car_part/search', [PartsCarsController::class, 'search']);
+Route::post('/car_part/restore', [PartsCarsController::class, 'restore']);
+Route::post('/car_part/paginate', [PartsCarsController::class, 'paginate']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);

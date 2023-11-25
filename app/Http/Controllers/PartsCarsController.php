@@ -21,7 +21,7 @@ class PartsCarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'cars', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'create')) {
                 throw new Exception('No tienes permisos en ' . $branch);
             }
 
@@ -87,36 +87,6 @@ class PartsCarsController extends Controller
         }
     }
 
-    public function index(Request $request)
-    {
-        $response = new Response();
-        try {
-
-            [$branch, $status, $message, $role] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'read')) {
-                throw new Exception('No tienes permisos para listar las unidades de ' . $branch);
-            }
-
-            $brandsJpa = Role::whereNotNull('status')->get();
-
-            $response->setStatus(200);
-            $response->setMessage('Operación correcta');
-            $response->setData($brandsJpa->toArray());
-        } catch (\Throwable$th) {
-            $response->setMessage($th->getMessage());
-            $response->setStatus(400);
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
-        }
-    }
-
     public function paginate(Request $request)
     {
         $response = new Response();
@@ -127,7 +97,7 @@ class PartsCarsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'read')) {
                 throw new Exception('No tienes permisos de ' . $branch);
             }
 
@@ -188,54 +158,24 @@ class PartsCarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'update')) {
-                throw new Exception('No tienes permisos para actualizar unidades');
+            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'update')) {
+                throw new Exception('No tienes permisos para actualizar parte del vehiculo');
             }
 
-            $unityJpa = PartsCars::find($request->id);
-            if (!$unityJpa) {
+            $partsCarJpa = PartsCars::find($request->id);
+            if (!$partsCarJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
-
-            if (isset($request->name)) {
-                $verifyCatJpa = PartsCars::select(['id', 'name'])
-                    ->where('name', $request->name)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para unidad");
-                }
-                $unityJpa->name = $request->name;
+            
+            if(isset($request->part)){
+                $partsCarJpa->part = $request->part;
             }
 
-            if (isset($request->acronym)) {
-                $verifyCatJpa = PartsCars::select(['id', 'acronym'])
-                    ->where('acronym', $request->acronym)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro acronimo para esta marca");
-                }
-                $unityJpa->acronym = $request->acronym;
-            }
-
-            if (isset($request->description)) {
-                $unityJpa->description = $request->description;
-            }
-
-            if (gValidate::check($role->permissions, $branch, 'unities', 'change_status')) {
-                if (isset($request->status)) {
-                    $unityJpa->status = $request->status;
-                }
-            }
-
-            $unityJpa->update_date = gTrace::getDate('mysql');
-            $unityJpa->_update_user = $userid;
-
-            $unityJpa->save();
+            $partsCarJpa->description = $request->description;
+            $partsCarJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La unidad ha sido actualizada correctamente');
+            $response->setMessage('La parte del vehiculo ha sido actualizada correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -256,8 +196,8 @@ class PartsCarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar unidades en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar parte del vehiculo en ' . $branch);
             }
 
             if (
@@ -266,18 +206,16 @@ class PartsCarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityJpa = PartsCars::find($request->id);
-            if (!$unityJpa) {
-                throw new Exception('La unidad que deseas eliminar no existe');
+            $partsCarJpa = PartsCars::find($request->id);
+            if (!$partsCarJpa) {
+                throw new Exception('La parte del vehiculo que deseas eliminar no existe');
             }
 
-            $unityJpa->update_date = gTrace::getDate('mysql');
-            $unityJpa->_update_user = $userid;
-            $unityJpa->status = null;
-            $unityJpa->save();
+            $partsCarJpa->status = null;
+            $partsCarJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La unidad a sido eliminada correctamente');
+            $response->setMessage('La parte del vehiculo a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
@@ -298,8 +236,8 @@ class PartsCarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar inidades en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar parte del vehiculo en ' . $branch);
             }
 
             if (
@@ -308,18 +246,16 @@ class PartsCarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityJpa = PartsCars::find($request->id);
-            if (!$unityJpa) {
-                throw new Exception('La unidad que deseas restaurar no existe');
+            $partCarsJpa = PartsCars::find($request->id);
+            if (!$partCarsJpa) {
+                throw new Exception('La parte del vehiculo que deseas restaurar no existe');
             }
 
-            $unityJpa->update_date = gTrace::getDate('mysql');
-            $unityJpa->_update_user = $userid;
-            $unityJpa->status = "1";
-            $unityJpa->save();
+            $partCarsJpa->status = "1";
+            $partCarsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La unidad a sido restaurada correctamente');
+            $response->setMessage('La parte del vehiculo a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
