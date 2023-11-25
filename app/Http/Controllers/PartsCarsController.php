@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Response;
-use App\Models\Unity;
+use App\Models\PartsCars;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,50 +21,23 @@ class PartsCarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'create')) {
-                throw new Exception('No tienes permisos para agregar unidades');
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'create')) {
+                throw new Exception('No tienes permisos en ' . $branch);
             }
 
             if (
-                !isset($request->value) ||
-                !isset($request->acronym) ||
-                !isset($request->name)
+                !isset($request->part)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityValidation = Unity::select(['acronym', 'name'])
-                ->where('acronym', $request->acronym)
-                ->orWhere('name', $request->name)
-                ->first();
-
-            if ($unityValidation) {
-                if ($unityValidation->acronym == $request->acronym) {
-                    throw new Exception("Escoja otro acronimo para la unidad");
-                }
-                if ($unityValidation->name == $request->name) {
-                    throw new Exception("Escoja otro nombre para la marca");
-                }
-            }
-
-            $inityJpa = new Unity();
-            $inityJpa->value = $request->value;
-            $inityJpa->acronym = $request->acronym;
-            $inityJpa->name = $request->name;
-
-            if (isset($request->description)) {
-                $inityJpa->description = $request->description;
-            }
-
-            $inityJpa->creation_date = gTrace::getDate('mysql');
-            $inityJpa->_creation_user = $userid;
-            $inityJpa->update_date = gTrace::getDate('mysql');
-            $inityJpa->_update_user = $userid;
-            $inityJpa->status = "1";
-            $inityJpa->save();
+            $partsCarJpa = new PartsCars();
+            $partsCarJpa->part = $request->part;
+            $partsCarJpa->status = 1;
+            $partsCarJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La unidad se a agregado correctamente');
+            $response->setMessage('La parte del vehículo se a agregado correctamente');
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -75,6 +48,7 @@ class PartsCarsController extends Controller
             );
         }
     }
+
 
     public function search(Request $request)
     {
@@ -89,7 +63,7 @@ class PartsCarsController extends Controller
             //     throw new Exception('No tienes permisos para listar unidades');
             // }
 
-            $peopleJpa = Unity::select([
+            $peopleJpa = PartsCars::select([
                 'id',
                 'acronym',
                 'name',
@@ -153,27 +127,24 @@ class PartsCarsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'unities', 'read')) {
-                throw new Exception('No tienes permisos para listar las unidades  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos de ' . $branch);
             }
 
-            $query = Unity::select(['*'])
+            $query = PartsCars::select(['*'])
                 ->orderBy($request->order['column'], $request->order['dir']);
 
-            if (!$request->all) {
-                $query->whereNotNull('status');
-            }
-
+                if(!$request->all){
+                    $query->whereNotNull('status');
+                }
+    
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'acronym' || $column == '*') {
-                    $q->where('acronym', $type, $value);
-                }
-                if ($column == 'name' || $column == '*') {
-                    $q->where('name', $type, $value);
+                if ($column == 'part' || $column == '*') {
+                    $q->where('part', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -181,7 +152,7 @@ class PartsCarsController extends Controller
             });
 
             $iTotalDisplayRecords = $query->count();
-            $initiesJpa = $query->select('*')
+            $partsCarJpa = $query->select('*')
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
@@ -190,8 +161,8 @@ class PartsCarsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Unity::count());
-            $response->setData($initiesJpa->toArray());
+            $response->setITotalRecords(PartsCars::count());
+            $response->setData($partsCarJpa->toArray());
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -202,7 +173,6 @@ class PartsCarsController extends Controller
             );
         }
     }
-
     public function update(Request $request)
     {
         $response = new Response();
@@ -222,13 +192,13 @@ class PartsCarsController extends Controller
                 throw new Exception('No tienes permisos para actualizar unidades');
             }
 
-            $unityJpa = Unity::find($request->id);
+            $unityJpa = PartsCars::find($request->id);
             if (!$unityJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
             if (isset($request->name)) {
-                $verifyCatJpa = Unity::select(['id', 'name'])
+                $verifyCatJpa = PartsCars::select(['id', 'name'])
                     ->where('name', $request->name)
                     ->where('id', '!=', $request->id)
                     ->first();
@@ -239,7 +209,7 @@ class PartsCarsController extends Controller
             }
 
             if (isset($request->acronym)) {
-                $verifyCatJpa = Unity::select(['id', 'acronym'])
+                $verifyCatJpa = PartsCars::select(['id', 'acronym'])
                     ->where('acronym', $request->acronym)
                     ->where('id', '!=', $request->id)
                     ->first();
@@ -296,7 +266,7 @@ class PartsCarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityJpa = Unity::find($request->id);
+            $unityJpa = PartsCars::find($request->id);
             if (!$unityJpa) {
                 throw new Exception('La unidad que deseas eliminar no existe');
             }
@@ -338,7 +308,7 @@ class PartsCarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $unityJpa = Unity::find($request->id);
+            $unityJpa = PartsCars::find($request->id);
             if (!$unityJpa) {
                 throw new Exception('La unidad que deseas restaurar no existe');
             }
