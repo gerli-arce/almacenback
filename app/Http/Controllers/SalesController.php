@@ -277,6 +277,9 @@ class SalesController extends Controller
                 } else if ($request->filter == 'SALES') {
                     $type_sales = "VENTAS";
                     $query->where('type_operation__operation', 'VENTA');
+                }else if ($request->filter == 'LEND') {
+                    $type_sales = "PRESTAMO";
+                    $query->where('type_operation__operation', 'PRESTAMO');
                 }
             }
 
@@ -544,7 +547,48 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
-                } else if ($sale['type_operation']['operation'] == 'VENTA') {
+                } else if ($sale['type_operation']['operation'] == 'PRESTAMO') {
+
+                    $saleProductJpa = SalesProducts::select([
+                        'sales_products.id as id',
+                        'tech.id as technical__id',
+                        'tech.name as technical__name',
+                        'tech.lastname as technical__lastname',
+                        'sales_products.date_sale as date_sale',
+                        'sales_products.status_sale as status_sale',
+                        'sales_products.description as description',
+                        'sales_products.status as status',
+                    ])
+                        ->join('people as tech', 'sales_products._technical', 'tech.id')
+                        ->where('sales_products.id', $sale['id'])->first();
+
+                    $saleJpa = gJSON::restore($saleProductJpa->toArray(), '__');
+
+                    $sale_details = "
+                    <div>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>PRESTATARIO</td>
+                                    <td>{$saleJpa['technical']['name']} {$saleJpa['technical']['lastname']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$saleJpa['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                <td class='n'>Tipo</td>
+                                <td>{$tipo_instalacion}</td>
+                            </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    ";
+                }else if($sale['type_operation']['operation'] == 'VENTA'){
                     $viewSale = Sale::where('id', $sale['id'])->first();
                     $saleJpa = gJSON::restore($viewSale->toArray(), '__');
 
