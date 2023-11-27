@@ -16,7 +16,6 @@ class CarsComponentsController extends Controller
     {
         $response = new Response();
         try {
-
             
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -28,19 +27,18 @@ class CarsComponentsController extends Controller
 
             if (
                 !isset($request->component) ||
-                !isset($request->correlative) ||
-                !isset($request->_view)
+                !isset($request->_part)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $permissionValidation = CarComponents::select(['component'])
+            $carsComponentsValidation = CarComponents::select(['component'])
                 ->where('component', $request->component)
                 ->where('_part', $request->_part)
                 ->first();
 
-            if ($permissionValidation) {
-                throw new Exception("El permiso ya existe.");
+            if ($carsComponentsValidation) {
+                throw new Exception("El componente ya existe.");
             }
 
             $carComponentsJpa = new CarComponents();
@@ -54,7 +52,7 @@ class CarsComponentsController extends Controller
             $carComponentsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('Vista agregada correctamente');
+            $response->setMessage('Componente agregada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

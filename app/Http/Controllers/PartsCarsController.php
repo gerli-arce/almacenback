@@ -12,6 +12,25 @@ use Illuminate\Support\Facades\DB;
 
 class PartsCarsController extends Controller
 {
+
+    public function index (Response $rsponse){
+        $response = new Response();
+        try {
+            $viewsJpa = PartsCars::whereNotNull('status')->orderBy('part', 'ASC')->get();
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($viewsJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -48,7 +67,6 @@ class PartsCarsController extends Controller
             );
         }
     }
-
 
     public function search(Request $request)
     {

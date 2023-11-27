@@ -14,7 +14,7 @@ use App\Http\Controllers\{
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
-    PriceController, PartsCarsController,
+    PriceController, PartsCarsController, CarsComponentsController,
 };
 
 /*
@@ -475,6 +475,15 @@ Route::delete('/car_part', [PartsCarsController::class, 'destroy']);
 Route::post('/car_part/search', [PartsCarsController::class, 'search']);
 Route::post('/car_part/restore', [PartsCarsController::class, 'restore']);
 Route::post('/car_part/paginate', [PartsCarsController::class, 'paginate']);
+
+// COMPONENT CAR
+Route::get('/car_component', [CarsComponentsController::class, 'index']);
+Route::post('/car_component', [CarsComponentsController::class, 'store']);
+Route::patch('/car_component', [CarsComponentsController::class, 'update']);
+Route::delete('/car_component', [CarsComponentsController::class, 'destroy']);
+Route::post('/car_component/search', [CarsComponentsController::class, 'search']);
+Route::post('/car_component/restore', [CarsComponentsController::class, 'restore']);
+Route::post('/car_component/paginate', [CarsComponentsController::class, 'paginate']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
