@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJSON;
 use App\gLibraries\gValidate;
 use App\Models\CarComponents;
+use App\Models\ViewComponentsByPart;
 use App\Models\Response;
 use Exception;
 use Illuminate\Http\Request;
@@ -61,38 +63,6 @@ class CarsComponentsController extends Controller
                 $response->toArray(),
                 $response->getStatus()
             );
-        }$response = new Response();
-        try {
-
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'cars_parts', 'create')) {
-                throw new Exception('No tienes permisos en ' . $branch);
-            }
-
-            if (
-                !isset($request->part)
-            ) {
-                throw new Exception("Error: No deje campos vacíos");
-            }
-
-            $partsCarJpa = new PartsCars();
-            $partsCarJpa->part = $request->part;
-            $partsCarJpa->status = 1;
-            $partsCarJpa->save();
-
-            $response->setStatus(200);
-            $response->setMessage('La parte del vehículo se a agregado correctamente');
-        } catch (\Throwable $th) {
-            $response->setStatus(400);
-            $response->setMessage($th->getMessage());
-        } finally {
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
         }
     }
 
@@ -101,23 +71,8 @@ class CarsComponentsController extends Controller
         $response = new Response();
         try {
 
-            $query = ViewPermissionsByView::select([
-                'id',
-                'permission',
-                'correlative',
-                'description',
-                'status',
-                'view__id',
-                'view__view',
-                'view__path',
-                'view__description',
-                'view__status',
-
-            ])
+            $query = ViewComponentsByPart::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
-
-            // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
-            // }
 
             if (!$request->all) {
                 $query->whereNotNull('status');
@@ -129,14 +84,11 @@ class CarsComponentsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
-                if ($column == 'permission' || $column == '*') {
-                    $q->where('permission', $type, $value);
+                if ($column == 'component' || $column == '*') {
+                    $q->where('component', $type, $value);
                 }
-                if ($column == 'correlative' || $column == '*') {
-                    $q->where('correlative', $type, $value);
-                }
-                if ($column == 'view__view' || $column == '*') {
-                    $q->orWhere('view__view', $type, $value);
+                if ($column == 'part' || $column == '*') {
+                    $q->where('parts_car__part', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -144,23 +96,23 @@ class CarsComponentsController extends Controller
 
             });
             $iTotalDisplayRecords = $query->count();
-            $permissionsJpa = $query->select('*')
+            $componentsJpa = $query->select('*')
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
 
-            $permissions = array();
-            foreach ($permissionsJpa as $permissionJpa) {
-                $permission = gJSON::restore($permissionJpa->toArray(), '__');
-                $permissions[] = $permission;
+            $components = array();
+            foreach ($componentsJpa as $componentnJpa) {
+                $component = gJSON::restore($componentnJpa->toArray(), '__');
+                $components[] = $component;
             }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Permission::count());
-            $response->setData($permissions);
+            $response->setITotalRecords(CarComponents::count());
+            $response->setData($components);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln ' . $th->getLine());
@@ -184,40 +136,38 @@ class CarsComponentsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $PermissionValidation = Permission::select(['permissions.id', 'permissions.permission'])
-                ->where('permission', $request->permission)
+            $componentValidation = CarComponents::select(['components_car.id', 'components_car.component'])
+                ->where('component', $request->component)
                 ->where('id', '!=', $request->id)
                 ->first();
 
-            if ($PermissionValidation) {
-                throw new Exception("Este permiso ya existe");
+            if ($componentValidation) {
+                throw new Exception("Este componente ya existe");
             }
 
-            $permissionJpa = Permission::find($request->id);
-            if (!$permissionJpa) {
-                throw new Exception("El permiso que solicitada no existe");
+            $componentJpa = CarComponents::find($request->id);
+            if (!$componentJpa) {
+                throw new Exception("El componente que solicitada no existe");
             }
-            if (isset($request->permission)) {
-                $permissionJpa->permission = $request->permission;
+            if (isset($request->component)) {
+                $componentJpa->component = $request->component;
             }
-            if (isset($request->correlative)) {
-                $permissionJpa->correlative = $request->correlative;
-            }
-            if (isset($request->_view)) {
-                $permissionJpa->_view = $request->_view;
+           
+            if (isset($request->_part)) {
+                $componentJpa->_part = $request->_part;
             }
             if (isset($request->description)) {
-                $permissionJpa->description = $request->description;
+                $componentJpa->description = $request->description;
             }
 
             if (isset($request->status)) {
-                $permissionJpa->status = $request->status;
+                $componentJpa->status = $request->status;
             }
 
-            $permissionJpa->save();
+            $componentJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El permiso se a actualizado correctamente');
+            $response->setMessage('El componente se a actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
