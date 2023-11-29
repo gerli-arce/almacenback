@@ -899,6 +899,269 @@ class LendProductsController extends Controller
         }
     }
 
+    public function generateReportByLend(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'read')) {
+                throw new Exception('No tienes permisos para listar registros de prestamos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportRecordsLends.html');
+
+            // if (
+            //     !isset($request->date_start) ||
+            //     !isset($request->date_end)
+            // ) {
+            //     throw new Exception("Error: No deje campos vacíos");
+            // }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+            $dat_technical = People::find($request->technical);
+
+            $query = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+            ])
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->orderBy('view_sales.id', 'desc')
+                ->where('view_sales.technical_id', $request->technical)
+            // ->whereNotNUll('view_sales.status')
+                ->where('branch__correlative', $branch);
+
+            if (isset($request->model)) {
+                $query
+                    ->where('view_details_sales.product__model__id', $request->model)
+                    ->where('type_intallation', 'PRESTAMO')
+                    ->orWhere(function ($q) use ($request) {
+
+                        $q->where('view_details_sales.product__model__id', $request->model)
+                            ->where('technical_id', $request->technical)
+                            ->where('type_intallation', 'PRESTAMO');
+                    })
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('view_details_sales.product__model__id', $request->model)
+                            ->where('technical_id', $request->technical)
+                            ->where('type_intallation', 'DEVOLUCION_PRESTAMO');
+                    });
+            } else {
+                $query->where('view_sales.type_intallation', 'PRESTAMO')
+                    ->orWhere('view_sales.type_intallation', 'DEVOLUCION_PRESTAMO');
+            }
+
+            $query->where('view_sales.type_operation__id', 12);
+
+            if (isset($request->date_start) || isset($request->date_end)) {
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd]);
+            }
+
+            $iTotalDisplayRecords = $query->count();
+
+            $salesJpa = $query->get();
+
+            $sales = array();
+            foreach ($salesJpa as $saleJpa) {
+                $sale = gJSON::restore($saleJpa->toArray(), '__');
+                $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                $details = array();
+                foreach ($detailSalesJpa as $detailJpa) {
+                    $detail = gJSON::restore($detailJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale['details'] = $details;
+                $sales[] = $sale;
+            }
+
+            $count = 1;
+            $view_details = '';
+            $sumary = '';
+            foreach ($sales as $sale) {
+
+                $technical_details = "";
+                $saleProductJpa = SalesProducts::select([
+                    'sales_products.id as id',
+                    'tech.id as technical__id',
+                    'tech.name as technical__name',
+                    'tech.lastname as technical__lastname',
+                    'sales_products.date_sale as date_sale',
+                    'sales_products.status_sale as status_sale',
+                    'sales_products.description as description',
+                    'sales_products.status as status',
+                ])
+                    ->join('people as tech', 'sales_products._technical', 'tech.id')
+                    ->where('sales_products.id', $sale['id'])->first();
+
+                $technical_details = "
+                    <div>
+                        <p>Técnico: <strong>{$saleProductJpa->technical__name} {$saleProductJpa->technical__lastname}</strong></p>
+                        <p>Fecha: <strong>{$saleProductJpa->date_sale}</strong></p>
+                    </div>
+                    ";
+
+                $usuario = "
+                <div>
+                    <p><strong> {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} </strong> </p>
+                    <p>{$sale['date_sale']}</p>
+                </div>
+                ";
+
+                $tipo_instalacion = isset($sale['type_intallation']) ? $sale['type_intallation'] : "<i>sin tipo</i>";
+                $tipo_instalacion = str_replace('_', ' ', $tipo_instalacion);
+
+                $datos = "
+                    <div>
+                        <p><strong>Tipo salida</strong>: {$tipo_instalacion}</p>
+                    </div>
+                ";
+
+                $sumary .= "
+                <tr>
+                    <td>{$count}</td>
+                    <td>{$usuario}</td>
+                    <td>{$datos}</td>
+                </tr>
+                ";
+
+                $view_details .= "
+                <div style='margin-top:8px;'>
+                    <p style='margin-buttom: 12px;'>{$count}) <strong>{$tipo_instalacion}</strong> - {$sale['user_creation']['person']['name']} {$sale['user_creation']['person']['lastname']} - {$sale['date_sale']} </p>
+                    <div style='margin-buttom: 12px;margin-left:20px;'>
+                        {$technical_details}
+                    </div>
+                    <div style='display: flex;margin-top: 50px;'>";
+
+                foreach ($sale['details'] as $detailJpa) {
+                    $details_equipment = 'display:none;';
+                    if ($detailJpa['product']['type'] == 'EQUIPO') {
+                        $details_equipment = '';
+                    }
+                    $view_details .= "
+                            <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 300px; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
+                                <center>
+                                    <p><strong>{$detailJpa['product']['model']['model']}</strong></p>
+                                    <img src='https://almacen.fastnetperu.com.pe/api/model/{$detailJpa['product']['model']['relative_id']}/mini' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;margin-top:12px;'></img>
+                                    <div style='{$details_equipment}'>
+                                        <table class='table_details'>
+                                            <tbody>
+                                                <tr>
+                                                    <td>MAC</td>
+                                                    <td>{$detailJpa['product']['mac']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>SERIE</td>
+                                                    <td>{$detailJpa['product']['serie']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <table class='table_details'>
+                                            <thead>
+                                                <tr>
+                                                    <td>NUEVOS</td>
+                                                    <td>SEMINUEVOS</td>
+                                                    <td>MALOGRADOS</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>{$detailJpa['mount_new']}</td>
+                                                    <td>{$detailJpa['mount_second']}</td>
+                                                    <td>{$detailJpa['mount_ill_fated']}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <p><strong>Descripción:</strong>{$detailJpa['description']}</p>
+                                    </div>
+                                </center>
+                            </div>
+                        ";
+                }
+
+                $view_details .= "
+                            </div>
+                        </div>
+                    ";
+
+                $count = $count + 1;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_interaction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{people_names}',
+                    '{date_start_str}',
+                    '{date_end_str}',
+                    '{summary}',
+                    '{details}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $request->date_start_str,
+                    $request->date_end_str,
+                    $sumary,
+                    $view_details,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getStockProductByModel(Request $request)
     {
         $response = new Response();
