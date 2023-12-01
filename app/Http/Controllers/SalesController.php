@@ -866,7 +866,11 @@ class SalesController extends Controller
                 } else if ($request->filter == 'SALES') {
                     $type_sales = "VENTAS";
                     $query->where('view_sales.type_operation__operation', 'VENTA');
+                }else if ($request->filter == 'LEND'){
+                    $type_sales = "PRESTAMOS";
+                    $query->where('view_sales.type_operation__operation', 'PRESTAMO');
                 }
+
             }
 
             $salesJpa = $query->get();
