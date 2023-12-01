@@ -382,6 +382,7 @@ Route::post('/lend/paginate/record', [LendProductsController::class, 'paginateRe
 Route::post('/lend/record/report', [LendProductsController::class, 'generateReportBySearch']);
 Route::post('/lend/takeout/lend', [LendProductsController::class, 'recordTakeOutByTechnical']);
 Route::post('/lend/search/stock', [LendProductsController::class, 'getStockProductByModel']);
+Route::post('/lend/report', [LendProductsController::class, 'reportLend']);
 
 
 // TOWER

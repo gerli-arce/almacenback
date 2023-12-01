@@ -406,6 +406,127 @@ class LendProductsController extends Controller
         }
     }
 
+    public function reportLend(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'read')) {
+                throw new Exception('No tienes permisos para listar registros de prestamos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportLend.html');
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $dat_technical = People::find($request->technical_id);
+
+            $lendJpa = ViewSales::select([
+                'view_sales.id as id',
+                'view_sales.client_id as client_id',
+                'view_sales.technical_id as technical_id',
+                'view_sales.branch__id as branch__id',
+                'view_sales.branch__name as branch__name',
+                'view_sales.branch__correlative	 as branch__correlative',
+                'view_sales.type_operation__id	 as type_operation__id',
+                'view_sales.type_operation__operation	 as type_operation__operation',
+                'view_sales.tower_id as tower_id',
+                'view_sales.plant_id as plant_id',
+                'view_sales.room_id as room_id',
+                'view_sales.type_intallation as type_intallation',
+                'view_sales.date_sale as date_sale',
+                'view_sales.issue_date as issue_date',
+                'view_sales.issue_user_id as issue_user_id',
+                'view_sales.status_sale as status_sale',
+                'view_sales.description as description',
+                'view_sales.user_creation__id as user_creation__id',
+                'view_sales.user_creation__username as user_creation__username',
+                'view_sales.user_creation__person__id as user_creation__person__id',
+                'view_sales.user_creation__person__name as user_creation__person__name',
+                'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                'view_sales.creation_date as creation_date',
+                'view_sales.update_user_id as update_user_id',
+                'view_sales.update_date as update_date',
+                'view_sales.status as status',
+            ])
+                ->distinct()
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                ->where('view_sales.id', $request->id)->first();
+
+            $sale = gJSON::restore($lendJpa->toArray(), '__');
+            $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+            $details = array();
+            
+            foreach ($detailSalesJpa as $detailJpa) {
+                $detail = gJSON::restore($detailJpa->toArray(), '__');
+                $details[] = $detail;
+            }
+
+            $sale['details'] = $details;
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_interaction}',
+            //         '{issue_long_date}',
+            //         '{user_generate}',
+            //         '{people_names}',
+            //         '{date_start_str}',
+            //         '{date_end_str}',
+            //         '{summary}',
+            //         '{details}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $user->person__name . ' ' . $user->person__lastname,
+            //         $dat_technical->name . ' ' . $dat_technical->lastname,
+            //         $request->date_start_str,
+            //         $request->date_end_str,
+            //         $sumary,
+            //         $view_details,
+            //     ],
+            //     $template
+            // );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Lend.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setData($sale);
+            // $response->setMessage('operacion correcta');
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function paginateRecordsLends(Request $request)
     {
         $response = new Response();
@@ -455,7 +576,7 @@ class LendProductsController extends Controller
                 ->whereNotNUll('view_sales.status');
 
             $query->where('type_operation__id', '12');
-            
+
             if (isset($request->search['model'])) {
                 $query
                     ->where('view_details_sales.product__model__id', $request->search['model'])
@@ -899,7 +1020,8 @@ class LendProductsController extends Controller
         }
     }
 
-    public function generateReportByLend(Request $request){
+    public function generateReportByLend(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
