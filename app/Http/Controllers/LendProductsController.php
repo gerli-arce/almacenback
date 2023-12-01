@@ -537,6 +537,8 @@ class LendProductsController extends Controller
                     '{technical}',
                     '{operation}',
                     '{date_register}',
+                    '{prestamista}',
+                    '{prestatario}',
                     '{summary}',
                 ],
                 [
@@ -547,6 +549,8 @@ class LendProductsController extends Controller
                     $dat_technical->name . ' ' . $dat_technical->lastname,
                     $sale['status_sale'],
                     $sale['creation_date'],
+                    $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $user->person__name . ' ' . $user->person__lastname,
                     $sumary,
                 ],
                 $template
