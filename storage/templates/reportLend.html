@@ -253,83 +253,19 @@
                         "
                     >
                 <span>RUC 20602791816</span>
-                <span>GUIA </span>
-                <span>ELECTRÓNICA </span>
+                <span>PRESTAMO</span>
                 <br>
-                <span>FAS-{num_guia}</span>
+                <span>{num}</span>
                 </div>
                 </div>
             </div>
             <br />
-
-            <div style="display: inline; font-size: 13px">
-                <div style="max-width: 50%; display: inline-block">
-                    <p style="margin: 0px; padding: 0px">Sucursal de envio:</p>
-                    <strong style="margin: 0px; padding: 0px"
-                        >{branch_send}</strong
-                    >
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 30px;
-                    "
-                >
-                    <p style="margin: 0px; padding: 0px">
-                        Sucursal de recepción:
-                    </p>
-                    <strong style="margin: 0px; padding: 0px">
-                        {branch_designation}
-                    </strong>
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 30px;
-                    "
-                >
-                    <p style="margin: 0px; padding: 0px">
-                        Responsable Resepcion:
-                    </p>
-                    <strong style="margin: 0px; padding: 0px">
-                        {responsible_pickup}
-                    </strong>
-                </div>
-            </div>
-            <br />
-            <hr />
-            <div style="display: inline; font-size: 13px; margin-top: 5px">
-                <div style="max-width: 50%; display: inline-block">
-                    <p>Fecha de envio:</p>
-                    <strong>{date_send}</strong>
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 120px;
-                    "
-                >
-                    <p>Empresa de transporte:</p>
-                    <strong> {business_transport} </strong>
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 70px;
-                    "
-                >
-                    <p>Precio de transporte:</p>
-                    <strong> S/.{transport_price} </strong>
-                </div>
-                <!-- <div>
-                    <p>Descripción</p>
-                    <strong style="font-size: 13px;"> {description} </strong>
-                </div> -->
-            </div>
+            <p id="date">{branch_interaction}, {issue_long_date}</p>
+            <p><strong>Prestamista:</strong> {user}</p>
+            <p><strong>Prestatario:</strong> {technical}</p>
+            <p><strong>Operación:</strong> {operation}</p>
+            <p><strong>Fecha de registro:</strong> {date_register}</p>
+          
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
             <table style="height: 370px">
                 <thead>
