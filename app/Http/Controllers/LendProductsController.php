@@ -476,55 +476,15 @@ class LendProductsController extends Controller
 
             foreach ($detailSalesJpa as $detailJpa) {
                 $product = gJSON::restore($detailJpa->toArray(), '__');
-
-                
                 $details[] = $product;
-                $model = $relativeId = $unity = "";
-                if ($product['product']['type'] === "EQUIPO") {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
-                } else {
-                    $model = $product['product']['model']['model'];
-                    $relativeId = $product['product']['model']['relative_id'];
-                    $unity = $product['product']['model']['unity']['name'];
-                }
-                $mount_new = $product['mount_new'];
-                $mount_second = $product['mount_second'];
-                $mount_ill_fated = $product['mount_ill_fated'];
-                if (isset($models[$model])) {
-                    $models[$model]['mount_new'] += $mount_new;
-                    $models[$model]['mount_second'] += $mount_second;
-                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
-                } else {
-                    $models[$model] = array(
-                        'model' => $model,
-                        'mount_new' => $mount_new,
-                        'mount_second' => $mount_second,
-                        'mount_ill_fated' => $mount_ill_fated,
-                        'relative_id' => $relativeId,
-                        'unity' => $unity);
-                }
-            }
-            $count = 1;
-            $products = array_values($models);
-            foreach ($products as $detail) {
-                $sumary .= "
-                <tr>
-                    <td><center style='font-size:12px;'>{$count}</center></td>
-                    <td>
-                        <center style='font-size:12px;color:green;'>
-                            Nu:{$detail['mount_new']} |
-                            Se:{$detail['mount_second']} |
-                            Ma:{$detail['mount_ill_fated']}
-                        </center>
-                    </td>
-                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
-                </tr>
+
+                $sumary.="
+                
+                
                 ";
-                $count = $count + 1;
+             
             }
+           
 
             $sale['details'] = $details;
 
