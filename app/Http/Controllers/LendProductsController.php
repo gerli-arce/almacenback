@@ -478,9 +478,54 @@ class LendProductsController extends Controller
                 $product = gJSON::restore($detailJpa->toArray(), '__');
                 $details[] = $product;
 
+                $is_bisible = '';
+
+                if($product['product']['type'] == 'EQUIPO'){
+                    $is_bisible = '';
+                }else{
+                    $is_bisible = 'hide';
+                }
+
                 $sumary.="
-                
-                
+                <div class='content_detail'>
+                    <center>
+                        <p style='font-size:11px;'>{$product['product']['model']['model']}</p>
+                        <img src='https://almacenbackdev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' class='img_detail'>
+                        <div >
+                            <table class='table_details'>
+                                <thead>
+                                    <tr>
+                                        <td>Nuevos</td>
+                                        <td>Seminuevos</td>
+                                        <td>Malogrados</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{$product['mount_new']}</td>
+                                        <td>{$product['mount_second']}</td>
+                                        <td>{$product['mount_ill_fated']}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class='{$is_bisible}'>
+                            <table class='table_details'>
+                                <tbody>
+                                    <tr>
+                                        <td>MAC</td>
+                                        <td>{$product['product']['mac']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>SERIE</td>
+                                        <td>{$product['product']['serie']}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>{$product['description']}</p>
+                    </center>
+                </div>
                 ";
              
             }

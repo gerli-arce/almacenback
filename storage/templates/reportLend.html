@@ -86,30 +86,7 @@
             height: 2.41cm;
         }
 
-        table {
-            width: 100%;
-            border-spacing: 0;
-        }
-
-        table td {
-            vertical-align: middle;
-        }
-
-        table tbody td {
-            border-bottom: 1px solid #222222;
-        }
-
-        table thead td {
-            text-align: center;
-            font-weight: bold;
-            background-color: #323a46;
-            color: #ffffff !important;
-        }
-
-        table td {
-            vertical-align: middle;
-            padding: 5px 10px;
-        }
+      
 
         #total_hours {
             position: relative;
@@ -189,14 +166,51 @@
         }
 
         .content_detail {
+            height: auto;
             display: inline-block;
             width: 46%;
             max-width: 50%;
-            background-color: #2a325c23;
-            margin: 10px;
-            border: solid 2px rgb(27, 31, 49);
+            background-color: #4f5a8f10;
+            margin: 5px;
+            border: solid 1px rgba(27, 31, 49, 0.324);
             border-radius: 8px;
+            padding: 5px;
         }
+
+        .img_detail {
+            width: 20%;
+            border: 2px solid #0000;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .table_details {
+            border-collapse: collapse;
+            font-size: 11px;
+            margin: 5px;
+            width: 94%;
+            border: 1px solid #62697e52;
+            /* Agrega un borde a la tabla */
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .table_details thead tr td {
+            border: 1px solid #62697e52;
+            padding: 3px;
+            background-color: rgb(150 171 203 / 18%);
+        }
+
+        .table_details tbody tr td {
+            border: 1px solid #62697e52;
+            padding:3px;
+        }
+
+        .hide {
+            display: none;
+        }
+        
+
     </style>
 </head>
 
@@ -273,10 +287,8 @@
 
         <center class="text-bold" style="margin-top: 8px">Resumen</center>
         <div
-            style="display: flex; border: solid 1px rgb(40, 44, 61, 0.5);width: 100%;padding: 10px; border-radius: 8px; ">
-            <div style="">
-                <p>hola</p>
-            </div>
+            style="display:flexbox; border: solid 1px rgb(40, 44, 61, 0.5);width: 100%;padding: 10px; border-radius: 8px; padding-top: 70px;">
+            {summary}
         </div>
         <br />
         <div style="display: inline; font-size: 13px">
