@@ -490,7 +490,7 @@ class LendProductsController extends Controller
                 <div class='content_detail'>
                     <center>
                         <p style='font-size:11px;'>{$product['product']['model']['model']}</p>
-                        <img src='https://almacenbackdev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' class='img_detail'>
+                        <img src='https://almacenback.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' class='img_detail'>
                         <div >
                             <table class='table_details'>
                                 <thead>
