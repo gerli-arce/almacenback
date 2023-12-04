@@ -184,18 +184,7 @@ class CarsController extends Controller
                 throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 
-            $query = Brand::select([
-                'id',
-                'correlative',
-                'brand',
-                'description',
-                'relative_id',
-                'creation_date',
-                '_creation_user',
-                'update_date',
-                '_update_user',
-                'status',
-            ])
+            $query = Cars::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -207,11 +196,23 @@ class CarsController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'correlative' || $column == '*') {
-                    $q->where('correlative', $type, $value);
+                if ($column == 'placa' || $column == '*') {
+                    $q->where('placa', $type, $value);
                 }
-                if ($column == 'brand' || $column == '*') {
-                    $q->where('brand', $type, $value);
+                if ($column == 'color' || $column == '*') {
+                    $q->where('color', $type, $value);
+                }
+                if ($column == 'num_chasis' || $column == '*') {
+                    $q->orWhere('num_chasis', $type, $value);
+                }
+                if ($column == 'year' || $column == '*') {
+                    $q->orWhere('year', $type, $value);
+                }
+                if ($column == 'soat' || $column == '*') {
+                    $q->orWhere('soat', $type, $value);
+                }
+                if ($column == 'property_card' || $column == '*') {
+                    $q->orWhere('property_card', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -219,16 +220,7 @@ class CarsController extends Controller
             });
 
             $iTotalDisplayRecords = $query->count();
-            $brandsJpa = $query->select('id',
-                'correlative',
-                'brand',
-                'description',
-                'relative_id',
-                'creation_date',
-                '_creation_user',
-                'update_date',
-                '_update_user',
-                'status')
+            $brandsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
