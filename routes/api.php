@@ -14,7 +14,7 @@ use App\Http\Controllers\{
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
-    PriceController, PartsCarsController, CarsComponentsController,
+    PriceController, PartsCarsController, CarsComponentsController, CarsController,
 };
 
 /*
@@ -467,6 +467,15 @@ Route::get('/room/image/{id}', [RoomController::class, 'getImages']);
 Route::get('/roomimgs/{id}/{zize}', [RoomController::class, 'images']);
 Route::post('/room/generate/report/details', [RoomController::class, 'reportDetailsByTower']);
 Route::delete('/room/image/{id}', [RoomController::class, 'deleteImage']);
+
+//CAR
+Route::get('/car', [CarsController::class, 'index']);
+Route::post('/car', [CarsController::class, 'store']);
+Route::patch('/car', [CarsController::class, 'update']);
+Route::delete('/car', [CarsController::class, 'destroy']);
+Route::post('/car/search', [CarsController::class, 'search']);
+Route::post('/car/restore', [CarsController::class, 'restore']);
+Route::post('/car/paginate', [CarsController::class, 'paginate']);
 
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);
