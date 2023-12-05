@@ -476,6 +476,7 @@ Route::delete('/car', [CarsController::class, 'destroy']);
 Route::post('/car/search', [CarsController::class, 'search']);
 Route::post('/car/restore', [CarsController::class, 'restore']);
 Route::post('/car/paginate', [CarsController::class, 'paginate']);
+Route::get('/carimg/{id}/{zize}', [CarsController::class, 'images']);
 
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);

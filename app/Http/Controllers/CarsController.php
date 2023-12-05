@@ -9,7 +9,7 @@ use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\Cars;
-use App\Models\EntryDetail;
+use App\Models\ViewCars;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use Exception;
@@ -79,6 +79,14 @@ class CarsController extends Controller
                 $carsJpa->property_card = $request->property_card;
             }
 
+            if(isset($request->technical_review)){
+                $carsJpa->technical_review = $request->technical_review;
+            }
+            
+            if(isset($request->license)){
+                $carsJpa->license = $request->license;
+            }
+
             if(isset($request->_person)){
                 $carsJpa->_person = $request->_person;
             }
@@ -92,19 +100,26 @@ class CarsController extends Controller
                 isset($request->image_mini) &&
                 isset($request->image_full)
             ) {
-                if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
-                ) {
-                    $carsJpa->image_type = $request->image_type;
-                    $carsJpa->image_mini = base64_decode($request->image_mini);
-                    $carsJpa->image_full = base64_decode($request->image_full);
-                } else {
+                if($request->image_type != 'none'){
+                    if (
+                        $request->image_type &&
+                        $request->image_mini &&
+                        $request->image_full
+                    ) {
+                        $carsJpa->image_type = $request->image_type;
+                        $carsJpa->image_mini = base64_decode($request->image_mini);
+                        $carsJpa->image_full = base64_decode($request->image_full);
+                    } else {
+                        $carsJpa->image_type = null;
+                        $carsJpa->image_mini = null;
+                        $carsJpa->image_full = null;
+                    }
+                }else{
                     $carsJpa->image_type = null;
                     $carsJpa->image_mini = null;
                     $carsJpa->image_full = null;
                 }
+               
             }
 
             if (isset($request->description)) {
@@ -184,7 +199,7 @@ class CarsController extends Controller
                 throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 
-            $query = Cars::select('*')
+            $query = ViewCars::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -197,10 +212,10 @@ class CarsController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'placa' || $column == '*') {
-                    $q->where('placa', $type, $value);
+                    $q->orWhere('placa', $type, $value);
                 }
                 if ($column == 'color' || $column == '*') {
-                    $q->where('color', $type, $value);
+                    $q->orWhere('color', $type, $value);
                 }
                 if ($column == 'num_chasis' || $column == '*') {
                     $q->orWhere('num_chasis', $type, $value);
@@ -214,23 +229,39 @@ class CarsController extends Controller
                 if ($column == 'property_card' || $column == '*') {
                     $q->orWhere('property_card', $type, $value);
                 }
+                if ($column == 'model' || $column == '*') {
+                    $q->orWhere('model__model', $type, $value);
+                }
+                if ($column == 'person__name' || $column == '*') {
+                    $q->orWhere('person__name', $type, $value);
+                }
+                if ($column == 'person__lastname' || $column == '*') {
+                    $q->orWhere('person__lastname', $type, $value);
+                }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
             });
 
             $iTotalDisplayRecords = $query->count();
-            $brandsJpa = $query
+            $carsJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
+
+            $cars = array();
+            foreach ($carsJpa as $carJpa) {
+                $car = gJSON::restore($carJpa->toArray(), '__');
+                $cars[] = $car;
+            }
+    
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Brand::count());
-            $response->setData($brandsJpa->toArray());
+            $response->setITotalRecords(ViewCars::count());
+            $response->setData($cars);
         } catch (\Throwable$th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -242,7 +273,7 @@ class CarsController extends Controller
         }
     }
 
-    public function image($relative_id, $size)
+    public function image($id, $size)
     {
         $response = new Response();
         $content = null;
@@ -252,17 +283,17 @@ class CarsController extends Controller
                 $size = 'mini';
             }
             if (
-                !isset($relative_id)
+                !isset($id)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $userJpa = Brand::select([
-                "brands.image_$size as image_content",
-                'brands.image_type',
+            $userJpa = Cars::select([
+                "cars.image_$size as image_content",
+                'cars.image_type',
 
             ])
-                ->where('relative_id', $relative_id)
+                ->where('id', $id)
                 ->first();
 
             if (!$userJpa) {
@@ -275,14 +306,14 @@ class CarsController extends Controller
             $type = $userJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable$th) {
-            $ruta = '../storage/images/brands-default.jpg';
+            $ruta = '../storage/images/car-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
-            $type = 'image/jpeg';
-            $response->setStatus(400);
+            $type = 'image/png';
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
