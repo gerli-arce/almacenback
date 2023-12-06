@@ -291,7 +291,7 @@ class LendProductsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'read')) {
                 throw new Exception('No tienes permisos para crear productos');
             }
 
@@ -714,8 +714,8 @@ class LendProductsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'lend', 'update')) {
-                throw new Exception('No tienes permisos para actualizar devolver un prestamo');
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'read')) {
+                throw new Exception('No tienes permisos para actualizarun prestamo');
             }
 
             if (
@@ -1351,7 +1351,7 @@ class LendProductsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'lend', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'lend', 'read')) {
                 throw new Exception('No tienes permisos para hacer devoluciones de prestamos');
             }
 
