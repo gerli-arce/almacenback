@@ -4,19 +4,14 @@ namespace App\Http\Controllers;
 
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
-use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
 use App\Models\Cars;
-use App\Models\ViewCars;
 use App\Models\Response;
-use App\Models\SalesProducts;
+use App\Models\ViewCars;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class CarsController extends Controller
 {
@@ -55,43 +50,43 @@ class CarsController extends Controller
             $carsJpa->_branch = $branch_->id;
             $carsJpa->placa = $request->placa;
 
-            if(isset($request->color)){
+            if (isset($request->color)) {
                 $carsJpa->color = $request->color;
             }
 
-            if(isset($request->num_chasis)){
+            if (isset($request->num_chasis)) {
                 $carsJpa->num_chasis = $request->num_chasis;
             }
 
-            if(isset($request->year)){
+            if (isset($request->year)) {
                 $carsJpa->year = $request->year;
             }
 
-            if(isset($request->soat)){
+            if (isset($request->soat)) {
                 $carsJpa->soat = $request->soat;
             }
 
-            if(isset($request->_model)){
+            if (isset($request->_model)) {
                 $carsJpa->_model = $request->_model;
             }
 
-            if(isset($request->property_card)){
+            if (isset($request->property_card)) {
                 $carsJpa->property_card = $request->property_card;
             }
 
-            if(isset($request->technical_review)){
+            if (isset($request->technical_review)) {
                 $carsJpa->technical_review = $request->technical_review;
             }
-            
-            if(isset($request->license)){
+
+            if (isset($request->license)) {
                 $carsJpa->license = $request->license;
             }
 
-            if(isset($request->_person)){
+            if (isset($request->_person)) {
                 $carsJpa->_person = $request->_person;
             }
 
-            if(isset($request->_branch)){
+            if (isset($request->_branch)) {
                 $carsJpa->_branch = $request->_branch;
             }
 
@@ -100,7 +95,7 @@ class CarsController extends Controller
                 isset($request->image_mini) &&
                 isset($request->image_full)
             ) {
-                if($request->image_type != 'none'){
+                if ($request->image_type != 'none') {
                     if (
                         $request->image_type &&
                         $request->image_mini &&
@@ -114,12 +109,12 @@ class CarsController extends Controller
                         $carsJpa->image_mini = null;
                         $carsJpa->image_full = null;
                     }
-                }else{
+                } else {
                     $carsJpa->image_type = null;
                     $carsJpa->image_mini = null;
                     $carsJpa->image_full = null;
                 }
-               
+
             }
 
             if (isset($request->description)) {
@@ -173,7 +168,7 @@ class CarsController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($peopleJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -183,7 +178,6 @@ class CarsController extends Controller
             );
         }
     }
-
 
     public function paginate(Request $request)
     {
@@ -254,7 +248,6 @@ class CarsController extends Controller
                 $car = gJSON::restore($carJpa->toArray(), '__');
                 $cars[] = $car;
             }
-    
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -262,7 +255,7 @@ class CarsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewCars::count());
             $response->setData($cars);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -305,7 +298,7 @@ class CarsController extends Controller
             $content = $userJpa->image_content;
             $type = $userJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/car-default.png';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -341,73 +334,107 @@ class CarsController extends Controller
                 throw new Exception('No tienes permisos para actualizar marcas');
             }
 
-            $brandJpa = Brand::select(['id'])-> find($request->id);
-            if (!$brandJpa) {
+            $cardJpa = Cars::select('*')->find($request->id);
+            if (!$cardJpa) {
                 throw new Exception("No se puede actualizar este registro");
             }
 
-            if (isset($request->brand)) {
-                $verifyCatJpa = Brand::select(['id', 'brand'])
-                    ->where('brand', $request->brand)
+            if (isset($request->placa)) {
+                $verifyCarJpa = Cars::select(['id', 'placa'])
+                    ->where('placa', $request->placa)
                     ->where('id', '!=', $request->id)
                     ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro nombre para esta marca");
+                if ($verifyCarJpa) {
+                    throw new Exception("la placa ya esta registrada");
                 }
-                $brandJpa->brand = $request->brand;
+                $cardJpa->placa = $request->placa;
             }
 
-            if (isset($request->correlative)) {
-                $verifyCatJpa = Brand::select(['id', 'correlative'])
-                    ->where('correlative', $request->correlative)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Elija otro correlativo para esta marca");
-                }
-                $brandJpa->correlative = $request->correlative;
+            
+            if (isset($request->color)) {
+                $cardJpa->color = $request->color;
             }
+
+            if (isset($request->num_chasis)) {
+                $cardJpa->num_chasis = $request->num_chasis;
+            }
+
+            if (isset($request->year)) {
+                $cardJpa->year = $request->year;
+            }
+
+            if (isset($request->soat)) {
+                $cardJpa->soat = $request->soat;
+            }
+
+            if (isset($request->_model)) {
+                $cardJpa->_model = $request->_model;
+            }
+
+            if (isset($request->property_card)) {
+                $cardJpa->property_card = $request->property_card;
+            }
+
+            if (isset($request->technical_review)) {
+                $cardJpa->technical_review = $request->technical_review;
+            }
+
+            if (isset($request->license)) {
+                $cardJpa->license = $request->license;
+            }
+
+            if (isset($request->_person)) {
+                $cardJpa->_person = $request->_person;
+            }
+
+            if (isset($request->_branch)) {
+                $cardJpa->_branch = $request->_branch;
+            }
+
 
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
                 isset($request->image_full)
             ) {
-                if (
-                    $request->image_type &&
-                    $request->image_mini &&
-                    $request->image_full
-                ) {
-                    $brandJpa->image_type = $request->image_type;
-                    $brandJpa->image_mini = base64_decode($request->image_mini);
-                    $brandJpa->image_full = base64_decode($request->image_full);
+
+                if ($request->image_type != 'none') {
+                    if (
+                        $request->image_type &&
+                        $request->image_mini &&
+                        $request->image_full
+                    ) {
+                        $cardJpa->image_type = $request->image_type;
+                        $cardJpa->image_mini = base64_decode($request->image_mini);
+                        $cardJpa->image_full = base64_decode($request->image_full);
+                    } else {
+                        $cardJpa->image_type = null;
+                        $cardJpa->image_mini = null;
+                        $cardJpa->image_full = null;
+                    }
                 } else {
-                    $brandJpa->image_type = null;
-                    $brandJpa->image_mini = null;
-                    $brandJpa->image_full = null;
+                    $cardJpa->image_type = null;
+                    $cardJpa->image_mini = null;
+                    $cardJpa->image_full = null;
                 }
+
             }
 
             if (isset($request->description)) {
-                $brandJpa->description = $request->description;
+                $cardJpa->description = $request->description;
             }
 
-            if (gValidate::check($role->permissions, $branch, 'brands', 'change_status')) {
-                if (isset($request->status)) {
-                    $brandJpa->status = $request->status;
-                }
-            }
+            $cardJpa->update_date = gTrace::getDate('mysql');
+            $cardJpa->_update_user = $userid;
 
-            $brandJpa->update_date = gTrace::getDate('mysql');
-            $brandJpa->_update_user = $userid;
-
-            $brandJpa->save();
+            $cardJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La categoria ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+            // $response->setData([$cardJpa]);
+            $response->setMessage('La vehiculo ha sido actualizado correctamente');
+        } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -448,7 +475,7 @@ class CarsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La marca a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -490,7 +517,7 @@ class CarsController extends Controller
             $response->setStatus(200);
             $response->setMessage('La marca a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
