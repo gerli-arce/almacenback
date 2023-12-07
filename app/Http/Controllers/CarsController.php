@@ -66,6 +66,10 @@ class CarsController extends Controller
                 $carsJpa->soat = $request->soat;
             }
 
+            if (isset($request->expiration_date_soat)) {
+                $carsJpa->expiration_date_soat = $request->expiration_date_soat;
+            }
+
             if (isset($request->_model)) {
                 $carsJpa->_model = $request->_model;
             }
@@ -365,6 +369,10 @@ class CarsController extends Controller
 
             if (isset($request->soat)) {
                 $cardJpa->soat = $request->soat;
+            }
+
+            if (isset($request->expiration_date_soat)) {
+                $cardJpa->expiration_date_soat = $request->expiration_date_soat;
             }
 
             if (isset($request->_model)) {
