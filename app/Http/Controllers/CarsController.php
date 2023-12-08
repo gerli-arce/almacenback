@@ -470,18 +470,18 @@ class CarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $brandJpa = Brand::find($request->id);
-            if (!$brandJpa) {
-                throw new Exception('La categoria que deseas eliminar no existe');
+            $carJpa = Cars::find($request->id);
+            if (!$carJpa) {
+                throw new Exception('La vehiculo que deseas eliminar no existe');
             }
 
-            $brandJpa->update_date = gTrace::getDate('mysql');
-            $brandJpa->_update_user = $userid;
-            $brandJpa->status = null;
-            $brandJpa->save();
+            $carJpa->update_date = gTrace::getDate('mysql');
+            $carJpa->_update_user = $userid;
+            $carJpa->status = null;
+            $carJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La marca a sido eliminada correctamente');
+            $response->setMessage('La vehiculo a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
@@ -503,7 +503,7 @@ class CarsController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar marcas en ' . $branch);
+                throw new Exception('No tienes permisos para restaurar vehiculos en ' . $branch);
             }
 
             if (
@@ -512,18 +512,18 @@ class CarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $categoriesJpa = Brand::find($request->id);
-            if (!$categoriesJpa) {
-                throw new Exception('La marca que deseas restaurar no existe');
+            $carsJpa = Cars::find($request->id);
+            if (!$carsJpa) {
+                throw new Exception('La vehículo que deseas restaurar no existe');
             }
 
-            $categoriesJpa->update_date = gTrace::getDate('mysql');
-            $categoriesJpa->_update_user = $userid;
-            $categoriesJpa->status = "1";
-            $categoriesJpa->save();
+            $carsJpa->update_date = gTrace::getDate('mysql');
+            $carsJpa->_update_user = $userid;
+            $carsJpa->status = "1";
+            $carsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La marca a sido restaurada correctamente');
+            $response->setMessage('La vehículo a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
