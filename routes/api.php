@@ -491,7 +491,7 @@ Route::post('/car_part/paginate', [PartsCarsController::class, 'paginate']);
 Route::get('/car_component', [CarsComponentsController::class, 'index']);
 Route::post('/car_component', [CarsComponentsController::class, 'store']);
 Route::patch('/car_component', [CarsComponentsController::class, 'update']);
-Route::delete('/car_component', [CarsComponentsController::class, 'destroy']);
+Route::delete('/car_component', [CarsComponentsController::class, 'delete']);
 Route::post('/car_component/search', [CarsComponentsController::class, 'search']);
 Route::post('/car_component/restore', [CarsComponentsController::class, 'restore']);
 Route::post('/car_component/paginate', [CarsComponentsController::class, 'paginate']);

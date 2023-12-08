@@ -190,17 +190,17 @@ class CarsComponentsController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $permissionJpa = Permission::find($request->id);
+            $carComponentJpa = CarComponents::find($request->id);
 
-            if (!$permissionJpa) {
+            if (!$carComponentJpa) {
                 throw new Exception("Este reguistro no existe");
             }
 
-            $permissionJpa->status = null;
-            $permissionJpa->save();
+            $carComponentJpa->status = null;
+            $carComponentJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El permiso se a eliminado correctamente');
+            $response->setMessage('El componente se a eliminado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -223,15 +223,15 @@ class CarsComponentsController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-            $viewJpa = Permission::find($request->id);
-            if (!$viewJpa) {
+            $carComponentJpa = CarComponents::find($request->id);
+            if (!$carComponentJpa) {
                 throw new Exception("Este reguistro no existe");
             }
-            $viewJpa->status = "1";
-            $viewJpa->save();
+            $carComponentJpa->status = "1";
+            $carComponentJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El permiso a sido restaurado correctamente');
+            $response->setMessage('El componente a sido restaurado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
