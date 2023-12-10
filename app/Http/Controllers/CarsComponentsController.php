@@ -14,6 +14,39 @@ use Illuminate\Support\Facades\DB;
 class CarsComponentsController extends Controller
 {
 
+    public function index(Request $request)  {
+        $response = new Response();
+        try {
+             
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars_components', 'create')) {
+                throw new Exception('No tienes permisos para agregar componentes de vheículo');
+            }
+
+            $query = ViewComponentsByPart::select('*')->whereNotNull('status')->get();
+            $components = array();
+            foreach ($query as $componentnJpa) {
+                $component = gJSON::restore($componentnJpa->toArray(), '__');
+                $components[] = $component;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($components);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -70,6 +103,15 @@ class CarsComponentsController extends Controller
     {
         $response = new Response();
         try {
+
+             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars_components', 'read')) {
+                throw new Exception('No tienes permisos para editar componentes de vheículo');
+            }
+
 
             $query = ViewComponentsByPart::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
