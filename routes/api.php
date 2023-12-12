@@ -473,10 +473,10 @@ Route::get('/car', [CarsController::class, 'index']);
 Route::post('/car', [CarsController::class, 'store']);
 Route::patch('/car', [CarsController::class, 'update']);
 Route::delete('/car', [CarsController::class, 'destroy']);
-Route::post('/car/search', [CarsController::class, 'search']);
 Route::post('/car/restore', [CarsController::class, 'restore']);
 Route::post('/car/paginate', [CarsController::class, 'paginate']);
 Route::get('/carimg/{id}/{zize}', [CarsController::class, 'image']);
+Route::post('/car/search', [CarsController::class, 'search']);
 
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);

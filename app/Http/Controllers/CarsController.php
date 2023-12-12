@@ -158,20 +158,18 @@ class CarsController extends Controller
                 throw new Exception('No tienes permisos para listar marcas');
             }
 
-            $peopleJpa = Brand::select([
+            $verifyCarJpa = Cars::select([
                 'id',
-                'correlative',
-                'brand',
-                'relative_id',
+                'placa'
             ])->whereNotNull('status')
-                ->WhereRaw("brand LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->WhereRaw("placa LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('brand', 'asc')
+                ->orderBy('placa', 'asc')
                 ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
-            $response->setData($peopleJpa->toArray());
+            $response->setData($verifyCarJpa->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
