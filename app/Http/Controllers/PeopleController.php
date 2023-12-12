@@ -49,14 +49,14 @@ class PeopleController extends Controller
             $type = $userJpa->image_type;
             $response->setStatus(200);
         } catch (\Throwable$th) {
-            $ruta = '../storage/images/user_not_found.svg';
+            $ruta = '../storage/images/people.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
-            $type = 'image/svg+xml';
-            $response->setStatus(400);
+            $type = 'image/jpg';
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,

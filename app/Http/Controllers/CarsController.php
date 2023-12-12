@@ -160,7 +160,7 @@ class CarsController extends Controller
 
             $verifyCarJpa = Cars::select([
                 'id',
-                'placa'
+                'placa',
             ])->whereNotNull('status')
                 ->WhereRaw("placa LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
@@ -170,6 +170,36 @@ class CarsController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($verifyCarJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getCar(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+                throw new Exception('No tienes permisos para listar los vehículos  de ' . $branch);
+            }
+
+            $carJpa = ViewCars::select('*')->whereNotNull('status')->find($id);
+            $car = gJSON::restore($carJpa->toArray(), '__');
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData([$car]);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -352,7 +382,6 @@ class CarsController extends Controller
                 $cardJpa->placa = $request->placa;
             }
 
-            
             if (isset($request->color)) {
                 $cardJpa->color = $request->color;
             }
@@ -397,7 +426,6 @@ class CarsController extends Controller
                 $cardJpa->_branch = $request->_branch;
             }
 
-
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -440,7 +468,7 @@ class CarsController extends Controller
             $response->setMessage('La vehiculo ha sido actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'Ln:'.$th->getLine());
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
