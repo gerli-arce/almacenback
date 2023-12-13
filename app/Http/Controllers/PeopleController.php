@@ -151,12 +151,7 @@ class PeopleController extends Controller
             //     throw new Exception('No tienes permisos para listar personas');
             // }
 
-            $peopleJpa = ViewPeople::select([
-                'id',
-                'doc_number',
-                'name',
-                'lastname',
-            ])
+            $peopleJpa = ViewPeople::select('*')
                 ->where("id",$id)
                 ->first();
 
