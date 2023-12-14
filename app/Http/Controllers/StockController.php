@@ -159,6 +159,16 @@ class StockController extends Controller
 
             $sumary = '';
 
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname',
+                'people.doc_number as person__doc_number'
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+
             $stocksJpa = ViewStock::select(['*'])
                 ->where('branch__correlative', $branch)
                 ->where('mount_new', '>', '0')
@@ -174,6 +184,8 @@ class StockController extends Controller
                 $stocks[] = $stock;
             }
 
+            $count = 1;
+
             foreach ($stocks as $models) {
                 $currency = "$";
                 if ($models['model']['currency'] == "SOLES") {
@@ -181,53 +193,55 @@ class StockController extends Controller
                 }
 
                 $image = "
-                <div>
-                <img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' style='background-color: #38414a;object-fit: cover; object-position: center center; cursor: pointer; height:50px;'></img>
-                </div>
-                ";
+                    <div>
+                        <center>
+                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
+                        </center>
+                    </div>
+                    ";
 
                 $product = "
-                <div style='font-size:12px'>
-                    <p style='margin-top:0px;magin-bottom:0px;'>Modelo: <strong>{$models['model']['model']}</strong></p>
-                    <p style='margin-top:0px;magin-bottom:0px;'>Categoria: <strong>{$models['category']['category']}</strong></p>
-                </div>
+                    <div>
+                        <p style='margin-top:0px;magin-bottom:0px;'><strong>{$models['category']['category']} {$models['brand']['brand']} {$models['model']['model']}</strong></p>
+                    </div>
+                    ";
+
+                    $stock = "
+                    <div>
+                        <center style='font-size:14px;'>
+                            <p><strong>N: " . ($models['mount_new'] == floor($models['mount_new']) ? floor($models['mount_new']) : $models['mount_new']) . "</strong>    <strong style='margin-left:12px;'>S: " . ($models['mount_second'] == floor($models['mount_second']) ? floor($models['mount_second']) : $models['mount_second']) . "</strong>    <strong style='margin-left:12px;'>M: " . ($models['mount_ill_fated'] == floor($models['mount_ill_fated']) ? floor($models['mount_ill_fated']) : $models['mount_ill_fated']) . "</strong></p>
+                        </center>
+                    </div>
                 ";
-
-                $stock = "
-                <div style='padding:0px;'>
-                    <p style='margin:0px;'>Nuevos: <strong style='font-size:16px'>{$models['mount_new']}</strong></p>
-                    <p style='margin:0px'>Seminuevos <strong style='font-size:16px'>{$models['mount_second']}</strong></p>
-                    <p style='margin:0px'>Malogrados <strong style='font-size:16px'>{$models['mount_ill_fated']}</strong></p>
-                </div>
-                ";
-
-                $actual = "
-                <div style='margin-left:35px;'>
-                    <input style='width:80px; border:solid 2px #000; height: 20px; margin: 1px;'> <br>
-                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
-                    <input style='width:80px; border:solid 2px #000;  height: 20px; margin: 1px;'> <br>
-                </div>
-            ";
-
+                
                 $sumary .= "
-            <tr>
-                <td class='text-center'>{$models['id']}</td>
-                <td>{$image}</td>
-                <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
-                <td>{$stock}</td>
-            </tr>
-        ";
+                    <tr>
+                        <td class='text-center'>{$count}</td>
+                        <td>{$image}</td>
+                        <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
+                        <td>{$stock}</td>
+                    </tr>
+                    ";
+                $count +=1;
             }
 
             $template = str_replace(
                 [
                     '{branch_name}',
                     '{issue_long_date}',
+                    '{risponsible}',
+                    '{doc_number_responsible}',
+                    '{in_charge}',
+                    '{doc_number_in_charge}',
                     '{summary}',
                 ],
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
+                    $user->person__name.' '.$user->person__lastname,
+                    $user->person__doc_number,
+                    'ROMMY MELITHZA PRADO VENEGAS',
+                    '70813909',
                     $sumary,
                 ],
                 $template

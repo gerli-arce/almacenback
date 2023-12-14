@@ -5,37 +5,41 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+    integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"
+    integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V"
+    crossorigin="anonymous"></script>
   <title>Informe.pdf</title>
   <style>
     * {
       font-family: 'Poppins', sans-serif;
       box-sizing: border-box;
       line-height: 1.5;
-      font-size: 10pt;
+      /* font-size: 10pt; */
       color: #343a40;
     }
 
     @page {
-      margin: 3cm 1.5cm;
+      margin: 1.5cm 1.5cm;
     }
 
-    header {
+    /* header {
       position: fixed;
       top: -2.25cm;
       width: 100%;
       padding: 10px 0;
       border-bottom: 1px solid #6c757d;
-    }
+    } */
 
-    footer {
+    /* footer {
       position: fixed;
       bottom: -2.25cm;
       width: 100%;
       padding: 10px 0;
       border-top: 1px solid #6c757d;
-    }
+    } */
 
     footer .issue-detail {
       position: absolute;
@@ -92,19 +96,21 @@
     }
 
     table tbody td {
-      border-bottom: 1px solid #222222;
+      border: 1px solid #222222;
+      font-size: 10px;
     }
 
     table thead td {
       text-align: center;
       font-weight: bold;
-      background-color: #323a46;
-      color: #ffffff !important;
+      background-color: #323a4638;
+      color: #000000 !important;
+      border: 1px solid #222222;
     }
 
     table td {
       vertical-align: middle;
-      padding: 5px 10px;
+      padding: 2px 3px;
     }
 
     #total_hours {
@@ -154,6 +160,16 @@
       max-width: 100%;
     }
 
+    .img_stock {
+      background-color: #ffffff;
+      object-fit: cover;
+      object-position: center center;
+      cursor: pointer;
+      height: 30px;
+      border: 1px solid #16283cbd;
+      padding: 3px;
+    }
+
     @media all {
       div.page-break {
         display: block;
@@ -164,47 +180,84 @@
 </head>
 
 <body>
-  <header>
-    <img id="softwareintegration" src="https://almacendev.fastnetperu.com.pe/img/logo-light.png" alt="Logo fastnet">
-    <!-- <img id="sodeworld" src="https://almacendev.fastnetperu.com.pe/api/profile/c85b4958/mini" alt="Logo de Software Developers World"> -->
-  </header>
-  <footer>
-    <div>
-      FASTNETPERU E.I.R.L<br>
-      Jr. 1 de Mayo 1085 PICHANAQUI<br>
-    </div>
-    <div class="issue-detail">
-        T: <a href="tel:51941415879">51 941 415 879</a>
-    </div>
-  </footer>
   <main>
-    <p id="date">{branch_name}, {issue_long_date}</p>
-    <br>
-    <p id="recipient">
-      Informe de Stock General de los productos de la sucursal de {branch_name}<br>
-    </p>
-  
-    <ol>
-      <li class="text-bold">
-        <span class="text-bold" id="section-1">Resumen</span>
-      </li>
-      <br>
-      <table>
-        <thead>
-          <tr>
-            <td>#</td>
-            <td>Imagen</td>
-            <td style="width:300px;">Producto</td>
-            <td>Stock</td>
-          </tr>
-        </thead>
-        <tbody>
-          {summary}
-         
-        </tbody>
-      </table>
-    </ol>
-  </main>
+    <div style="display: flex; align-items: center; justify-content: flex-end;">
 
+      <img style="width: 240px; margin-left: 67%;" src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
+        alt="Logo fastnet" />
+    </div>
+    <strong>FASTNETPERU E.I.R.L</strong>
+    <p>{issue_long_date}</p>
+    <p>
+      Yo, <strong>{risponsible}</strong> identificado(a) con el DNI <strong>{doc_number_responsible}</strong>, en
+      calidad de responsable de almacen de <strong>{branch_name}</strong>,
+      por este medio declaro que he entregado el siguiente stock de productos a <strong>{in_charge}</strong>
+      identificado(a) con el DNI <strong>{doc_number_in_charge}</strong>,
+      en calidad de encargado(a) de almacen de <strong>FASTNETPERU PICHANAKI</strong>:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <td>#</td>
+          <td>Imagen</td>
+          <td style="width:300px;">Producto</td>
+          <td>Stock</td>
+        </tr>
+      </thead>
+      <tbody>
+        {summary}
+      </tbody>
+    </table>
+    <p>
+      Asimismo, declaro que todos los productos mencionados anteriormente están físicamente presentes en el almacén
+      y en condiciones adecuadas al momento de la entrega.
+    </p>
+
+    <p>
+      Ambas partes, tanto el responsable de entrega como el responsable de recepción, reconocemos y aceptamos que
+      cualquier
+      discrepancia o faltante de los productos entregados será considerado como una falta grave y se aplicará una
+      sanción por cada producto faltante, de acuerdo con las políticas y procedimientos establecidos
+      por <strong>FASTNETPERU E.I.R.L.</strong>
+    </p>
+
+    <p>
+      Firma del Responsable de Entrega: ___________________________
+    </p>
+    <p>
+      Nombre del Responsable de Entrega: _________________________
+    </p>
+    <p>
+      Fecha: _______________________
+    </p>
+    <p>
+      Firma del Responsable de Recepción: ________________________
+    </p>
+    <p>
+      Nombre del Responsable de Recepción: _______________________
+    </p>
+    <p>
+      Fecha: _______________________
+    </p>
+    <p>
+      Agradecemos su atención y cooperación en este proceso de entrega y recepción de productos.
+      Esta declaración tiene como objetivo garantizar la transparencia y responsabilidad en la gestión de nuestro
+      inventario.
+    </p>
+    <p>
+      Por favor, asegúrese de conservar una copia firmada de este documento para futuras referencias.
+    </p>
+    <p>
+      Atentamente,
+    </p>
+    <p><strong>José Miguel Ramirez Murillo</strong></p>
+    <p><strong>Gerente General</strong></p>
+    <p><strong>
+        FASTNETPERU E.I.R.L.
+      </strong></p>
+
+  </main>
 </body>
+
 </html>

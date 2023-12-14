@@ -301,7 +301,7 @@ class ModelsController extends Controller
             $datos_image = addslashes($datos_image);
             fclose($fp);
             $content = stripslashes($datos_image);
-            $type = 'image/jpeg';
+            $type = 'image/jpg';
             $response->setStatus(200);
         } finally {
             return response(
