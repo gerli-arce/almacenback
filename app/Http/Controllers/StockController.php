@@ -6,6 +6,7 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\Models;
 use App\Models\Product;
 use App\Models\Response;
 use App\Models\Stock;
@@ -164,7 +165,7 @@ class StockController extends Controller
                 'users.username as username',
                 'people.name as person__name',
                 'people.lastname as person__lastname',
-                'people.doc_number as person__doc_number'
+                'people.doc_number as person__doc_number',
             ])
                 ->join('people', 'users._person', 'people.id')
                 ->where('users.id', $userid)->first();
@@ -206,14 +207,14 @@ class StockController extends Controller
                     </div>
                     ";
 
-                    $stock = "
+                $stock = "
                     <div>
                         <center style='font-size:14px;'>
                             <p><strong>N: " . ($models['mount_new'] == floor($models['mount_new']) ? floor($models['mount_new']) : $models['mount_new']) . "</strong>    <strong style='margin-left:12px;'>S: " . ($models['mount_second'] == floor($models['mount_second']) ? floor($models['mount_second']) : $models['mount_second']) . "</strong>    <strong style='margin-left:12px;'>M: " . ($models['mount_ill_fated'] == floor($models['mount_ill_fated']) ? floor($models['mount_ill_fated']) : $models['mount_ill_fated']) . "</strong></p>
                         </center>
                     </div>
                 ";
-                
+
                 $sumary .= "
                     <tr>
                         <td class='text-center'>{$count}</td>
@@ -222,7 +223,7 @@ class StockController extends Controller
                         <td>{$stock}</td>
                     </tr>
                     ";
-                $count +=1;
+                $count += 1;
             }
 
             $template = str_replace(
@@ -238,7 +239,7 @@ class StockController extends Controller
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
-                    $user->person__name.' '.$user->person__lastname,
+                    $user->person__name . ' ' . $user->person__lastname,
                     $user->person__doc_number,
                     'ROMMY MELITHZA PRADO VENEGAS',
                     '70813909',
@@ -714,6 +715,100 @@ class StockController extends Controller
             $response->setStatus(200);
             $response->setMessage('Pperación Correcta');
             $response->setData($productsJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function regularizeMountByBranch(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'stock', 'update')) {
+                throw new Exception('No tienes permisos para actualizar stock.');
+            }
+
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+
+            $models = Models::select(['id', 'model'])->whereNotNull('status')->get();
+
+            foreach ($models as $model) {
+
+                $stockJpa = Stock::whereNotNull('status')->where('_model', $model['id'])->where('_branch', $branch_->id)->first();
+
+                $productsJpa = Product::where('_model', $model['id'])
+                    ->where('_branch', $branch_->id)
+                    ->where('disponibility', 'DISPONIBLE')
+                    ->where(function ($q) {
+                        $q->where('product_status', 'NUEVO')
+                            ->orWhere('product_status', 'SEMINUEVO')
+                            ->orWhere('product_status', 'MALOGRADO')
+                            ->orWhere('product_status', 'POR REVISAR');
+                    })
+                    ->whereNotNull('status')
+                    ->get();
+
+                $new = $second = $ill_fated = 0;
+
+                $type = '';
+
+                if ($productsJpa->isEmpty()) {
+                    $stockJpa->mount_new = 0;
+                    $stockJpa->mount_second = 0;
+                    $stockJpa->mount_ill_fated = 0;
+                } else {
+                    foreach ($productsJpa as $product) {
+                        if ($product['type'] == 'EQUIPO') {
+                            $type = 'EQUIPO';
+                            if ($product['product_status'] == 'NUEVO') {
+                                $new += 1;
+                            } else if ($product['product_status'] == 'SEMINUEVO') {
+                                $second += 1;
+                            } else {
+                                $ill_fated += 1;
+                            }
+                        } else {
+                            $type = 'MATERIAL';
+
+                            if ($stockJpa->mount_new < 0) {
+                                $stockJpa->mount_new = 0;
+                            }
+                            if ($stockJpa->mount_second < 0) {
+                                $stockJpa->mount_second = 0;
+                            }
+                            if ($stockJpa->mount_ill_fated < 0) {
+                                $stockJpa->mount_ill_fated = 0;
+                            }
+
+                            $productJpa = Product::find($product['id']);
+                            $productJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
+                            $productJpa->save();
+                        }
+                    }
+                }
+                if ($type == 'EQUIPO') {
+                    $stockJpa->mount_new = $new;
+                    $stockJpa->mount_second = $second;
+                    $stockJpa->mount_ill_fated = $ill_fated;
+                }
+                $stockJpa->save();
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Pperación Correcta');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());

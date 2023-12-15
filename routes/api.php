@@ -240,6 +240,7 @@ Route::post('/products/search/guia', [ProductsController::class, 'getProductsByN
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
 Route::patch('/stock', [StockController::class, 'update']);
 Route::post('/stock/regularize', [StockController::class, 'RegularizeMountsByModel']);
+Route::get('/stock/regularize/all', [StockController::class, 'regularizeMountByBranch']);
 Route::post('/stock/products/all', [StockController::class, 'generateReportByStockByProducts']);
 Route::post('/stock/products/selected', [StockController::class, 'generateReportByProductsSelected']);
 Route::post('/stock/search', [StockController::class, 'getStockByModel']);
