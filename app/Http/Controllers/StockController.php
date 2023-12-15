@@ -195,7 +195,7 @@ class StockController extends Controller
                 $image = "
                     <div>
                         <center>
-                            <img src='https://almacendev.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
+                            <img src='https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
                         </center>
                     </div>
                     ";
