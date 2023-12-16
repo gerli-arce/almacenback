@@ -500,6 +500,7 @@ Route::post('/car_component/paginate', [CarsComponentsController::class, 'pagina
 
 // CHECKLIST CAR
 Route::post('/checklist', [ChecklistController::class, 'store']);
+Route::post('/checklist/paginate', [ChecklistController::class, 'paginate']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
