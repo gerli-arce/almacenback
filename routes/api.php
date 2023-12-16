@@ -14,7 +14,7 @@ use App\Http\Controllers\{
     TransportsController, BusinessController, ClientsController, ParcelsCreatedController,
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
-    PriceController, PartsCarsController, CarsComponentsController, CarsController,
+    PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
 };
 
 /*
@@ -497,6 +497,9 @@ Route::delete('/car_component', [CarsComponentsController::class, 'delete']);
 Route::post('/car_component/search', [CarsComponentsController::class, 'search']);
 Route::post('/car_component/restore', [CarsComponentsController::class, 'restore']);
 Route::post('/car_component/paginate', [CarsComponentsController::class, 'paginate']);
+
+// CHECKLIST CAR
+Route::post('/checklist', [ChecklistController::class, 'store']);
 
 
 // Route::get('/traslat', [connect::class, 'dats']);
