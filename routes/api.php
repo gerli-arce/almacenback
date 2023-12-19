@@ -501,7 +501,7 @@ Route::post('/car_component/paginate', [CarsComponentsController::class, 'pagina
 // CHECKLIST CAR
 Route::post('/checklist', [ChecklistController::class, 'store']);
 Route::post('/checklist/paginate', [ChecklistController::class, 'paginate']);
-
+Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewCarById']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);

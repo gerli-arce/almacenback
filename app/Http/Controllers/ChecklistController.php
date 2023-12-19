@@ -10,7 +10,7 @@ use App\Models\CheckByReview;
 use App\Models\CheckListCar;
 use App\Models\Response;
 use App\Models\ReviewCar;
-use App\Models\ViewCars;
+use App\Models\ViewCheckByReview;
 use App\Models\ViewReviewCar;
 use Exception;
 use Illuminate\Http\Request;
@@ -74,6 +74,7 @@ class ChecklistController extends Controller
             );
         }
     }
+
     public function paginate(Request $request)
     {
 
@@ -151,6 +152,93 @@ class ChecklistController extends Controller
                 $response->getStatus()
             );
         }
+    }
 
+    public function getReviewCarById(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
+                throw new Exception('No tienes permisos para listar los checklist  de ' . $branch);
+            }
+
+            $checksJpa = ViewCheckByReview::select('*')
+                ->whereNotNull('status')
+                ->where('_review', $request->id)
+                ->get();
+
+            $checks = array();
+            foreach ($checksJpa as $checkJpa) {
+                $check = gJSON::restore($checkJpa->toArray(), '__');
+                $checks[] = $check;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($checks);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function update(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'update')) {
+                throw new Exception("No tienes permisos para actualizar checklist ");
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $ReviewCarJpa = ReviewCar::find($request->id);
+            $ReviewCarJpa->_responsible_check = $userid;
+            $ReviewCarJpa->date = $request->date;
+            $ReviewCarJpa->_car = $request->_car;
+            $ReviewCarJpa->_driver = $request->_driver;
+            $ReviewCarJpa->description = $request->description;
+            $ReviewCarJpa->_update_user = $userid;
+            $ReviewCarJpa->update_date = gTrace::getDate('mysql');
+            $ReviewCarJpa->status = "1";
+            $ReviewCarJpa->save();
+
+            foreach ($request->data as $component) {
+                $CheckListCarJpa = CheckListCar::find($component['id']);
+                $CheckListCarJpa->_component = $component['id'];
+                $CheckListCarJpa->present = $component['dat']['present'];
+                $CheckListCarJpa->optimed = $component['dat']['optimed'];
+                $CheckListCarJpa->description = $component['dat']['description'];
+                $CheckListCarJpa->status = 1;
+                $CheckListCarJpa->save();
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('El checklist se ha actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
 }
