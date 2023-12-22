@@ -1039,6 +1039,9 @@ class TowerController extends Controller
 
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
                 ->get();
+            
+            
+            $TowerJpa = Tower::find($request->tower['id']);
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
@@ -1052,16 +1055,20 @@ class TowerController extends Controller
                     ->first();
 
                 if ($productJpa->type == "MATERIAL") {
-                    $productJpa->mount = $productJpa->mount + $detail['mount'];
-                    $stock->mount_new = $productJpa->mount;
+                    $stock->mount_new = $stock->mount_new + $detail['mount_new'];
+                    $stock->mount_second = $stock->mount_second + $detail['mount_second'];
+                    $stock->mount_ill_fated = $stock->mount_ill_fated + $detail['mount_ill_fated'];
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
                 } else {
                     $productJpa->disponibility = 'DISPONIBLE';
-                    $productJpa->condition_product = "REGRESO DE TORRE";
+                    $productJpa->condition_product = "REGRESO DE TORRE: ".TowerJpa->name." POR CANCELACIÓN DE LIQUIDACIÓN";
 
                     if ($productJpa->product_status == "NUEVO") {
                         $stock->mount_new = $stock->mount_new + 1;
                     } else if ($productJpa->product_status == "SEMINUEVO") {
                         $stock->mount_second = $stock->mount_second + 1;
+                    } else if ($productJpa->product_status == "MALOGRADO" || $productJpa->product_status == "POR REVISAR") {
+                        $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
                 }
 
