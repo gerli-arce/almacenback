@@ -217,15 +217,32 @@ class ChecklistController extends Controller
             $ReviewCarJpa->update_date = gTrace::getDate('mysql');
             $ReviewCarJpa->save();
 
-            // foreach ($request->data as $component) {
-            //     $CheckListCarJpa = CheckListCar::find($component['id']);
-            //     $CheckListCarJpa->_component = $component['id'];
-            //     $CheckListCarJpa->present = $component['dat']['present'];
-            //     $CheckListCarJpa->optimed = $component['dat']['optimed'];
-            //     $CheckListCarJpa->description = $component['dat']['description'];
-            //     $CheckListCarJpa->status = 1;
-            //     $CheckListCarJpa->save();
-            // }
+            foreach ($request->data as $component) {
+                $CheckListCarJpa = CheckListCar::find($component['dat']['id']);
+                if(!$CheckListCarJpa)
+                {
+                    $CheckListCarJpaNew = new CheckListCar();
+                    $CheckListCarJpaNew->_component = $component['id'];
+                    $CheckListCarJpaNew->present = $component['dat']['present'];
+                    $CheckListCarJpaNew->optimed = $component['dat']['optimed'];
+                    $CheckListCarJpaNew->description = $component['dat']['description'];
+                    $CheckListCarJpaNew->status = 1;
+                    $CheckListCarJpaNew->save();
+
+                    $CheckByReviewJpa = new CheckByReview();
+                    $CheckByReviewJpa->_check = $CheckListCarJpaNew->id;
+                    $CheckByReviewJpa->_review = $ReviewCarJpa->id;
+                    $CheckByReviewJpa->status = 1;
+                    $CheckByReviewJpa->save();
+                }else{
+                    $CheckListCarJpa->_component = $component['id'];
+                    $CheckListCarJpa->present = $component['dat']['present'];
+                    $CheckListCarJpa->optimed = $component['dat']['optimed'];
+                    $CheckListCarJpa->description = $component['dat']['description'];
+                    $CheckListCarJpa->status = 1;
+                    $CheckListCarJpa->save();
+                }
+            }
 
             $response->setStatus(200);
             $response->setMessage('El checklist se ha actualizado correctamente');
