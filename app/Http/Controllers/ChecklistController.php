@@ -209,25 +209,23 @@ class ChecklistController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $ReviewCarJpa = ReviewCar::find($request->id);
-            $ReviewCarJpa->_responsible_check = $userid;
             $ReviewCarJpa->date = $request->date;
             $ReviewCarJpa->_car = $request->_car;
             $ReviewCarJpa->_driver = $request->_driver;
             $ReviewCarJpa->description = $request->description;
             $ReviewCarJpa->_update_user = $userid;
             $ReviewCarJpa->update_date = gTrace::getDate('mysql');
-            $ReviewCarJpa->status = "1";
             $ReviewCarJpa->save();
 
-            foreach ($request->data as $component) {
-                $CheckListCarJpa = CheckListCar::find($component['id']);
-                $CheckListCarJpa->_component = $component['id'];
-                $CheckListCarJpa->present = $component['dat']['present'];
-                $CheckListCarJpa->optimed = $component['dat']['optimed'];
-                $CheckListCarJpa->description = $component['dat']['description'];
-                $CheckListCarJpa->status = 1;
-                $CheckListCarJpa->save();
-            }
+            // foreach ($request->data as $component) {
+            //     $CheckListCarJpa = CheckListCar::find($component['id']);
+            //     $CheckListCarJpa->_component = $component['id'];
+            //     $CheckListCarJpa->present = $component['dat']['present'];
+            //     $CheckListCarJpa->optimed = $component['dat']['optimed'];
+            //     $CheckListCarJpa->description = $component['dat']['description'];
+            //     $CheckListCarJpa->status = 1;
+            //     $CheckListCarJpa->save();
+            // }
 
             $response->setStatus(200);
             $response->setMessage('El checklist se ha actualizado correctamente');

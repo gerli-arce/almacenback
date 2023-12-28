@@ -500,6 +500,7 @@ Route::post('/car_component/paginate', [CarsComponentsController::class, 'pagina
 
 // CHECKLIST CAR
 Route::post('/checklist', [ChecklistController::class, 'store']);
+Route::patch('/checklist', [ChecklistController::class, 'update']);
 Route::post('/checklist/paginate', [ChecklistController::class, 'paginate']);
 Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewCarById']);
 
