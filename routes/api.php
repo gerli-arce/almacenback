@@ -503,6 +503,8 @@ Route::post('/checklist', [ChecklistController::class, 'store']);
 Route::patch('/checklist', [ChecklistController::class, 'update']);
 Route::post('/checklist/paginate', [ChecklistController::class, 'paginate']);
 Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewCarById']);
+Route::delete('/checklist', [ChecklistController::class, 'delete']);
+Route::post('/checklist/restore', [ChecklistController::class, 'restore']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);

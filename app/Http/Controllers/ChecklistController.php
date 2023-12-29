@@ -123,6 +123,9 @@ class ChecklistController extends Controller
                 if ($column == 'car__placa' || $column == '*') {
                     $q->orWhere('car__placa', $type, $value);
                 }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
             });
 
             $iTotalDisplayRecords = $query->count();
@@ -246,6 +249,65 @@ class ChecklistController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El checklist se ha actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'delete_restore')) {
+                throw new Exception("No tienes permisos para eliminar checklist ");
+            }
+
+            $ReviewCarJpa = ReviewCar::find($request->id);
+            $ReviewCarJpa->status = null;
+            $ReviewCarJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El checklist se ha eliminado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'delete_restore')) {
+                throw new Exception("No tienes permisos para restaurar checklist ");
+            }
+
+            $ReviewCarJpa = ReviewCar::find($request->id);
+            $ReviewCarJpa->status = 1;
+            $ReviewCarJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El checklist se ha restaurado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
