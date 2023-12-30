@@ -505,6 +505,7 @@ Route::post('/checklist/paginate', [ChecklistController::class, 'paginate']);
 Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewCarById']);
 Route::delete('/checklist', [ChecklistController::class, 'delete']);
 Route::post('/checklist/restore', [ChecklistController::class, 'restore']);
+Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);

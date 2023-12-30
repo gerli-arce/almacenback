@@ -157,6 +157,91 @@ class ChecklistController extends Controller
         }
     }
 
+    public function paginateByIdCar(Request $request)
+    {
+
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+            }
+
+            $query = ViewReviewCar::select('*')
+                ->where('car__id', $request->car)
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                if ($column == 'driver__name' || $column == '*') {
+                    $q->orWhere('driver__name', $type, $value);
+                }
+                if ($column == 'driver__lastname' || $column == '*') {
+                    $q->orWhere('driver__lastname', $type, $value);
+                }
+                if ($column == 'res_check__name' || $column == '*') {
+                    $q->orWhere('res_check__name', $type, $value);
+                }
+                if ($column == 'res_check__lastname' || $column == '*') {
+                    $q->orWhere('res_check__lastname', $type, $value);
+                }
+                if ($column == 'car__placa' || $column == '*') {
+                    $q->orWhere('car__placa', $type, $value);
+                }
+                if ($column == 'car__placa' || $column == '*') {
+                    $q->orWhere('car__placa', $type, $value);
+                }
+                if ($column == 'description' || $column == '*
+                ') {
+                    $q->orWhere('description', $type, $value);
+                }
+            });
+
+            $iTotalDisplayRecords = $query->count();
+            $reviewCarJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $reviews = array();
+            foreach ($reviewCarJpa as $reviewJpa) {
+                $review = gJSON::restore($reviewJpa->toArray(), '__');
+                $reviews[] = $review;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewReviewCar::where('car__id', $request->car)->count());
+            $response->setData($reviews);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getReviewCarById(Request $request)
     {
         $response = new Response();
@@ -222,8 +307,7 @@ class ChecklistController extends Controller
 
             foreach ($request->data as $component) {
                 $CheckListCarJpa = CheckListCar::find($component['dat']['id']);
-                if(!$CheckListCarJpa)
-                {
+                if (!$CheckListCarJpa) {
                     $CheckListCarJpaNew = new CheckListCar();
                     $CheckListCarJpaNew->_component = $component['id'];
                     $CheckListCarJpaNew->present = $component['dat']['present'];
@@ -237,7 +321,7 @@ class ChecklistController extends Controller
                     $CheckByReviewJpa->_review = $ReviewCarJpa->id;
                     $CheckByReviewJpa->status = 1;
                     $CheckByReviewJpa->save();
-                }else{
+                } else {
                     $CheckListCarJpa->_component = $component['id'];
                     $CheckListCarJpa->present = $component['dat']['present'];
                     $CheckListCarJpa->optimed = $component['dat']['optimed'];
@@ -290,7 +374,8 @@ class ChecklistController extends Controller
         }
     }
 
-    public function restore(Request $request){
+    public function restore(Request $request)
+    {
         $response = new Response();
         try {
 
