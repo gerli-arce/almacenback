@@ -206,8 +206,7 @@ class ChecklistController extends Controller
                 if ($column == 'car__placa' || $column == '*') {
                     $q->orWhere('car__placa', $type, $value);
                 }
-                if ($column == 'description' || $column == '*
-                ') {
+                if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
             });
