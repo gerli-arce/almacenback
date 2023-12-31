@@ -86,7 +86,7 @@ class ChecklistController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
                 throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 
@@ -168,7 +168,7 @@ class ChecklistController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
                 throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
             }
 

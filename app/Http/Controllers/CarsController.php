@@ -25,7 +25,7 @@ class CarsController extends Controller
                 throw new Exception($message);
             }
             if (!gValidate::check($role->permissions, $branch, 'cars', 'create')) {
-                throw new Exception("No tienes permisos para agregar vehiculos en ");
+                throw new Exception("No tienes permisos para agregar movilidades de " . $branch);
             }
 
             if (
@@ -154,8 +154,8 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar marcas');
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para listar movilidades  de ' . $branch);
             }
 
             $verifyCarJpa = Cars::select([
@@ -191,8 +191,8 @@ class CarsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar los vehículos  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para listar los movilidades  de ' . $branch);
             }
 
             $carJpa = ViewCars::select('*')->whereNotNull('status')->find($id);
@@ -221,8 +221,8 @@ class CarsController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para listar movilidades  de ' . $branch);
             }
 
             $query = ViewCars::select('*')
@@ -231,6 +231,8 @@ class CarsController extends Controller
             if (!$request->all) {
                 $query->whereNotNull('status');
             }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
@@ -267,7 +269,8 @@ class CarsController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-            });
+            })
+            ->where('branch__id', $branch_->id);
 
             $iTotalDisplayRecords = $query->count();
             $carsJpa = $query
@@ -362,8 +365,8 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'update')) {
-                throw new Exception('No tienes permisos para actualizar marcas');
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'update')) {
+                throw new Exception('No tienes permisos para actualizar movilidades  de ' . $branch);
             }
 
             $cardJpa = Cars::select('*')->find($request->id);
@@ -465,7 +468,7 @@ class CarsController extends Controller
 
             $response->setStatus(200);
             // $response->setData([$cardJpa]);
-            $response->setMessage('La vehiculo ha sido actualizado correctamente');
+            $response->setMessage('La movilidad ha sido actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
@@ -486,8 +489,8 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
-                throw new Exception('No tienes permisos para eliminar marcas en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar movilidades en ' . $branch);
             }
 
             if (
@@ -498,7 +501,7 @@ class CarsController extends Controller
 
             $carJpa = Cars::find($request->id);
             if (!$carJpa) {
-                throw new Exception('La vehiculo que deseas eliminar no existe');
+                throw new Exception('La movilidad que deseas eliminar no existe');
             }
 
             $carJpa->update_date = gTrace::getDate('mysql');
@@ -507,7 +510,7 @@ class CarsController extends Controller
             $carJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La vehiculo a sido eliminada correctamente');
+            $response->setMessage('La movilidad a sido eliminada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
@@ -528,8 +531,8 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'brands', 'delete_restore')) {
-                throw new Exception('No tienes permisos para restaurar vehiculos en ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar movilidades en ' . $branch);
             }
 
             if (
@@ -540,7 +543,7 @@ class CarsController extends Controller
 
             $carsJpa = Cars::find($request->id);
             if (!$carsJpa) {
-                throw new Exception('La vehículo que deseas restaurar no existe');
+                throw new Exception('La movilidad que deseas restaurar no existe');
             }
 
             $carsJpa->update_date = gTrace::getDate('mysql');
@@ -549,7 +552,7 @@ class CarsController extends Controller
             $carsJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('La vehículo a sido restaurada correctamente');
+            $response->setMessage('La movilidad a sido restaurada correctamente');
             $response->setData($role->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);

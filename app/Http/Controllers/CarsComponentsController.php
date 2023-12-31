@@ -22,7 +22,7 @@ class CarsComponentsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'cars_components', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars_components', 'read')) {
                 throw new Exception('No tienes permisos para agregar componentes de vheículo');
             }
 
