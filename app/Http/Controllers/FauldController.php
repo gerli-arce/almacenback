@@ -50,6 +50,8 @@ class FauldController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $client = People::find($request->_client);
+
             $salesProduct = new SalesProducts();
             $salesProduct->_client = $request->_client;
             $salesProduct->_technical = $request->_technical;
@@ -100,6 +102,8 @@ class FauldController extends Controller
                         $productByTechnicalJpa->save();
                     } else {
 
+                        $productJpa->disponibility = "EN AVERIA DEL CLIENTE " . $client->name . ' ' . $client->lastname;
+
                         $stock = Stock::where('_model', $productJpa->_model)
                             ->where('_branch', $branch_->id)
                             ->first();
@@ -107,6 +111,8 @@ class FauldController extends Controller
                             $stock->mount_new = intval($stock->mount_new) - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
+                        }else if ($productJpa->product_status == "MALOGRADO" && $productJpa->condition_product == "POR REVISAR") {
+                            $stock->mount_ill_fated = intval($stock->mount_ill_fated) - 1;
                         }
 
                         $stock->save();
@@ -342,6 +348,8 @@ class FauldController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $person = People::find($request->_client);
+
             $salesProduct = SalesProducts::find($request->id);
 
             if (isset($request->_client)) {
@@ -431,7 +439,7 @@ class FauldController extends Controller
                                 $PeopleJpa = People::where('id', $salesProduct->_client)->first();
 
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'INSTALACION: ' . $PeopleJpa->name . ' ' . $PeopleJpa->lastname;
+                                    $productJpa->disponibility = 'EN AVERIA DEL CLIENTE : ' . $person->name . ' ' . $person->lastname;
                                 }
                                 if (
                                     isset($request->image_qr)
@@ -468,7 +476,7 @@ class FauldController extends Controller
 
                             $productByTechnicalJpa->save();
                         } else {
-                            $productJpa->disponibility = "VENDIENDO";
+                            $productJpa->disponibility = "EN AVERIA DEL CLIENTE " . $person->name . ' ' . $person->lastname;
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
@@ -476,6 +484,8 @@ class FauldController extends Controller
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
                                 $stock->mount_second = $stock->mount_second - 1;
+                            } else if ($productJpa->product_status == "MALOGRADO" && $productJpa->condition_product == "POR REVISAR") {
+                                $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                             }
                             $stock->save();
                         }
@@ -737,6 +747,8 @@ class FauldController extends Controller
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
                 ->get();
 
+            $person = People::find($saleProductJpa->_client);
+
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             foreach ($detailsSalesJpa as $detail) {
@@ -766,6 +778,7 @@ class FauldController extends Controller
                     }else{
                         $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
+                    $productJpa->description =  $productJpa->description."; Eliminado del la averia del cliente " . $person->name . ' ' . $person->lastname ;
                 }
                 $stock->save();
                 $productJpa->save();
