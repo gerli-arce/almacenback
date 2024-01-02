@@ -225,7 +225,6 @@ class InstallationController extends Controller
                 !isset($request->price_installation) ||
                 !isset($request->_technical) ||
                 !isset($request->_type_operation) ||
-                // !isset($request->price_all) ||
                 !isset($request->type_pay) ||
                 !isset($request->mount_dues) ||
                 !isset($request->date_sale)
@@ -234,12 +233,8 @@ class InstallationController extends Controller
             }
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
-            // $SalesProductsJpa = SalesProducts::where('_client', $request->_client)->where('_type_operation', $request->_type_operation)->whereNotNull('status')->first();
-
-            // if($SalesProductsJpa){
-            //     throw new Exception('Error: Este cliente ya tiene una instalacion registrada');
-            // }
+            
+            $client = People::find($request->_client);
 
             $salesProduct = new SalesProducts();
             $salesProduct->_client = $request->_client;
@@ -308,9 +303,11 @@ class InstallationController extends Controller
                             $stock->mount_new = intval($stock->mount_new) - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
+                        }else if ($productJpa->product_status == "MALOGRADO" || $productJpa->product_status == "POR REVISAR") {
+                            $stock->mount_ill_fated = intval($stock->mount_ill_fated) - 1;
                         }
 
-                        $productJpa->disponibility = "EN INSTALACION";
+                        $productJpa->disponibility = "EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
 
                         $stock->save();
                         $productJpa->save();
@@ -615,12 +612,15 @@ class InstallationController extends Controller
 
             if (
                 !isset($request->id) ||
-                !isset($request->_technical)
+                !isset($request->_technical) ||
+                !isset($request->_client) 
             ) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
+            $client = People::find($request->_client);
 
             $salesProduct = SalesProducts::find($request->id);
 
@@ -701,6 +701,7 @@ class InstallationController extends Controller
                             $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                             $productByTechnicalJpa->save();
                         }
+
                         $detailSale->description = $product['description'];
                         $detailSale->save();
 
@@ -747,7 +748,8 @@ class InstallationController extends Controller
 
                             $productByTechnicalJpa->save();
                         } else {
-                            $productJpa->disponibility = "EN INSTALACION";
+
+                            $productJpa->disponibility = "EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
