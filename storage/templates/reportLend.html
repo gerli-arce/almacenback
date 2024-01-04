@@ -13,25 +13,38 @@
             font-family: "Poppins", sans-serif;
             box-sizing: border-box;
             line-height: 1.5;
-            /* font-size: 10pt; */
+            font-size: 10pt;
             color: #343a40;
         }
 
         @page {
             margin-top: 1.5cm;
-            margin-bottom: 3cm;
+            margin-bottom: 1cm;
             margin-left: 1.5cm;
             margin-right: 1.5cm;
         }
 
-        /* header {
-                position: fixed;
-                top: -2.25cm;
-                width: 100%;
-                padding: 10px 0;
-                border-bottom: 1px solid #6c757d;
-            } */
 
+
+        footer {
+            position: fixed;
+            bottom: -2.25cm;
+            width: 100%;
+            padding: 10px 0;
+            border-top: 1px solid #6c757d;
+        }
+
+        footer .issue-detail {
+            position: absolute;
+            float: right;
+            top: 10px;
+        }
+
+        a {
+            text-decoration: none;
+            color: unset;
+        }
+    
         footer {
             position: fixed;
             bottom: -2.25cm;
@@ -226,7 +239,7 @@
             </div>
             <!-- <img i src="https://almacendev.fastnetperu.com.pe/api/profile/c85b4958/mini" alt="Logo de Software Developers World"> 
         </header> -->
-    <footer>
+    <!-- <footer>
         <div>
             FASTNETPERU E.I.R.L<br />
             Jr. 1 de Mayo 1085 PICHANAQUI<br />
@@ -234,7 +247,7 @@
         <div class="issue-detail">
             T: <a href="tel:51941415879">51 941 415 879</a>
         </div>
-    </footer>
+    </footer> -->
     <main>
         <!-- <p style="margin: 0px; padding: 0px" id="date">
                 {branch_name}, {issue_long_date}
@@ -264,17 +277,17 @@
                             height: 140px;
                             width:250px;
                             background-color: rgb(234, 234, 234);
-                            font-size: 24px;
+                            font-size: 20pt;
                             font-weight: 600;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
                             border: solid 2px #000;
                         ">
-                    <span>RUC 20602791816</span>
-                    <span>PRESTAMO</span>
+                    <h1>RUC 20602791816</h1>
+                    <h1>PRESTAMO</h1>
                     <br>
-                    <span>{num}</span>
+                    <h1>{num}</h1>
                 </div>
             </div>
         </div>
