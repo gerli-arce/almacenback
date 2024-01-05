@@ -192,14 +192,23 @@ class StockController extends Controller
                 if ($models['model']['currency'] == "SOLES") {
                     $currency = "S/.";
                 }
+                // $url = "https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini";
 
-                $image = "
-                    <div>
-                        <center>
-                            <img src='https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
-                        </center>
-                    </div>
-                    ";
+                // $headers = @get_headers($url);
+
+                // if ($headers && strpos($headers[0], '200') !== false) {
+                   
+                // } else {
+                //     throw new Exception('La imagen del modelo '. $models['model']['model'] .' no existe con el id '. $models['model']['relative_id'] );
+                // }
+
+                // $image = "
+                //     <div>
+                //         <center>
+                //             <img src='https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
+                //         </center>
+                //     </div>
+                //     ";
 
                 $product = "
                     <div>
@@ -218,7 +227,6 @@ class StockController extends Controller
                 $sumary .= "
                     <tr>
                         <td class='text-center'>{$count}</td>
-                        <td>{$image}</td>
                         <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
                         <td>{$stock}</td>
                     </tr>
@@ -739,9 +747,7 @@ class StockController extends Controller
                 throw new Exception('No tienes permisos para actualizar stock.');
             }
 
-
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
-
 
             $models = Models::select(['id', 'model'])->whereNotNull('status')->get();
 
@@ -749,62 +755,68 @@ class StockController extends Controller
 
                 $stockJpa = Stock::whereNotNull('status')->where('_model', $model['id'])->where('_branch', $branch_->id)->first();
 
-                $productsJpa = Product::where('_model', $model['id'])
-                    ->where('_branch', $branch_->id)
-                    ->where('disponibility', 'DISPONIBLE')
-                    ->where(function ($q) {
-                        $q->where('product_status', 'NUEVO')
-                            ->orWhere('product_status', 'SEMINUEVO')
-                            ->orWhere('product_status', 'MALOGRADO')
-                            ->orWhere('product_status', 'POR REVISAR');
-                    })
-                    ->whereNotNull('status')
-                    ->get();
+                if ($stockJpa) {
 
-                $new = $second = $ill_fated = 0;
+                    $productsJpa = Product::where('_model', $model['id'])
+                        ->where('_branch', $branch_->id)
+                        ->where('disponibility', 'DISPONIBLE')
+                        ->where(function ($q) {
+                            $q->where('product_status', 'NUEVO')
+                                ->orWhere('product_status', 'SEMINUEVO')
+                                ->orWhere('product_status', 'MALOGRADO')
+                                ->orWhere('product_status', 'POR REVISAR');
+                        })
+                        ->whereNotNull('status')
+                        ->get();
 
-                $type = '';
+                    $new = $second = $ill_fated = 0;
 
-                if ($productsJpa->isEmpty()) {
-                    $stockJpa->mount_new = 0;
-                    $stockJpa->mount_second = 0;
-                    $stockJpa->mount_ill_fated = 0;
-                } else {
-                    foreach ($productsJpa as $product) {
-                        if ($product['type'] == 'EQUIPO') {
-                            $type = 'EQUIPO';
-                            if ($product['product_status'] == 'NUEVO') {
-                                $new += 1;
-                            } else if ($product['product_status'] == 'SEMINUEVO') {
-                                $second += 1;
+                    $type = '';
+
+                    if ($productsJpa->isEmpty()) {
+                        $stockJpa->mount_new = 0;
+                        $stockJpa->mount_second = 0;
+                        $stockJpa->mount_ill_fated = 0;
+                    } else {
+                        foreach ($productsJpa as $product) {
+                            if ($product['type'] == 'EQUIPO') {
+                                $type = 'EQUIPO';
+                                if ($product['product_status'] == 'NUEVO') {
+                                    $new += 1;
+                                } else if ($product['product_status'] == 'SEMINUEVO') {
+                                    $second += 1;
+                                } else {
+                                    $ill_fated += 1;
+                                }
                             } else {
-                                $ill_fated += 1;
-                            }
-                        } else {
-                            $type = 'MATERIAL';
+                                $type = 'MATERIAL';
 
-                            if ($stockJpa->mount_new < 0) {
-                                $stockJpa->mount_new = 0;
-                            }
-                            if ($stockJpa->mount_second < 0) {
-                                $stockJpa->mount_second = 0;
-                            }
-                            if ($stockJpa->mount_ill_fated < 0) {
-                                $stockJpa->mount_ill_fated = 0;
-                            }
+                                if ($stockJpa->mount_new < 0) {
+                                    $stockJpa->mount_new = 0;
+                                }
+                                if ($stockJpa->mount_second < 0) {
+                                    $stockJpa->mount_second = 0;
+                                }
+                                if ($stockJpa->mount_ill_fated < 0) {
+                                    $stockJpa->mount_ill_fated = 0;
+                                }
 
-                            $productJpa = Product::find($product['id']);
-                            $productJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
-                            $productJpa->save();
+                                $productJpa = Product::find($product['id']);
+                                $productJpa->mount = $stockJpa->mount_new + $stockJpa->mount_second;
+                                $productJpa->save();
+                            }
                         }
                     }
+                    if ($type == 'EQUIPO') {
+                        $stockJpa->mount_new = $new;
+                        $stockJpa->mount_second = $second;
+                        $stockJpa->mount_ill_fated = $ill_fated;
+                    }
+                    $stockJpa->save();
+                }else{
+                    // throw new Exception('model.'. $model['id']);
                 }
-                if ($type == 'EQUIPO') {
-                    $stockJpa->mount_new = $new;
-                    $stockJpa->mount_second = $second;
-                    $stockJpa->mount_ill_fated = $ill_fated;
-                }
-                $stockJpa->save();
+
             }
 
             $response->setStatus(200);
@@ -820,47 +832,49 @@ class StockController extends Controller
         }
     }
 
-    // public function regularizar(Request $request)
-    // {
-    //     $response = new Response();
-    //     try {
-    //         $models = Models::select('id','model')->get();
-    //         $branchs = Branch::select('id', 'name')->get();
-    //         $exist = [];
-    //         foreach($branchs as $branch){
-    //             foreach($models as $model){
-    //                 $stockIsExist = Stock::select('id','_model','_branch')
-    //                 ->where('_model', $model['id'])
-    //                 ->where('_branch', $branch['id'])
-    //                 ->first();
-    //                 if(!$stockIsExist){
-    //                     $stockJpa = new Stock();
-    //                     $stockJpa->_model = $model['id'];
-    //                     $stockJpa->mount = '0';
-    //                     $stockJpa->stock_min = '5';
-    //                     $stockJpa->_branch = $branch['id'];
-    //                     $stockJpa->status = '1';
-    //                     $stockJpa->save();
-    //                 }else{
-    //                     $exist[] = [
-    //                         'model'=>$model['model'],
-    //                         'branch'=>$branch['name']
-    //                     ];
-    //                 }
-    //             }
-    //         }
+    public function regularizar(Request $request)
+    {
+        $response = new Response();
+        try {
+            $models = Models::select('id','model')->get();
+            $branchs = Branch::select('id', 'name')->get();
+            $exist = [];
+            foreach($branchs as $branch){
+                foreach($models as $model){
+                    $stockIsExist = Stock::select('id','_model','_branch')
+                    ->where('_model', $model['id'])
+                    ->where('_branch', $branch['id'])
+                    ->first();
+                    if(!$stockIsExist){
+                        $stockJpa = new Stock();
+                        $stockJpa->_model = $model['id'];
+                        $stockJpa->mount_new = '0';
+                        $stockJpa->mount_second = '0';
+                        $stockJpa->mount_ill_fated = '0';
+                        $stockJpa->stock_min = '5';
+                        $stockJpa->_branch = $branch['id'];
+                        $stockJpa->status = '1';
+                        $stockJpa->save();
+                    }else{
+                        $exist[] = [
+                            'model'=>$model['model'],
+                            'branch'=>$branch['name']
+                        ];
+                    }
+                }
+            }
 
-    //         $response->setData($exist);
-    //         $response->setStatus(200);
-    //         $response->setMessage('stocks actualizados correctamente');
-    //     } catch (\Throwable$th) {
-    //         $response->setStatus(400);
-    //         $response->setMessage($th->getMessage());
-    //     } finally {
-    //         return response(
-    //             $response->toArray(),
-    //             $response->getStatus()
-    //         );
-    //     }
-    // }
+            $response->setData($exist);
+            $response->setStatus(200);
+            $response->setMessage('stocks actualizados correctamente');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }

@@ -100,6 +100,10 @@ class ModelsController extends Controller
                 $stockJpa->mount_second = '0';
                 $stockJpa->stock_min = '5';
                 $stockJpa->_branch = $branch['id'];
+                $stockJpa->_creation_user = $userid;
+                $stockJpa->creation_date = gTrace::getDate('mysql');
+                $stockJpa->_update_user = $userid;
+                $stockJpa->update_date = gTrace::getDate('mysql');
                 $stockJpa->status = '1';
                 $stockJpa->save();
             }

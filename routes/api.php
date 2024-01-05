@@ -512,3 +512,4 @@ Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
 Route::get('/stock_plant', [connect::class, 'changeByProductForModelStokPlant']);
 Route::get('/products_plant', [connect::class, 'changeByProductForModelProductsPlant']);
+Route::get('/regularizar', [StockController::class, 'regularizar']);
