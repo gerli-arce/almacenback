@@ -1693,6 +1693,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
+            ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'desc')
                 ->where('view_sales.technical_id', $request->technical)
@@ -1724,7 +1725,9 @@ class TechnicalsController extends Controller
             if (isset($request->date_start) || isset($request->date_end)) {
                 $dateStart = date('Y-m-d', strtotime($request->date_start));
                 $dateEnd = date('Y-m-d', strtotime($request->date_end));
-                $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd]);
+                $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd])
+                ->where('view_sales.technical_id', $request->technical)
+                ->where('branch__correlative', $branch);
             }
 
             $iTotalDisplayRecords = $query->count();
