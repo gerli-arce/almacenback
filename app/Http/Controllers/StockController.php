@@ -877,4 +877,51 @@ class StockController extends Controller
             );
         }
     }
+
+    public function proveImagesByModels(){
+        $response = new Response();
+        try {
+            $models = Models::select('id','model', 'relative_id')->get();
+            foreach($models as $model){
+
+                try {
+                    $options = new Options();
+                    $options->set('isRemoteEnabled', true);
+                    $pdf = new Dompdf($options);
+                    $url = "https://almacendev.fastnetperu.com.pe/api/model/{$model['relative_id']}/mini";
+                    $template = "
+                    <html>
+                        <head>
+                            <style>
+                                @page { margin: 0px; }
+                                body { margin: 0px; }
+                            </style>
+                        </head>
+                        <body>
+                            <img src='{$url}' style='width:100%; height:100%;'>
+                        </body>
+                    </html>
+                    ";
+                    $pdf->loadHTML($template);
+                    $pdf->render();
+                    $output = $pdf->output();
+                    $tempDir = sys_get_temp_dir();
+                    file_put_contents("{$tempDir}/pdf.pdf", $output);
+                } catch (\Throwable $th) {
+                    throw new Exception('La imagen del modelo '. $model['model'] .' no existe con el id '. $model['relative_id'].'El error es:'.$th->getMessage() );
+                }
+            }
+            $response->setData($models->toArray());
+            $response->setStatus(200);
+            $response->setMessage('No hay errores en la carga de imagenes');
+        } catch (\Throwable$th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
