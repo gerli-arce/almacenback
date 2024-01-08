@@ -137,7 +137,6 @@ class StockController extends Controller
 
     public function generateReportStock(Request $request)
     {
-        set_time_limit(120);
         try {
 
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -197,18 +196,19 @@ class StockController extends Controller
                 // $headers = @get_headers($url);
 
                 // if ($headers && strpos($headers[0], '200') !== false) {
-                   
+
                 // } else {
                 //     throw new Exception('La imagen del modelo '. $models['model']['model'] .' no existe con el id '. $models['model']['relative_id'] );
                 // }
+                $url = "https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini";
 
-                // $image = "
-                //     <div>
-                //         <center>
-                //             <img src='https://almacen.fastnetperu.com.pe/api/model/{$models['model']['relative_id']}/mini' alt='.' class='img_stock'></img>
-                //         </center>
-                //     </div>
-                //     ";
+                $image = "
+                    <div>
+                        <center>
+                            <img src='{$url}' class='img_stock'>
+                        </center>
+                    </div>
+                    ";
 
                 $product = "
                     <div>
@@ -224,9 +224,11 @@ class StockController extends Controller
                     </div>
                 ";
 
+               
                 $sumary .= "
                     <tr>
                         <td class='text-center'>{$count}</td>
+                        <td>{$image}</td>
                         <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
                         <td>{$stock}</td>
                     </tr>
@@ -813,7 +815,7 @@ class StockController extends Controller
                         $stockJpa->mount_ill_fated = $ill_fated;
                     }
                     $stockJpa->save();
-                }else{
+                } else {
                     // throw new Exception('model.'. $model['id']);
                 }
 
@@ -836,16 +838,16 @@ class StockController extends Controller
     {
         $response = new Response();
         try {
-            $models = Models::select('id','model')->get();
+            $models = Models::select('id', 'model')->get();
             $branchs = Branch::select('id', 'name')->get();
             $exist = [];
-            foreach($branchs as $branch){
-                foreach($models as $model){
-                    $stockIsExist = Stock::select('id','_model','_branch')
-                    ->where('_model', $model['id'])
-                    ->where('_branch', $branch['id'])
-                    ->first();
-                    if(!$stockIsExist){
+            foreach ($branchs as $branch) {
+                foreach ($models as $model) {
+                    $stockIsExist = Stock::select('id', '_model', '_branch')
+                        ->where('_model', $model['id'])
+                        ->where('_branch', $branch['id'])
+                        ->first();
+                    if (!$stockIsExist) {
                         $stockJpa = new Stock();
                         $stockJpa->_model = $model['id'];
                         $stockJpa->mount_new = '0';
@@ -855,10 +857,10 @@ class StockController extends Controller
                         $stockJpa->_branch = $branch['id'];
                         $stockJpa->status = '1';
                         $stockJpa->save();
-                    }else{
+                    } else {
                         $exist[] = [
-                            'model'=>$model['model'],
-                            'branch'=>$branch['name']
+                            'model' => $model['model'],
+                            'branch' => $branch['name'],
                         ];
                     }
                 }
@@ -867,7 +869,7 @@ class StockController extends Controller
             $response->setData($exist);
             $response->setStatus(200);
             $response->setMessage('stocks actualizados correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -878,17 +880,17 @@ class StockController extends Controller
         }
     }
 
-    public function proveImagesByModels(){
+    public function proveImagesByModels()
+    {
         $response = new Response();
         try {
-            $models = Models::select('id','model', 'relative_id')->get();
-            foreach($models as $model){
-
+            $models = Models::select('id', 'model', 'relative_id')->get();
+            foreach ($models as $model) {
                 try {
                     $options = new Options();
                     $options->set('isRemoteEnabled', true);
                     $pdf = new Dompdf($options);
-                    $url = "https://almacendev.fastnetperu.com.pe/api/model/{$model['relative_id']}/mini";
+                    $url = "https://almacen.fastnetperu.com.pe/api/model/{$model['relative_id']}/mini";
                     $template = "
                     <html>
                         <head>
@@ -898,7 +900,7 @@ class StockController extends Controller
                             </style>
                         </head>
                         <body>
-                            <img src='{$url}' style='width:100%; height:100%;'>
+                            <img src='{$url}' style='width:10%; height:10%;'>
                         </body>
                     </html>
                     ";
@@ -908,13 +910,13 @@ class StockController extends Controller
                     $tempDir = sys_get_temp_dir();
                     file_put_contents("{$tempDir}/pdf.pdf", $output);
                 } catch (\Throwable $th) {
-                    throw new Exception('La imagen del modelo '. $model['model'] .' no existe con el id '. $model['relative_id'].'El error es:'.$th->getMessage() );
+                    throw new Exception('La imagen del modelo ' . $model['model'] . ' no existe con el id ' . $model['relative_id'] . 'El error es:' . $th->getMessage());
                 }
             }
             $response->setData($models->toArray());
             $response->setStatus(200);
             $response->setMessage('No hay errores en la carga de imagenes');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
