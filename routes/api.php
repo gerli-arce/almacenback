@@ -15,6 +15,7 @@ use App\Http\Controllers\{
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
+    ChangesCarController
 };
 
 /*
@@ -506,6 +507,9 @@ Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewC
 Route::delete('/checklist', [ChecklistController::class, 'delete']);
 Route::post('/checklist/restore', [ChecklistController::class, 'restore']);
 Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
+
+// CHANGES CAR 
+Route::post('/changes_car', [ChangesCarController::class, 'store']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
