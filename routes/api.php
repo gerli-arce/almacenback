@@ -510,6 +510,7 @@ Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
 
 // CHANGES CAR 
 Route::post('/changes_car', [ChangesCarController::class, 'store']);
+Route::post('/changes_car/paginate/oil', [ChangesCarController::class, 'paginateChangesOil']);
 
 // Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
