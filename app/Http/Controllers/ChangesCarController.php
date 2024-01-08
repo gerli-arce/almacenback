@@ -127,4 +127,93 @@ class ChangesCarController extends Controller
             );
         }
     }
+
+    public function update(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'changes_car', 'update')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+
+            $changeCarJpa = ChangesCar::find($request->id);
+            $changeCarJpa->change = $request->change;
+            $changeCarJpa->_person = $request->_person;
+            $changeCarJpa->date = $request->date;
+            $changeCarJpa->description = $request->description;
+            $changeCarJpa->save();
+           
+            $response->setStatus(200);
+            $response->setMessage('El se ha actualizado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'changes_car', 'delete')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+
+            $changeCarJpa = ChangesCar::find($request->id);
+            $changeCarJpa->status = null;
+            $changeCarJpa->save();
+           
+            $response->setStatus(200);
+            $response->setMessage('El se ha eliminado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+    public function restore(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'changes_car', 'delete')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+
+            $changeCarJpa = ChangesCar::find($request->id);
+            $changeCarJpa->status = "1";
+            $changeCarJpa->save();
+           
+            $response->setStatus(200);
+            $response->setMessage('El se ha restaurado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 }
