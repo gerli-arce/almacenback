@@ -64,8 +64,8 @@ class ChangesCarController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'changes_car', 'read')) {
+                throw new Exception('No tienes permisos para listar los cambios de aceite');
             }
 
             $query = ViewChangesCar::select('*')
@@ -137,8 +137,8 @@ class ChangesCarController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+            if (!gValidate::check($role->permissions, $branch, 'changes_car', 'read')) {
+                throw new Exception('No tienes permisos para listar cambios');
             }
 
             $query = ViewChangesCar::select('*')
