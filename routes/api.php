@@ -512,6 +512,7 @@ Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
 Route::post('/changes_car', [ChangesCarController::class, 'store']);
 Route::patch('/changes_car', [ChangesCarController::class, 'update']);
 Route::post('/changes_car/paginate/oil', [ChangesCarController::class, 'paginateChangesOil']);
+Route::post('/changes_car/paginate/review', [ChangesCarController::class, 'paginateRewiewTechnicals']);
 Route::delete('/changes_car', [ChangesCarController::class, 'delete']);
 Route::post('/changes_car/restore', [ChangesCarController::class, 'restore']);
 
