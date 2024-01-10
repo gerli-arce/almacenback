@@ -516,7 +516,6 @@ Route::post('/changes_car/paginate/review', [ChangesCarController::class, 'pagin
 Route::delete('/changes_car', [ChangesCarController::class, 'delete']);
 Route::post('/changes_car/restore', [ChangesCarController::class, 'restore']);
 
-// Route::get('/traslat', [connect::class, 'dats']);
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
 Route::get('/stock_plant', [connect::class, 'changeByProductForModelStokPlant']);

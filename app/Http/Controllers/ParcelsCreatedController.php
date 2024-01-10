@@ -72,6 +72,9 @@ class ParcelsCreatedController extends Controller
                 'responsible.id as responsible_pickup__id',
                 'responsible.name as responsible_pickup__name',
                 'responsible.lastname as responsible_pickup__lastname',
+                'responsible_br.id as responsible_branch__id',
+                'responsible_br.name as responsible_branch__name',
+                'responsible_br.lastname as responsible_branch__lastname',
                 'sender.id as sender__id',
                 'sender.name as sender__name',
                 'sender.lastname as sender__lastname',
@@ -90,6 +93,7 @@ class ParcelsCreatedController extends Controller
                 ->join('people as sender', 'users._person', 'sender.id')
                 ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
                 ->join('people as responsible', 'parcels._responsible_pickup', 'responsible.id')
+                ->join('people as responsible_br', 'parcels._responsible_branch', 'responsible_br.id')
                 ->join('transport', 'parcels._business_transport', 'transport.id')
                 ->whereNotNull('parcels.status')
                 ->find($request->id);
@@ -196,6 +200,7 @@ class ParcelsCreatedController extends Controller
                     '{branch_send}',
                     '{branch_designation}',
                     '{responsible_pickup}',
+                    '{responsible_branch}',
                     '{date_send}',
                     '{business_transport}',
                     '{transport_price}',
@@ -211,6 +216,7 @@ class ParcelsCreatedController extends Controller
                     $parcel['branch_send']['name'],
                     $parcel['branch_destination']['name'],
                     $parcel['responsible_pickup']['name'] . ' ' . $parcel['responsible_pickup']['lastname'],
+                    $parcel['responsible_branch']['name'] . ' ' . $parcel['responsible_branch']['lastname'],
                     $parcel['date_send'],
                     $parcel['business_transport']['name'],
                     $parcel['price_transport'],
@@ -754,7 +760,8 @@ class ParcelsCreatedController extends Controller
                 !isset($request->_business_transport) ||
                 !isset($request->price_transport) ||
                 !isset($request->_type_operation) ||
-                !isset($request->_responsible_pickup)
+                !isset($request->_responsible_pickup) ||
+                !isset($request->_responsible_branch)
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
@@ -767,6 +774,7 @@ class ParcelsCreatedController extends Controller
             $parcelJpa->_branch_destination = $request->_branch_destination;
             $parcelJpa->_business_transport = $request->_business_transport;
             $parcelJpa->_responsible_pickup = $request->_responsible_pickup;
+            $parcelJpa->_responsible_branch = $request->_responsible_branch;
             $parcelJpa->price_transport = $request->price_transport;
             $parcelJpa->parcel_type = "GENERATED";
             $parcelJpa->parcel_status = "ENVIADO";
@@ -902,6 +910,9 @@ class ParcelsCreatedController extends Controller
 
             if (isset($request->_responsible_pickup)) {
                 $parcelJpa->_responsible_pickup = $request->_responsible_pickup;
+            }
+            if (isset($request->_responsible_branch)) {
+                $parcelJpa->_responsible_branch = $request->_responsible_branch;
             }
 
             if (isset($request->_business_transport)) {
