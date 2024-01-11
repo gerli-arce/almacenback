@@ -608,6 +608,8 @@ class ParcelsRegistersController extends Controller
 
             $parcelJpa = Parcel::select(['id'])->find($request->id);
 
+            $model_ = Models::select('id', 'model', 'currency', 'price_buy', 'price_sale', 'mr_revenue')->find($request->_model);
+
             if (isset($request->date_send)) {
                 $parcelJpa->date_send = $request->date_send;
             }
@@ -661,6 +663,7 @@ class ParcelsRegistersController extends Controller
             }
             if (isset($request->currency)) {
                 $parcelJpa->currency = $request->currency;
+                $model_->currency = $request->currency;
             }
             if (isset($request->warranty)) {
                 $parcelJpa->warranty = $request->warranty;
@@ -685,19 +688,29 @@ class ParcelsRegistersController extends Controller
                 //     $EntryDetailJpa->mount = $request->amount;
                 //     $EntryDetailJpa->save();
                 // }
-
             }
             if (isset($request->value_unity)) {
                 $parcelJpa->value_unity = $request->value_unity;
             }
             if (isset($request->price_unity)) {
                 $parcelJpa->price_unity = $request->price_unity;
+                $model_->price_buy = $request->price_unity;
             }
             if (isset($request->mr_revenue)) {
                 $parcelJpa->mr_revenue = $request->mr_revenue;
+                $model_->mr_revenue = $request->mr_revenue;
             }
             if (isset($request->price_buy)) {
                 $parcelJpa->price_buy = $request->price_buy;
+                $model_->price_sale = $request->price_buy;
+                // search products by num_guia and model
+                $products = Product::where('num_guia', $parcelJpa->num_guia)->where('_model', $parcelJpa->_model)->get();
+                // recorrer y aclualizar su precio de venta 
+                foreach ($products as $product) {
+                    $product->price_buy = $request->price_unity;
+                    $product->price_sale = $request->price_buy;
+                    $product->save();
+                }
             }
 
             $parcelJpa->update_date = gTrace::getDate('mysql');
@@ -709,13 +722,15 @@ class ParcelsRegistersController extends Controller
                 }
             }
 
+            $model_->save();
+
             $parcelJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('La encomienda ha sido actualizado correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage());
+            $response->setMessage($th->getMessage().'LN:'.$th->getLine());
         } finally {
             return response(
                 $response->toArray(),
