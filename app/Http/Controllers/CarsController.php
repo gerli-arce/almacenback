@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Cars;
 use App\Models\Response;
 use App\Models\ViewCars;
+use App\Models\ProductsByCar;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -557,6 +558,50 @@ class CarsController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function setProductsByCars(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            // validar permisos 
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'create')) {
+                throw new Exception('No tienes permisos para agregar productos a movilidades en ' . $branch);
+            }
+            if (
+                !isset($request->data) ||
+                !isset($request->car)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            foreach ($request->data as $product) {
+                $productByCarJpa = new ProductsByCar();
+                $productByCarJpa->_car = $request->car['id'];
+                $productByCarJpa->_product = $product['product']['id'];
+                $productByCarJpa->_model = $product['product']['model']['id'];
+                $productByCarJpa->mount_new = $product['mount_new'];
+                $productByCarJpa->mount_second = $product['mount_second'];
+                $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
+                $productByCarJpa->description = $product['description'];
+                $productByCarJpa->save();
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Los productos se han agregado correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),

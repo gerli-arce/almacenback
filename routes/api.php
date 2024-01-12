@@ -480,6 +480,7 @@ Route::post('/car/paginate', [CarsController::class, 'paginate']);
 Route::get('/carimg/{id}/{zize}', [CarsController::class, 'image']);
 Route::post('/car/search', [CarsController::class, 'search']);
 Route::get('/car/car/{id}', [CarsController::class, 'getCar']);
+Route::post('/car/record', [CarsController::class, 'setProductsByCars']);
 
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);
