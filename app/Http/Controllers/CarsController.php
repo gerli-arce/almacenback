@@ -7,9 +7,10 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Cars;
+use App\Models\ProductsByCar;
 use App\Models\Response;
 use App\Models\ViewCars;
-use App\Models\ProductsByCar;
+use App\Models\ViewProductsByCar;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -271,7 +272,7 @@ class CarsController extends Controller
                     $q->orWhere('description', $type, $value);
                 }
             })
-            ->where('branch__id', $branch_->id);
+                ->where('branch__id', $branch_->id);
 
             $iTotalDisplayRecords = $query->count();
             $carsJpa = $query
@@ -574,7 +575,7 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            // validar permisos 
+            // validar permisos
             if (!gValidate::check($role->permissions, $branch, 'cars', 'create')) {
                 throw new Exception('No tienes permisos para agregar productos a movilidades en ' . $branch);
             }
@@ -594,6 +595,7 @@ class CarsController extends Controller
                 $productByCarJpa->mount_second = $product['mount_second'];
                 $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
                 $productByCarJpa->description = $product['description'];
+                $productByCarJpa->status = 1;
                 $productByCarJpa->save();
             }
 
@@ -609,4 +611,85 @@ class CarsController extends Controller
             );
         }
     }
+
+    public function paginateProductsByCar(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            
+            
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para listar productos de movilidades en ' . $branch);
+            }
+
+            $query = ViewProductsByCar::select('*')
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'car__placa' || $column == '*') {
+                    $q->orWhere('car__placa', $type, $value);
+                }
+                if ($column == 'product__name' || $column == '*') {
+                    $q->orWhere('product__name', $type, $value);
+                }
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+                if ($column == 'mount_new' || $column == '*') {
+                    $q->orWhere('mount_new', $type, $value);
+                }
+                if ($column == 'mount_second' || $column == '*') {
+                    $q->orWhere('mount_second', $type, $value);
+                }
+                if ($column == 'mount_ill_fated' || $column == '*') {
+                    $q->orWhere('mount_ill_fated', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+            })
+                ->where('car__id', $request->car);
+
+            $iTotalDisplayRecords = $query->count();
+            $productsByCarJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $productsByCar = array();
+            foreach ($productsByCarJpa as $productByCarJpa) {
+                $productByCar = gJSON::restore($productByCarJpa->toArray(), '__');
+                $productsByCar[] = $productByCar;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewProductsByCar::count());
+            $response->setData($productsByCar);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'Ln:' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
+    }
+
 }
