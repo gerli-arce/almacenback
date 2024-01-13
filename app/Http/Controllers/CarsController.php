@@ -604,7 +604,7 @@ class CarsController extends Controller
                     ->first();
 
                 if ($productByCarJpa_val) {
-                    if ($product['type'] == 'MATERIAL') {
+                    if ($product['product']['type'] == 'MATERIAL') {
                         $productByCarJpa_val->mount_new += $product['mount_new'];
                         $productByCarJpa_val->mount_second += $product['mount_second'];
                         $productByCarJpa_val->mount_ill_fated += $product['mount_ill_fated'];
@@ -623,7 +623,7 @@ class CarsController extends Controller
                         $productByCarJpa->save();
                     }
                 } else {
-                    if ($product['type'] == 'MATERIAL') {
+                    if ($product['product']['type'] == 'MATERIAL') {
                         $productByCarJpa = new ProductsByCar();
                         $productByCarJpa->_car = $request->car['id'];
                         $productByCarJpa->_product = $product['product']['id'];
@@ -653,7 +653,7 @@ class CarsController extends Controller
                 $stock->mount_second -= $product['mount_second'];
                 $stock->mount_ill_fated -= $product['mount_ill_fated'];
 
-                if ($product['type'] == 'MATERIAL') {
+                if ($product['product']['type'] == 'MATERIAL') {
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
                 } else {
                     $productJpa->disponibility = "En el stock vehículo: " . $request->car['placa'];
