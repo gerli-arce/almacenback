@@ -7,8 +7,10 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Cars;
+use App\Models\Product;
 use App\Models\ProductsByCar;
 use App\Models\Response;
+use App\Models\Stock;
 use App\Models\ViewCars;
 use App\Models\ViewProductsByCar;
 use Exception;
@@ -586,17 +588,79 @@ class CarsController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+
             foreach ($request->data as $product) {
-                $productByCarJpa = new ProductsByCar();
-                $productByCarJpa->_car = $request->car['id'];
-                $productByCarJpa->_product = $product['product']['id'];
-                $productByCarJpa->_model = $product['product']['model']['id'];
-                $productByCarJpa->mount_new = $product['mount_new'];
-                $productByCarJpa->mount_second = $product['mount_second'];
-                $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
-                $productByCarJpa->description = $product['description'];
-                $productByCarJpa->status = 1;
-                $productByCarJpa->save();
+
+                $stock = Stock::where('_model', $product['product']['model']['id'])
+                    ->where('_branch', $branch_->id)
+                    ->first();
+
+                $productJpa = Product::find($product['product']['id']);
+
+                $productByCarJpa_val = ProductsByCar::select('*')
+                    ->where('_car', $request->car['id'])
+                    ->where('_model', $product['product']['model']['id'])
+                    ->first();
+
+                if ($productByCarJpa_val) {
+                    if ($product['type'] == 'MATERIAL') {
+                        $productByCarJpa_val->mount_new += $product['mount_new'];
+                        $productByCarJpa_val->mount_second += $product['mount_second'];
+                        $productByCarJpa_val->mount_ill_fated += $product['mount_ill_fated'];
+                        $productByCarJpa_val->description = $product['description'];
+                        $productByCarJpa_val->save();
+                    } else {
+                        $productByCarJpa = new ProductsByCar();
+                        $productByCarJpa->_car = $request->car['id'];
+                        $productByCarJpa->_product = $product['product']['id'];
+                        $productByCarJpa->_model = $product['product']['model']['id'];
+                        $productByCarJpa->mount_new = $product['mount_new'];
+                        $productByCarJpa->mount_second = $product['mount_second'];
+                        $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByCarJpa->description = $product['description'];
+                        $productByCarJpa->status = 1;
+                        $productByCarJpa->save();
+                    }
+                } else {
+                    if ($product['type'] == 'MATERIAL') {
+                        $productByCarJpa = new ProductsByCar();
+                        $productByCarJpa->_car = $request->car['id'];
+                        $productByCarJpa->_product = $product['product']['id'];
+                        $productByCarJpa->_model = $product['product']['model']['id'];
+                        $productByCarJpa->mount_new = $product['mount_new'];
+                        $productByCarJpa->mount_second = $product['mount_second'];
+                        $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByCarJpa->description = $product['description'];
+                        $productByCarJpa->status = 1;
+                        $productByCarJpa->save();
+
+                    } else {
+                        $productByCarJpa = new ProductsByCar();
+                        $productByCarJpa->_car = $request->car['id'];
+                        $productByCarJpa->_product = $product['product']['id'];
+                        $productByCarJpa->_model = $product['product']['model']['id'];
+                        $productByCarJpa->mount_new = $product['mount_new'];
+                        $productByCarJpa->mount_second = $product['mount_second'];
+                        $productByCarJpa->mount_ill_fated = $product['mount_ill_fated'];
+                        $productByCarJpa->description = $product['description'];
+                        $productByCarJpa->status = 1;
+                        $productByCarJpa->save();
+                    }
+                }
+
+                $stock->mount_new -= $product['mount_new'];
+                $stock->mount_second -= $product['mount_second'];
+                $stock->mount_ill_fated -= $product['mount_ill_fated'];
+
+                if ($product['type'] == 'MATERIAL') {
+                    $productJpa->mount = $stock->mount_new + $stock->mount_second;
+                } else {
+                    $productJpa->disponibility = "En el stock vehículo: " . $request->car['placa'];
+                    $productJpa->description .= "Se agrego al stock del vehículo: " . $request->car['placa'] . " en la fecha " . gTrace::getDate('mysql');
+                }
+                $stock->save();
+                $productJpa->save();
             }
 
             $response->setStatus(200);
@@ -620,8 +684,7 @@ class CarsController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            
-            
+
             if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
                 throw new Exception('No tienes permisos para listar productos de movilidades en ' . $branch);
             }
