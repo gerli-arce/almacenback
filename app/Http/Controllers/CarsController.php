@@ -13,6 +13,8 @@ use App\Models\Response;
 use App\Models\Stock;
 use App\Models\ViewCars;
 use App\Models\ViewProductsByCar;
+use App\Models\SalesProducts;
+use App\Models\DetailSale;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -590,6 +592,23 @@ class CarsController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
+            $salesProduct = new SalesProducts();
+
+            $salesProduct->_branch = $branch_->id;
+            $salesProduct->_car = $request->car['id'];
+            $salesProduct->_type_operation = 14;
+            $salesProduct->type_intallation = "CAR";
+            $salesProduct->status_sale = "AGREGADO";
+            $salesProduct->_issue_user = $userid;
+            $salesProduct->type_pay = "GASTOS INTERNOS";
+
+            $salesProduct->_creation_user = $userid;
+            $salesProduct->creation_date = gTrace::getDate('mysql');
+            $salesProduct->_update_user = $userid;
+            $salesProduct->update_date = gTrace::getDate('mysql');
+            $salesProduct->status = "1";
+            $salesProduct->save();
+
             foreach ($request->data as $product) {
 
                 $stock = Stock::where('_model', $product['product']['model']['id'])
@@ -659,6 +678,18 @@ class CarsController extends Controller
                     $productJpa->disponibility = "En el stock vehículo: " . $request->car['placa'];
                     $productJpa->description .= "Se agrego al stock del vehículo: " . $request->car['placa'] . " en la fecha " . gTrace::getDate('mysql');
                 }
+
+                
+                $detailSale = new DetailSale();
+                $detailSale->_product = $productJpa->id;
+                $detailSale->mount_new = $product['mount_new'];
+                $detailSale->mount_second = $product['mount_second'];
+                $detailSale->mount_ill_fated = $product['mount_ill_fated'];
+                $detailSale->description = $product['description'];
+                $detailSale->_sales_product = $salesProduct->id;
+                $detailSale->status = '1';
+                $detailSale->save();
+
                 $stock->save();
                 $productJpa->save();
             }

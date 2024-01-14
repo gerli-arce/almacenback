@@ -15,6 +15,8 @@ use App\Models\ViewDetailsSales;
 use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
+use App\Models\Cars;
+
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -225,6 +227,7 @@ class SalesController extends Controller
                 'view_sales.tower_id as tower_id',
                 'view_sales.plant_id as plant_id',
                 'view_sales.room_id as room_id',
+                'view_sales.car_id as car_id',
                 'view_sales.type_intallation as type_intallation',
                 'view_sales.date_sale as date_sale',
                 'view_sales.issue_date as issue_date',
@@ -280,6 +283,9 @@ class SalesController extends Controller
                 }else if ($request->filter == 'LEND') {
                     $type_sales = "PRESTAMO";
                     $query->where('type_operation__operation', 'PRESTAMO');
+                }else if($request->filter == 'CARS'){
+                    $type_sales = "MOVILIDADES";
+                    $query->where('type_operation__operation', 'MOVILIDADES');
                 }
             }
 
@@ -616,7 +622,33 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
+                }else if($sale['type_operation']['operation'] == 'MOVILIDADES'){
+                    $car = Cars::where('id', $sale['car_id'])->first();
+                    $sale_details = "
+                    <div>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>VEHICULO</td>
+                                    <td>{$car->placa}</td>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$sale['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                <td class='n'>Tipo</td>
+                                <td>{$tipo_instalacion}</td>
+                            </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    ";
                 }
+                
 
                 $usuario = "
                 <div>
