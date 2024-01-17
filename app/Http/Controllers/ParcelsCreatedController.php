@@ -1043,7 +1043,7 @@ class ParcelsCreatedController extends Controller
                             $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
 
                             $productJpa->mount = $stock->mount_new - $stock->mount_second;
-                            $stock->mount_new = $productJpa->mount;
+                            // $stock->mount_new = $productJpa->mount;
                             $stock->save();
                         } else {
                             $productJpa->disponibility = "EN ENCOMIENDA";
