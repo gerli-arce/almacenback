@@ -917,9 +917,7 @@ class ParcelsCreatedController extends Controller
                 $parcelJpa->price_transport = $request->price_transport;
             }
 
-            if (isset($request->description)) {
-                $parcelJpa->description = $request->description;
-            }
+            $parcelJpa->description = $request->description;
 
             if (isset($request->_branch)) {
                 $parcelJpa->_branch = $branch_->id;

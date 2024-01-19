@@ -7,10 +7,12 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\DetailSale;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Product;
 use App\Models\Response;
+use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewProducts;
 use Exception;
@@ -990,12 +992,46 @@ class ProductsController extends Controller
             }
 
             $productJpa = Product::find($request->id);
-
             if (!$productJpa) {
                 throw new Exception("Este reguistro no existe");
             }
-
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
+            if ($request->reazon) {
+                if ($request->reazon == "RETURN_TO_PROVIDER") {
+                    $salesProduct = new SalesProducts();
+                    $salesProduct->_branch = $branch_->id;
+                    $salesProduct->_type_operation = 15;
+                    $salesProduct->date_sale = gTrace::getDate('mysql');
+                    $salesProduct->status_sale = "PENDING";
+                    $salesProduct->description = "DEVOLUCIÓN A PROVEEDOR";
+                    $salesProduct->_client = $productJpa->provider_return;
+                    $salesProduct->type_intallation = "DEVOLUCIÓN A PROVEEDOR";
+                    $salesProduct->_issue_user = $userid;
+                    $salesProduct->_creation_user = $userid;
+                    $salesProduct->creation_date = gTrace::getDate('mysql');
+                    $salesProduct->_update_user = $userid;
+                    $salesProduct->update_date = gTrace::getDate('mysql');
+                    $salesProduct->status = "1";
+                    $salesProduct->save();
+
+                    $detailSale = new DetailSale();
+                    $detailSale->_product = $productJpa->id;
+                    $detailSale->mount_new = $stock->mount_new;
+                    $detailSale->mount_second = $stock->mount_second;
+                    $detailSale->mount_ill_fated = $stock->mount_ill_fated;
+                    $detailSale->_sales_product = $salesProduct->id;
+                    $detailSale->status = '1';
+                    $detailSale->save();
+                    $productJpa->description .= "Se devovio al proveedor en la fecha: " . gTrace::getDate('mysql');
+
+                } else if ($request->reazon == "OTHER_REAZON") {
+                    $productJpa->description .= "Se elimino por la razon: " . $request->indique_reazon . ", En la fecha: " . gTrace::getDate('mysql');
+                }
+            }
 
             $productJpa->mount = 0;
             $productJpa->_update_user = $userid;
@@ -1005,9 +1041,7 @@ class ProductsController extends Controller
 
             if ($productJpa->type == 'EQUIPO') {
                 if ($productJpa->product_status == "NUEVO") {
-                    $stock = Stock::where('_model', $productJpa->_model)
-                        ->where('_branch', $branch_->id)
-                        ->first();
+
                     $stock->mount_new = intval($stock->mount_new) - 1;
                     $stock->_update_user = $userid;
                     $stock->update_date = gTrace::getDate('mysql');

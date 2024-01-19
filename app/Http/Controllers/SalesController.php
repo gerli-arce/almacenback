@@ -6,6 +6,7 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\Cars;
 use App\Models\Parcel;
 use App\Models\Plant;
 use App\Models\Response;
@@ -15,8 +16,7 @@ use App\Models\ViewDetailsSales;
 use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
-use App\Models\Cars;
-
+use App\Models\ViewPeople;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -263,13 +263,13 @@ class SalesController extends Controller
 
             if ($request->filter != '*') {
                 if ($request->filter == 'INSTALLATION') {
-                     $type_sales = "INSTALACIONES";
+                    $type_sales = "INSTALACIONES";
                     $query->where('type_operation__operation', 'INSTALACIÓN');
                 } else if ($request->filter == 'FAULD') {
                     $type_sales = "AVERIAS";
                     $query->where('type_operation__operation', 'AVERIA');
                 } else if ($request->filter == 'TOWER') {
-                     $type_sales = "TORRES";
+                    $type_sales = "TORRES";
                     $query->where('type_operation__operation', 'TORRE');
                 } else if ($request->filter == 'PLANT') {
                     $type_sales = "PLANTA";
@@ -280,12 +280,15 @@ class SalesController extends Controller
                 } else if ($request->filter == 'SALES') {
                     $type_sales = "VENTAS";
                     $query->where('type_operation__operation', 'VENTA');
-                }else if ($request->filter == 'LEND') {
+                } else if ($request->filter == 'LEND') {
                     $type_sales = "PRESTAMO";
                     $query->where('type_operation__operation', 'PRESTAMO');
-                }else if($request->filter == 'CARS'){
+                } else if ($request->filter == 'CARS') {
                     $type_sales = "MOVILIDADES";
                     $query->where('type_operation__operation', 'MOVILIDADES');
+                }else if($request->filter == 'DEVOLUTION'){
+                    $type_sales = "DEVOLUCION A PROVEEDOR";
+                    $query->where('type_operation__operation', 'DEVOLUCION A PROVEEDOR');
                 }
             }
 
@@ -594,7 +597,7 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
-                }else if($sale['type_operation']['operation'] == 'VENTA'){
+                } else if ($sale['type_operation']['operation'] == 'VENTA') {
                     $viewSale = Sale::where('id', $sale['id'])->first();
                     $saleJpa = gJSON::restore($viewSale->toArray(), '__');
 
@@ -622,7 +625,7 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
-                }else if($sale['type_operation']['operation'] == 'MOVILIDADES'){
+                } else if ($sale['type_operation']['operation'] == 'MOVILIDADES') {
                     $car = Cars::where('id', $sale['car_id'])->first();
                     $sale_details = "
                     <div>
@@ -647,8 +650,38 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
+                } else if ($sale['type_operation']['operation'] == 'DEVOLUCION A PROVEEDOR') {
+
+                    $client = ViewPeople::find($sale['client_id']);
+                    if(!$client){
+                        throw new Exception("Error: No se encontro al cliente". $sale);
+                    }
+
+                    $sale_details = "
+                    <div>
+                        <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                            <tbody>
+                                <tr>
+                                    <td class='n'>CLIENTE</td>
+                                    <td>{$client->name} {$client->lastname}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$saleJpa['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                <td class='n'>Tipo</td>
+                                <td>{$tipo_instalacion}</td>
+                            </tr>
+                                <tr>
+                                    <td class='n'>Fecha emisión</td>
+                                    <td>{$sale['creation_date']}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    ";
                 }
-                
 
                 $usuario = "
                 <div>
@@ -898,7 +931,7 @@ class SalesController extends Controller
                 } else if ($request->filter == 'SALES') {
                     $type_sales = "VENTAS";
                     $query->where('view_sales.type_operation__operation', 'VENTA');
-                }else if ($request->filter == 'LEND'){
+                } else if ($request->filter == 'LEND') {
                     $type_sales = "PRESTAMOS";
                     $query->where('view_sales.type_operation__operation', 'PRESTAMO');
                 }

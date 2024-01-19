@@ -1194,7 +1194,7 @@ class TowerController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'towers', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'tower', 'update')) {
                 throw new Exception('No tienes permisos para actualizar');
             }
 
