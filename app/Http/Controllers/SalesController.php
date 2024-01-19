@@ -10,13 +10,14 @@ use App\Models\Cars;
 use App\Models\Parcel;
 use App\Models\Plant;
 use App\Models\Response;
+use App\Models\Room;
 use App\Models\Sale;
 use App\Models\SalesProducts;
 use App\Models\ViewDetailsSales;
 use App\Models\viewInstallations;
+use App\Models\ViewPeople;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
-use App\Models\ViewPeople;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -286,10 +287,14 @@ class SalesController extends Controller
                 } else if ($request->filter == 'CARS') {
                     $type_sales = "MOVILIDADES";
                     $query->where('type_operation__operation', 'MOVILIDADES');
-                }else if($request->filter == 'DEVOLUTION'){
+                } else if ($request->filter == 'DEVOLUTION') {
                     $type_sales = "DEVOLUCION A PROVEEDOR";
                     $query->where('type_operation__operation', 'DEVOLUCION A PROVEEDOR');
+                } else if ($request->filter == 'ROOM') {
+                    $type_sales = "PARA CENTRAL";
+                    $query->where('type_operation__operation', 'PARA CENTRAL');
                 }
+
             }
 
             $salesJpa = $query->get();
@@ -653,8 +658,8 @@ class SalesController extends Controller
                 } else if ($sale['type_operation']['operation'] == 'DEVOLUCION A PROVEEDOR') {
 
                     $client = ViewPeople::find($sale['client_id']);
-                    if(!$client){
-                        throw new Exception("Error: No se encontro al cliente". $sale);
+                    if (!$client) {
+                        throw new Exception("Error: No se encontro al cliente" . $sale);
                     }
 
                     $sale_details = "
@@ -662,7 +667,7 @@ class SalesController extends Controller
                         <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
                             <tbody>
                                 <tr>
-                                    <td class='n'>CLIENTE</td>
+                                    <td class='n'>PROVEEDOR</td>
                                     <td>{$client->name} {$client->lastname}</td>
                                 </tr>
                                 <tr>
@@ -681,6 +686,34 @@ class SalesController extends Controller
                         </table>
                     </div>
                     ";
+                } else if ($sale['type_operation']['operation'] == 'PARA CENTRAL') {
+                    $room = Room::select([
+                        'room.id as id',
+                        'room.name as name',
+                        'room.description as description',
+                    ])->where('room.id', $sale['room_id'])->first();
+
+                    $sale_details = "
+                        <div>
+                            <table class='table_details' style='margin-left:-10px; margin-bottom:10px;'>
+                                <tbody>
+                                <tr>
+                                    <td class='n'>CENTRAL</td>
+                                    <td>{$room->name}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>FECHA</td>
+                                    <td>{$sale['date_sale']}</td>
+                                </tr>
+                                <tr>
+                                    <td class='n'>Tipo</td>
+                                    <td>{$sale}</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    ";
+
                 }
 
                 $usuario = "
@@ -934,7 +967,17 @@ class SalesController extends Controller
                 } else if ($request->filter == 'LEND') {
                     $type_sales = "PRESTAMOS";
                     $query->where('view_sales.type_operation__operation', 'PRESTAMO');
+                } else if ($request->filter == 'CARS') {
+                    $type_sales = "MOVILIDADES";
+                    $query->where('view_sales.type_operation__operation', 'MOVILIDADES');
+                } else if ($request->filter == 'DEVOLUTION') {
+                    $type_sales = "DEVOLUCION A PROVEEDOR";
+                    $query->where('view_sales.type_operation__operation', 'DEVOLUCION A PROVEEDOR');
+                }else if ($request->filter == 'ROOM') {
+                    $type_sales = "PARA CENTRAL";
+                    $query->where('view_sales.type_operation__operation', 'PARA CENTRAL');
                 }
+
 
             }
 
