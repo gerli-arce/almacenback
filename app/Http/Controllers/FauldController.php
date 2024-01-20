@@ -537,7 +537,7 @@ class FauldController extends Controller
             $ProductJpa = Product::find($request->product['id']);
             $ProductJpa->product_status = "SEMINUEVO";
             $ProductJpa->disponibility = "DISPONIBLE";
-            $ProductJpa->description = $request->description . '... (Cliente:' . $request->people . ')';
+            $ProductJpa->description = $request->description . ' devuelto  (Cliente:' . $request->people . ') en la fecha: '.gTrace::getDate('mysql');;
             $ProductJpa->price_sale = $request->price;
             $ProductJpa->update_date = gTrace::getDate('mysql');
             $ProductJpa->_update_user = $userid;
