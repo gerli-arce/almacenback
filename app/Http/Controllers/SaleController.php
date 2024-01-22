@@ -455,11 +455,13 @@ class SaleController extends Controller
                     ->get();
                 foreach ($detailsSalesJpa as $detail) {
                     $productJpa = Product::find($detail['_product']);
-                    $productJpa->disponibility = 'VENDIDO A: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
-                    $productJpa->save();
+                    if ($productJpa->type == "EQUIPO") {
+                        $productJpa->disponibility = 'VENDIDO A: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
+                        $productJpa->save();
+                    }
                 }
             }
-            
+
             if (isset($request->date_sale)) {
                 $salesProduct->date_sale = $request->date_sale;
             }
