@@ -447,9 +447,19 @@ class SaleController extends Controller
 
             $salesProduct = SalesProducts::find($request->id);
 
+            $PeopleJpa = People::where('id', $request->_client)->first();
+
             if (isset($request->_client)) {
                 $salesProduct->_client = $request->_client;
+                $detailsSalesJpa = DetailSale::where('_sales_product', $salesProduct->id)
+                    ->get();
+                foreach ($detailsSalesJpa as $detail) {
+                    $productJpa = Product::find($detail['_product']);
+                    $productJpa->disponibility = 'VENDIDO A: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
+                    $productJpa->save();
+                }
             }
+            
             if (isset($request->date_sale)) {
                 $salesProduct->date_sale = $request->date_sale;
             }
@@ -535,7 +545,7 @@ class SaleController extends Controller
                             $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
                             $productJpa->mount = $stock->mount_new+$stock->mount_second;
                         } else {
-                            $productJpa->disponibility = "VENDIDO";
+                            $productJpa->disponibility = 'VENDIDO A: '.$PeopleJpa->name.' '.$PeopleJpa->lastname;
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
