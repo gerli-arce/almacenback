@@ -15,7 +15,7 @@ use App\Http\Controllers\{
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
-    ChangesCarController
+    ChangesCarController, ReviewTechnicalController
 };
 
 /*
@@ -517,6 +517,9 @@ Route::post('/changes_car/paginate/oil', [ChangesCarController::class, 'paginate
 Route::post('/changes_car/paginate/review', [ChangesCarController::class, 'paginateRewiewTechnicals']);
 Route::delete('/changes_car', [ChangesCarController::class, 'delete']);
 Route::post('/changes_car/restore', [ChangesCarController::class, 'restore']);
+
+// REVIEW TECHNICAL CAR
+Route::post('/review_technical', [ReviewTechnicalController::class, 'store']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

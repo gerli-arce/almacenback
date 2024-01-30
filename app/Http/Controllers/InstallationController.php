@@ -711,7 +711,7 @@ class InstallationController extends Controller
 
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                    $productJpa->disponibility = 'INSTALACION: ' . $PeopleJpa->name . ' ' . $PeopleJpa->lastname;
+                                   $productJpa->disponibility = "-- EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
                                 }
                                 if (
                                     isset($request->image_qr)
@@ -761,6 +761,7 @@ class InstallationController extends Controller
                                 $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                             }
                             $stock->save();
+                            $productJpa->save();
                         }
 
                         $productJpa->save();
