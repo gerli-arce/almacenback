@@ -522,6 +522,7 @@ Route::post('/changes_car/restore', [ChangesCarController::class, 'restore']);
 Route::post('/review_technical', [ReviewTechnicalController::class, 'store']);
 Route::patch('/review_technical', [ReviewTechnicalController::class, 'update']);
 Route::post('/review_technical/paginate', [ReviewTechnicalController::class, 'paginate']);
+Route::get('/review_technicalbill/{id}/{zize}', [ReviewTechnicalController::class, 'image']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

@@ -81,6 +81,56 @@ class ReviewTechnicalController extends Controller
         }
     }
 
+    public function image($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $reviewJpa = ReviewTechnicalByCar::select([
+                "review_technical_by_car.image_$size as image_content",
+                'review_technical_by_car.image_type',
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$reviewJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$reviewJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $reviewJpa->image_content;
+            $type = $reviewJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/factura-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(400);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
     public function paginate(Request $request){
         $response = new Response();
         try {
