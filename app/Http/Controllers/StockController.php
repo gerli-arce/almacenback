@@ -389,14 +389,14 @@ class StockController extends Controller
             }
 
             $query = ViewStock::select(['*'])
-                ->whereNotNull('status')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if ($request->all) {
                 $query->where(function ($q) use ($request) {
                     $q->where('mount_new', '>', '0')
                         ->orWhere('mount_second', '>', '0');
-                });
+                })->whereNotNull('status');
+            }else{
             }
 
             $query->where(function ($q) use ($request) {
