@@ -52,6 +52,7 @@ class PartsCarsController extends Controller
 
             $partsCarJpa = new PartsCars();
             $partsCarJpa->part = $request->part;
+            $partsCarJpa->car_type = $request->car_type;
             $partsCarJpa->status = 1;
             $partsCarJpa->save();
 
@@ -134,6 +135,9 @@ class PartsCarsController extends Controller
                 if ($column == 'part' || $column == '*') {
                     $q->where('part', $type, $value);
                 }
+                if ($column == 'car_type' || $column == '*') {
+                    $q->where('car_type', $type, $value);
+                }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
@@ -187,6 +191,10 @@ class PartsCarsController extends Controller
             
             if(isset($request->part)){
                 $partsCarJpa->part = $request->part;
+            }
+
+            if(isset($request->car_type)){
+                $partsCarJpa->car_type = $request->car_type;
             }
 
             $partsCarJpa->description = $request->description;

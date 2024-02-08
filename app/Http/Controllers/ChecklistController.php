@@ -87,7 +87,7 @@ class ChecklistController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'checklist', 'read')) {
-                throw new Exception('No tienes permisos para listar las marcas  de ' . $branch);
+                throw new Exception('No tienes permisos para listar los checklist  de ' . $branch);
             }
 
             $query = ViewReviewCar::select('*')

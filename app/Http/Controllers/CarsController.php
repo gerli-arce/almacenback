@@ -83,11 +83,7 @@ class CarsController extends Controller
             if (isset($request->property_card)) {
                 $carsJpa->property_card = $request->property_card;
             }
-
-            if (isset($request->technical_review)) {
-                $carsJpa->technical_review = $request->technical_review;
-            }
-
+           
             if (isset($request->license)) {
                 $carsJpa->license = $request->license;
             }
@@ -411,6 +407,10 @@ class CarsController extends Controller
                 $cardJpa->expiration_date_soat = $request->expiration_date_soat;
             }
 
+            if(isset($request->car_type)){
+                $cardJpa->car_type = $request->car_type;
+            };
+
             if (isset($request->_model)) {
                 $cardJpa->_model = $request->_model;
             }
@@ -419,10 +419,7 @@ class CarsController extends Controller
                 $cardJpa->property_card = $request->property_card;
             }
 
-            if (isset($request->technical_review)) {
-                $cardJpa->technical_review = $request->technical_review;
-            }
-
+           
             if (isset($request->license)) {
                 $cardJpa->license = $request->license;
             }
