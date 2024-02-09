@@ -12,12 +12,142 @@ use App\Models\Response;
 use App\Models\ReviewCar;
 use App\Models\ViewCheckByReview;
 use App\Models\ViewReviewCar;
+use App\Models\ViewUsers;
 use Exception;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use FontLib\Table\Type\name;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ChecklistController extends Controller
 {
+
+    public function generateReportByReview(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar instalaciones creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportChecklist.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $viewCheckByReviewJpa = ViewCheckByReview::where('_review', $request->id)->get();
+          
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $components = array();
+            foreach ($viewCheckByReviewJpa as $componentsJpa) {
+                $component = gJSON::restore($componentsJpa->toArray(), '__');
+                $components[] = $component;
+            }
+            $sumary = '';
+            $fomatComponents = array();
+            foreach($components as $component){
+                $partId = $component['check']['component']['part']['id'];
+                $partName = $component['check']['component']['part']['part'];
+                if(!isset($fomatComponents[$partId])){
+                    $fomatComponents[$partId] = array(
+                        'id'=>$partId,
+                        'part'=>$partName,
+                        'component' => array(),
+                    );
+                }
+                array_push($fomatComponents[$partId]['component'], array(
+                    'id'=>$component['check']['component']['id'],
+                    'component'=>$component['check']['component']['component'],
+                    'present'=>$component['check']['present'],
+                    'optimed'=>$component['check']['optimed'],
+                    'description'=>$component['check']['description'],
+                ));
+            }
+
+            foreach($fomatComponents as $part){
+                $sumary .= "
+                <table>
+                    <thead>
+                        <tr><td colspan='5' style='text-align:center;'>{$part['part']}</td></tr>
+                        <tr>
+                            <td>#</td>
+                            <td>Componente</td>
+                            <td>Presente</td>
+                            <td>Optima</td>
+                            <td>Descripción</td>
+                        </tr>
+                    </thead>
+                    <tbody>";
+                $counter = 1;
+                foreach($part['component'] as $component){
+                    $present = $component['present'] == 1 ? 'SI' : 'NO';
+                    $optimed = $component['optimed'] == 1 ? 'SI' : 'NO';
+                    
+                    $presentColor = $component['present'] == 1 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+                    $optimedColor = $component['optimed'] == 1 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+                    
+                    $sumary .= "
+                        <tr>
+                            <td><center >{$counter}</center></td>
+                            <td><center >{$component['component']}</center></td>
+                            <td style='background-color: {$presentColor};'><center >{$present}</center></td>
+                            <td style='background-color: {$optimedColor};'><center >{$optimed}</center></td>
+                            <td><center >{$component['description']}</center></td>
+                        </tr>
+                    ";
+                    $counter ++;
+                }
+                $sumary .= "</tbody></table>";
+            }
+            $template = str_replace(
+                [
+                    '{tables}',
+                    '{num_checklist}',
+                    '{placa}',
+                    '{color}',
+                    '{property_card}',
+                    '{technical}',
+                    '{date}',
+                    '{risponsible}',
+                    '{description}'
+                ],
+                [
+                    $sumary,
+                    $request->id,
+                    $request->car['placa'],
+                    $request->car['color'],
+                    $request->car['property_card'],
+                    $request->driver['name'].' '.$request->driver['lastname'],
+                    $request->date,
+                    $user->person__name.' '.$user->person__lastname,
+                    $request->description
+                ],
+                $template
+            );
+    
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
     public function store(Request $request)
     {
         $response = new Response();

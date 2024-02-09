@@ -509,6 +509,7 @@ Route::post('/checklist/get_checklist', [ChecklistController::class, 'getReviewC
 Route::delete('/checklist', [ChecklistController::class, 'delete']);
 Route::post('/checklist/restore', [ChecklistController::class, 'restore']);
 Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
+Route::post('/checklist/report', [ChecklistController::class, 'generateReportByReview']);
 
 // CHANGES CAR 
 Route::post('/changes_car', [ChangesCarController::class, 'store']);
