@@ -18,13 +18,13 @@ class CarsComponentsController extends Controller
         $response = new Response();
         try {
              
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'cars_components', 'read')) {
-                throw new Exception('No tienes permisos para agregar componentes de vheículo');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'cars_components', 'read')) {
+            //     throw new Exception('No tienes permisos para agregar componentes de vheículo');
+            // }
 
             $query = ViewComponentsByPart::select('*')->whereNotNull('status')->get();
             $components = array();
