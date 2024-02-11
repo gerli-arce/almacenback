@@ -510,6 +510,11 @@ Route::delete('/checklist', [ChecklistController::class, 'delete']);
 Route::post('/checklist/restore', [ChecklistController::class, 'restore']);
 Route::post('/checklist/car', [ChecklistController::class, 'paginateByIdCar']);
 Route::post('/checklist/report', [ChecklistController::class, 'generateReportByReview']);
+Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
+Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
+Route::get('/checklist/image/{id}', [ChecklistController::class, 'getImages']);
+Route::get('/checklistimgs/{id}/{zize}', [ChecklistController::class, 'images']);
+
 
 // CHANGES CAR 
 Route::post('/changes_car', [ChangesCarController::class, 'store']);
