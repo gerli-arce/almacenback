@@ -76,6 +76,10 @@ class CarsController extends Controller
                 $carsJpa->expiration_date_soat = $request->expiration_date_soat;
             }
 
+            if(isset($request->car_type)){
+                $carsJpa->car_type = $request->car_type;
+            };
+
             if (isset($request->_model)) {
                 $carsJpa->_model = $request->_model;
             }
