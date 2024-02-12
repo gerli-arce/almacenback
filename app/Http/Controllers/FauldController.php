@@ -7,6 +7,8 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
+use App\Models\EntryDetail;
+use App\Models\EntryProducts;
 use App\Models\People;
 use App\Models\Product;
 use App\Models\ProductByTechnical;
@@ -111,7 +113,7 @@ class FauldController extends Controller
                             $stock->mount_new = intval($stock->mount_new) - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
                             $stock->mount_second = intval($stock->mount_second) - 1;
-                        }else if ($productJpa->product_status == "MALOGRADO" && $productJpa->condition_product == "POR REVISAR") {
+                        } else if ($productJpa->product_status == "MALOGRADO" && $productJpa->condition_product == "POR REVISAR") {
                             $stock->mount_ill_fated = intval($stock->mount_ill_fated) - 1;
                         }
 
@@ -535,19 +537,63 @@ class FauldController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $ProductJpa = Product::find($request->product['id']);
-            $ProductJpa->product_status = "SEMINUEVO";
-            $ProductJpa->disponibility = "DISPONIBLE";
-            $ProductJpa->description = $request->description . ' devuelto  (Cliente:' . $request->people . ') en la fecha: '.gTrace::getDate('mysql');;
-            $ProductJpa->price_sale = $request->price;
-            $ProductJpa->update_date = gTrace::getDate('mysql');
-            $ProductJpa->_update_user = $userid;
+
+            if($ProductJpa->type == "EQUIPO"){
+                $ProductJpa->product_status = "SEMINUEVO";
+                $ProductJpa->disponibility = "DISPONIBLE";
+                $ProductJpa->description = $request->description . ' devuelto  (Cliente:' . $request->people . ') en la fecha: ' . gTrace::getDate('mysql');
+                $ProductJpa->price_sale = $request->price;
+                $ProductJpa->update_date = gTrace::getDate('mysql');
+                $ProductJpa->_update_user = $userid;
+            }
+
             $ProductJpa->save();
 
             $stock = Stock::where('_model', $ProductJpa->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
 
-            $stock->mount_second = $stock->mount_second + 1;
+            $EntryProductsJpa = new EntryProducts();
+            $EntryProductsJpa->_user = $userid;
+            $EntryProductsJpa->_client = $request->_client;
+            $EntryProductsJpa->_branch = $branch_->id;
+            $EntryProductsJpa->entry_date = gTrace::getDate('mysql');
+            $EntryProductsJpa->_type_operation = 2;
+            $EntryProductsJpa->condition_product = $request->condition_product;
+            $EntryProductsJpa->product_status = 'SEMINUEVO';
+            $EntryProductsJpa->type_entry = "DEVOLUCIÓN DEL CLIENTE: ". $request->people;
+            $EntryProductsJpa->description = $request->description;
+            $EntryProductsJpa->_creation_user = $userid;
+            $EntryProductsJpa->creation_date = gTrace::getDate('mysql');
+            $EntryProductsJpa->_update_user = $userid;
+            $EntryProductsJpa->update_date = gTrace::getDate('mysql');
+            $EntryProductsJpa->status = "1";
+            $EntryProductsJpa->save();
+
+            $entryDetailJpa = new EntryDetail();
+            $entryDetailJpa->_product = $ProductJpa->id;
+
+            if($ProductJpa->type == "EQUIPO"){
+                $entryDetailJpa->mount_new = "1";
+            }else{
+                $entryDetailJpa->mount_new = $request->mount_new;
+                $entryDetailJpa->mount_second = $request->mount_second;
+                $entryDetailJpa->mount_ill_fated = $request->mount_ill_fated;
+            }
+
+            $entryDetailJpa->_entry_product = $EntryProductsJpa->id;
+            $entryDetailJpa->status = "1";
+            $entryDetailJpa->save();
+
+            if($ProductJpa->type == "EQUIPO"){
+                $stock->mount_second = $stock->mount_second + 1;
+            }else{
+                $stock->mount_new = $stock->mount_new + $request->mount_new;
+                $stock->mount_second = $stock->mount_second + $request->mount_second;
+                $stock->mount_ill_fated = $stock->mount_ill_fated + $request->mount_ill_fated;
+            }
+
+            $stock->save();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -775,10 +821,10 @@ class FauldController extends Controller
                         $stock->mount_new = $stock->mount_new + 1;
                     } else if ($productJpa->product_status == 'SEMINUEVO') {
                         $stock->mount_second = $stock->mount_second + 1;
-                    }else{
+                    } else {
                         $stock->mount_ill_fated = $stock->mount_ill_fated + 1;
                     }
-                    $productJpa->description =  $productJpa->description."; Eliminado del la averia del cliente " . $person->name . ' ' . $person->lastname ;
+                    $productJpa->description = $productJpa->description . "; Eliminado del la averia del cliente " . $person->name . ' ' . $person->lastname;
                 }
                 $stock->save();
                 $productJpa->save();
