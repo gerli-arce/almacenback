@@ -514,6 +514,8 @@ Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
 Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
 Route::get('/checklist/image/{id}', [ChecklistController::class, 'getImages']);
 Route::get('/checklistimgs/{id}/{zize}', [ChecklistController::class, 'images']);
+Route::delete('/checklist/image/{id}', [ChecklistController::class, 'deleteImage']);
+Route::patch('/checklist/setimage', [ChecklistController::class, 'updateImage']);
 
 
 // CHANGES CAR 
