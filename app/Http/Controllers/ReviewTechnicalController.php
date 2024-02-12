@@ -6,19 +6,118 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\ChangesCar;
-use App\Models\ReviewTechnicalByCar;
-use App\Models\ViewReviewTechnicalByCar;
 use App\Models\Response;
+use App\Models\ReviewTechnicalByCar;
 use App\Models\ViewChangesCar;
-use App\Models\ViewCheckByReview;
-use App\Models\ViewReviewCar;
+use App\Models\ViewReviewTechnicalByCar;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReviewTechnicalController extends Controller
 {
+
+    public function generateReportByReviewTechnical(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportReviewTechnical.html');
+
+            $ReviewTechnicalByCarJpa = ReviewTechnicalByCar::select([
+                'id',
+                '_car',
+                'date',
+                'components',
+                'description',
+                '_technical',
+                'price_all',
+                '_creation_user',
+                'creation_date',
+                '_update_user',
+                'update_date',
+                'status',
+            ])->find($request->id);
+            $ReviewTechnicalByCarJpa->components = gJSON::parse($ReviewTechnicalByCarJpa->components);
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+       
+            $summary = '';
+
+            $counter = 1;
+            foreach ($ReviewTechnicalByCarJpa->components as $component) {
+
+                $summary .= "
+                        <tr>
+                            <td><center >{$counter}</center></td>
+                            <td><center >{$component['component']}</center></td>
+                            <td><center >S/{$component['price']}</center></td>
+                        </tr>
+                    ";
+                $counter++;
+            }
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{id_img}',
+                    '{placa}',
+                    '{color}',
+                    '{property_card}',
+                    '{technical}',
+                    '{date}',
+                    '{risponsible}',
+                    '{description}',
+                    '{total}',
+                    '{summary}',
+                ],
+                [
+                    $request->id,
+                    $request->id,
+                    $request->car['placa'],
+                    $request->car['color'],
+                    $request->car['property_card'],
+                    $request->technical['name'] . ' ' . $request->technical['lastname'],
+                    $request->date,
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $request->description,
+                    $request->price_all,
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -41,7 +140,6 @@ class ReviewTechnicalController extends Controller
             $reviewTechnicalByCarJpa->_technical = $request->_technical;
             $reviewTechnicalByCarJpa->price_all = $request->price_all;
 
-            
             if (
                 isset($request->image_type) &&
                 isset($request->image_mini) &&
@@ -68,12 +166,12 @@ class ReviewTechnicalController extends Controller
             $reviewTechnicalByCarJpa->_update_user = $userid;
             $reviewTechnicalByCarJpa->status = "1";
             $reviewTechnicalByCarJpa->save();
-         
+
             $response->setStatus(200);
             $response->setMessage('Revisión técnica creada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'LN: '.$th->getLine());
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
@@ -123,7 +221,7 @@ class ReviewTechnicalController extends Controller
             fclose($fp);
             $content = stripslashes($datos_image);
             $type = 'image/jpeg';
-            $response->setStatus(400);
+            $response->setStatus(200);
         } finally {
             return response(
                 $content,
@@ -199,7 +297,7 @@ class ReviewTechnicalController extends Controller
             $response->setData($reviews_technicals);
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'LN: '.$th->getLine().'FL: '.$th->getFile());
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine() . 'FL: ' . $th->getFile());
         } finally {
             return response(
                 $response->toArray(),
@@ -261,7 +359,7 @@ class ReviewTechnicalController extends Controller
             $response->setMessage('Revisión técnica actualizada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
-            $response->setMessage($th->getMessage().'LN: '.$th->getLine());
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
