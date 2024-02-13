@@ -1092,11 +1092,15 @@ class ParcelsRegistersController extends Controller
                     <p>Serie: <strong>{$product['serie']}</strong></p>
                 </div>
                 ";
+                
+                $conditionProduct = str_replace('_', ' ', $product['condition_product']);
+
                 $estado = "
-                <div>
-                    <p>Estado: <strong>{$product['product_status']}</strong></p>
-                    <p>Disponibilidad: <strong>{$product['disponibility']}</strong></p>
-                </div>
+                    <div>
+                        <p><strong>Estado:</strong> {$product['product_status']}</p>
+                        <p><strong>Disponibilidad:</strong> {$product['disponibility']}</p>
+                        <p><strong>Condición:</strong> {$conditionProduct}</p>
+                    </div>
                 ";
                 $sucursal = "
                 <div>
