@@ -243,6 +243,235 @@ class ParcelsCreatedController extends Controller
         }
     }
 
+    public function generateReportDetails(Request $request)
+    {
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'parcels_created', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+
+            $pdf = new Dompdf($options);
+
+            $template = file_get_contents('../storage/templates/reportDetailsParcel.html');
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = DB::table('users')
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)
+                ->first();
+
+            $parcelJpa = Parcel::select([
+                'parcels.id as id',
+                'parcels.date_send as date_send',
+                'parcels.date_entry as date_entry',
+                'parcels._business_transport as _business_transport',
+                'transport.id as business_transport__id',
+                'transport.name as business_transport__name',
+                'parcels._branch_send as _branch_send',
+                'br_send.id as branch_send__id',
+                'br_send.name as branch_send__name',
+                'parcels._branch_destination as _branch_destination',
+                'br_des.id as branch_destination__id',
+                'br_des.name as branch_destination__name',
+                'parcels.price_transport as price_transport',
+                'responsible.id as responsible_pickup__id',
+                'responsible.name as responsible_pickup__name',
+                'responsible.lastname as responsible_pickup__lastname',
+                'sender.id as sender__id',
+                'sender.name as sender__name',
+                'sender.lastname as sender__lastname',
+                'parcels.parcel_type as parcel_type',
+                'parcels.parcel_status as parcel_status',
+                'parcels.description as description',
+                'parcels._branch as _branch',
+                'parcels.creation_date as creation_date',
+                'parcels._creation_user as _creation_user',
+                'parcels.update_date as update_date',
+                'parcels._update_user as _update_user',
+                'parcels.status as status',
+            ])
+                ->join('branches as br_send', 'parcels._branch_send', 'br_send.id')
+                ->join('users', 'parcels._creation_user', 'users.id')
+                ->join('people as sender', 'users._person', 'sender.id')
+                ->join('branches as br_des', 'parcels._branch_destination', 'br_des.id')
+                ->join('people as responsible', 'parcels._responsible_pickup', 'responsible.id')
+                ->join('transport', 'parcels._business_transport', 'transport.id')
+                ->whereNotNull('parcels.status')
+                ->find($request->id);
+
+            $parcel = gJSON::restore($parcelJpa->toArray(), '__');
+
+            $detailsParcelJpa = DetailsParcel::select(
+                'details_parcel.id as id',
+                'details_parcel._parcel as _parcel',
+                'details_parcel.mount_new as mount_new',
+                'details_parcel.mount_second as mount_second',
+                'details_parcel.mount_ill_fated as mount_ill_fated',
+                'products.id as product__id',
+                'products.relative_id as product__relative_id',
+                'products.type as product__type',
+                'products.mac as product__mac',
+                'products.price_sale as product__price_sale',
+                'products.currency as product__currency',
+                'products.serie as product__serie',
+                'products.condition_product as product__condition_product',
+                'products.product_status as product__product_status',
+                'models.id as product__model__id',
+                'models.model as product__model__model',
+                'models.relative_id as product__relative_id',
+                'unities.id as product__model__unity__id',
+                'unities.name as product__model__unity__name',
+                'details_parcel.description as description',
+                'details_parcel.status as status'
+            )
+                ->join('products', 'details_parcel._product', 'products.id')
+                ->join('models', 'products._model', 'models.id')
+                ->join('unities', 'models._unity', 'unities.id')
+                ->where('_parcel', $parcel['id'])
+                ->whereNotNull('details_parcel.status')
+                ->get();
+
+            $sumary = '';
+            $details = [];
+
+            foreach ($detailsParcelJpa as $detail) {
+                $detail = gJSON::restore($detail->toArray(), '__');
+                $details[] = $detail;
+            }
+
+
+            $count = 1;
+            foreach ($details as $detail) {
+
+                $product = "
+                    <center>
+                        <p>{$detail['product']['model']['model']}</p>
+                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['relative_id']}/mini' width='100' height='100' style='border: solid 1px #000; padding:5px;'/>
+                    </center>
+                ";
+
+                $equipment = "
+                    <div>
+                        <p>Mac: {$detail['product']['mac']}</p>
+                        <p>Serie: {$detail['product']['serie']}</p>
+                    </div>
+                ";
+
+                $material = "
+                    <div>
+                        <p>Nuevos: {$detail['mount_new']}</p>
+                        <p>Segunda: {$detail['mount_second']}</p>
+                        <p>Malogrados: {$detail['mount_ill_fated']}</p>
+                    </div>
+                ";
+
+                $mounts = $material;
+
+                if($detail['product']['type'] == 'EQUIPO'){
+                    $mounts = $equipment;
+                }
+
+                $conditionProduct = str_replace('_', ' ', $detail['product']['condition_product']);
+
+                $status = "
+                    <div>
+                        <p>Estado: {$detail['product']['product_status']}</p>
+                        <p>Condición: {$conditionProduct}</p>
+                        <p>Unidad: {$detail['product']['model']['unity']['name']}</p>
+                    </div>
+                ";
+
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td>{$product}</td>
+                    <td>{$mounts}</td>
+                    <td>{$status}</td>
+                </tr>
+                ";
+
+                $count = $count + 1;
+            }
+
+            $parcel['details'] = $details;
+
+            $template = str_replace(
+                [
+                    '{branch_name}',
+                    '{issue_long_date}',
+                    '{num_guia}',
+                    '{branch_send}',
+                    '{branch_designation}',
+                    '{responsible_pickup}',
+                    '{date_send}',
+                    '{business_transport}',
+                    '{transport_price}',
+                    '{description}',
+                    '{remitente}',
+                    '{reseptor}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    str_pad($parcel['id'], 6, "0", STR_PAD_LEFT),
+                    $parcel['branch_send']['name'],
+                    $parcel['branch_destination']['name'],
+                    $parcel['responsible_pickup']['name'] . ' ' . $parcel['responsible_pickup']['lastname'],
+                    $parcel['date_send'],
+                    $parcel['business_transport']['name'],
+                    $parcel['price_transport'],
+                    $parcel['description'],
+                    $user->name . ' ' . $user->lastname,
+                    $parcel['responsible_pickup']['name'] . ' ' . $parcel['responsible_pickup']['lastname'],
+                    $sumary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+
+            return $pdf->stream('Guia.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('correcto');
+            // $response->setData($details);
+
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function generateReportParcelsSendsByBranchByMonth(Request $request)
     {
         try {
