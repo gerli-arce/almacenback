@@ -315,6 +315,7 @@ Route::post('/keys/returnkey', [KeysesController::class, 'returnKey']);
 Route::get('/keys/record/{idkey}', [KeysesController::class, 'RecordKey']);
 Route::get('/keys/lend/{idkey}', [KeysesController::class, 'searchLendByKey']);
 Route::get('/keysimg/{relative_id}/{zize}', [KeysesController::class, 'image']);
+Route::post('/keys/reports', [KeysesController::class, 'generateReport']);
 
 
 // TRANSPORTS

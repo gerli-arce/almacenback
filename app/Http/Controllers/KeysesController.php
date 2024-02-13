@@ -12,6 +12,9 @@ use App\Models\People;
 use App\Models\Branch;
 use App\Models\Response;
 use App\Models\ViewKeys;
+use App\Models\ViewUsers;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -672,5 +675,152 @@ class KeysesController extends Controller
         }
     }
     
+
+    public function generateReport(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportKeys.html');
+
+            
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+            // $dat_technical = People::find($request->technical);
+
+            $query = Keyses::select([
+                'id',
+                'name',
+                'responsible',
+                'date_entry',
+                'price',
+                'duplicate',
+                'status_key',
+                'description',
+                'address',
+                'position_x',
+                'position_y',
+                'n_duplicates',
+                'relative_id',
+                'status',
+                'creation_date',
+                'update_date',
+                '_creation_user',
+                '_update_user',
+            ])->where('_branch', $branch_->id);
+
+            $type= 'GENERAL';
+            if($request->type == 'lends'){
+                $query->where('status_key','EN USO');
+                $type = 'PRESTADAS';
+            }else if($request->type == 'availables'){
+                $query->where('status_key','DISPONIBLE');
+                $type = 'DISPONIBLES';
+            }
+
+            $KeysesJpa = $query->get();
+
+            $summary = '';
+           
+            $count = 1;
+            foreach ($KeysesJpa as $key) {
+
+                $dat_responsible = People::find($key->responsible);
+
+                $bg_key = 'background-color: #5da0ff30';
+
+                if($key->status_key != 'DISPONIBLE'){
+                    $bg_key = 'background-color: #f97d7d2b';
+                }
+
+                $image = "
+                <div>
+                    <img src='https://almacendev.fastnetperu.com.pe/api/keysimg/{$key->relative_id}/mini' width='100' height='100' style='border: solid 1px #000; padding: 5px;'>
+                </div>
+                ";
+
+                $name = "
+                    <div>
+                        <p><strong>{$key->name}</strong></p>
+                        <p>$key->date_entry</p>
+                        <p>{$key->status_key}</p>
+                    </div>
+                ";
+
+                $details = "
+                <div>
+                    <p><strong>N. Dupl:</strong> {$key->n_duplicates}</p>
+                    <p>(X => {$key->position_x})</p>
+                    <p>(Y => {$key->position_y})</p>
+                </div>
+                ";
+
+                $summary .= "
+                <tr style='{$bg_key}'>
+                    <td><center>{$count}</center></td>
+                    <td><center>{$image}</center></td>
+                    <td>{$name}</td>
+                    <td>{$dat_responsible->name}</td>
+                    <td>{$details}</td>
+                </tr>
+                ";
+                $count++;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_interaction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{type}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $type,
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('Operacion correcta');
+            // $response->setData($KeysesJpa->toArray());
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 
 }
