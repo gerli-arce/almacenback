@@ -362,7 +362,7 @@ class ParcelsCreatedController extends Controller
                 $product = "
                     <center>
                         <p>{$detail['product']['model']['model']}</p>
-                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['relative_id']}/mini' width='100' height='100' style='border: solid 1px #000; padding:5px;'/>
+                        <img src='https://almacen.fastnetperu.com.pe/api/model/{$detail['product']['relative_id']}/mini' height='25' style='border: solid 1px #000; padding:2px;'/>
                     </center>
                 ";
 
