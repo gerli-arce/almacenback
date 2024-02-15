@@ -7,17 +7,19 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\Cars;
+use App\Models\DetailSale;
 use App\Models\Product;
 use App\Models\ProductsByCar;
 use App\Models\Response;
+use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewCars;
 use App\Models\ViewProductsByCar;
-use App\Models\SalesProducts;
-use App\Models\DetailSale;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class CarsController extends Controller
 {
@@ -76,7 +78,7 @@ class CarsController extends Controller
                 $carsJpa->expiration_date_soat = $request->expiration_date_soat;
             }
 
-            if(isset($request->car_type)){
+            if (isset($request->car_type)) {
                 $carsJpa->car_type = $request->car_type;
             };
 
@@ -87,7 +89,7 @@ class CarsController extends Controller
             if (isset($request->property_card)) {
                 $carsJpa->property_card = $request->property_card;
             }
-           
+
             if (isset($request->license)) {
                 $carsJpa->license = $request->license;
             }
@@ -411,7 +413,7 @@ class CarsController extends Controller
                 $cardJpa->expiration_date_soat = $request->expiration_date_soat;
             }
 
-            if(isset($request->car_type)){
+            if (isset($request->car_type)) {
                 $cardJpa->car_type = $request->car_type;
             };
 
@@ -423,7 +425,6 @@ class CarsController extends Controller
                 $cardJpa->property_card = $request->property_card;
             }
 
-           
             if (isset($request->license)) {
                 $cardJpa->license = $request->license;
             }
@@ -680,7 +681,6 @@ class CarsController extends Controller
                     $productJpa->description .= "Se agrego al stock del vehículo: " . $request->car['placa'] . " en la fecha " . gTrace::getDate('mysql');
                 }
 
-                
                 $detailSale = new DetailSale();
                 $detailSale->_product = $productJpa->id;
                 $detailSale->mount_new = $product['mount_new'];
@@ -785,6 +785,118 @@ class CarsController extends Controller
             );
         }
 
+    }
+
+    public function reportProductsByCar(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportProductsCar.html');
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $productByCarJpa = ViewProductsByCar::where('car__id', $request->id)->whereNotNull('status')->get();
+
+            $stock_car = [];
+
+            foreach ($productByCarJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_car[] = $product;
+            }
+
+            $models = array();
+            foreach ($stock_car as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity,
+                    );
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_new']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_second']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{placa}',
+                    '{color}',
+                    '{technical}',
+                    '{summary}',
+                ],
+                [
+                    str_pad($request->id, 6, "0", STR_PAD_LEFT),
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->placa,
+                    $request->color,
+                    $request->person['name'].' '.$request->person['lastname'],
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
     }
 
 }
