@@ -308,28 +308,20 @@ class StockController extends Controller
 
             foreach ($request->data as $model) {
 
-                $stock = "
-                <div>
-                    <p>Nuevos: <trong>{$model['mount_new']}</trong></p>
-                    <p>Seminuevos: <strong>{$model['mount_second']}</strong></p>
-                    <p>Malogrados: <strong>{$model['mount_ill_fated']}</strong></p>
-                    <p>Pedido: <strong>{$model['mount_order']}</strong></p>
-                </div>
-                ";
-
                 $model_ = "
                 <center style='font-size:15px;'>
-                    <p><strong>{$model['model']['model']}</strong></p>
-                    <p>CAT: <strong>{$model['category']['category']}</strong></p>
+                    <p><strong>{$model['model']['model']} / {$model['category']['category']} / {$model['model']['unity']['name']}</strong></p>
                 </center>
                 ";
 
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:15px;'>{$count}</center></td>
-                    <td><span style='font-size:15px;'>{$stock}</span></td>
-                    <td><center style='font-size:15px;'>{$model['model']['unity']['name']}</center></td>
                     <td>{$model_}</td>
+                    <td><span style='font-size:15px;'><center>{$model['mount_new']}</center></span></td>
+                    <td><span style='font-size:15px;'><center>{$model['mount_second']}</center></span></td>
+                    <td><span style='font-size:15px;'><center>{$model['mount_ill_fated']}</center></span></td>
+                    <td><span style='font-size:15px;'><center>{$model['mount_order']}</center></span></td>
                 </tr>
                 ";
                 $count = $count + 1;
