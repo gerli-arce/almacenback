@@ -675,6 +675,7 @@ class SaleController extends Controller
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
             $salesProduct = SalesProducts::find($request->id);
+            $salesProduct->status = null;
             $salesProduct->_update_user = $userid;
             $salesProduct->update_date = gTrace::getDate('mysql');
 
