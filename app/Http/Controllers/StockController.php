@@ -216,21 +216,14 @@ class StockController extends Controller
                     </div>
                     ";
 
-                $stock = "
-                    <div>
-                        <center style='font-size:14px;'>
-                            <p><strong>N: " . ($models['mount_new'] == floor($models['mount_new']) ? floor($models['mount_new']) : $models['mount_new']) . "</strong>    <strong style='margin-left:12px;'>S: " . ($models['mount_second'] == floor($models['mount_second']) ? floor($models['mount_second']) : $models['mount_second']) . "</strong>    <strong style='margin-left:12px;'>M: " . ($models['mount_ill_fated'] == floor($models['mount_ill_fated']) ? floor($models['mount_ill_fated']) : $models['mount_ill_fated']) . "</strong></p>
-                        </center>
-                    </div>
-                ";
-
-               
                 $sumary .= "
-                    <tr>
-                        <td class='text-center'>{$count}</td>
-                        <td>{$image}</td>
-                        <td><p><strong style='font-size:14px;'>{$product}</strong></p></td>
-                        <td>{$stock}</td>
+                    <tr style='font-size: 18px;'>
+                        <td class='text-center'>".$count."</td>
+                        <td>".$image."</td>
+                        <td><p><strong '>".$product."</strong></p></td>
+                        <td><center>". ($models['mount_new'] == floor($models['mount_new']) ? floor($models['mount_new']) : $models['mount_new']) ."</center></td>
+                        <td><center>". ($models['mount_second'] == floor($models['mount_second']) ? floor($models['mount_second']) : $models['mount_second']) ."</center></td>
+                        <td><center>".($models['mount_ill_fated'] == floor($models['mount_ill_fated']) ? floor($models['mount_ill_fated']) : $models['mount_ill_fated']) ."</center></td>
                     </tr>
                     ";
                 $count += 1;
