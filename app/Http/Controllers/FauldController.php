@@ -62,7 +62,6 @@ class FauldController extends Controller
             $salesProduct->type_intallation = $request->type_intallation;
             $salesProduct->date_sale = $request->date_sale;
             $salesProduct->status_sale = $request->status_sale;
-            // $salesProduct->price_all = $request->price_all;
             $salesProduct->_issue_user = $userid;
             $salesProduct->price_installation = $request->price_installation;
             $salesProduct->type_pay = $request->type_pay;
@@ -82,6 +81,9 @@ class FauldController extends Controller
             if (isset($request->data)) {
                 foreach ($request->data as $product) {
                     $productJpa = Product::find($product['product']['id']);
+                    $stock = Stock::where('_model', $productJpa->_model)
+                            ->where('_branch', $branch_->id)
+                            ->first();
 
                     $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->_technical)
                         ->whereNotNull('status')
@@ -90,25 +92,22 @@ class FauldController extends Controller
 
                     if ($product['product']['type'] == "MATERIAL") {
                         if ($product['mount_new'] > 0) {
-                            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new - $product['mount_new'];
+                            $productByTechnicalJpa->mount_new -= $product['mount_new'];
                         }
 
                         if ($product['mount_second'] > 0) {
-                            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second - $product['mount_second'];
+                            $productByTechnicalJpa->mount_second -= $product['mount_second'];
                         }
 
                         if ($product['mount_ill_fated'] > 0) {
-                            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated - $product['mount_ill_fated'];
+                            $productByTechnicalJpa->mount_ill_fated -= $product['mount_ill_fated'];
                         }
 
                         $productByTechnicalJpa->save();
                     } else {
 
                         $productJpa->disponibility = "EN AVERIA DEL CLIENTE " . $client->name . ' ' . $client->lastname;
-
-                        $stock = Stock::where('_model', $productJpa->_model)
-                            ->where('_branch', $branch_->id)
-                            ->first();
+                        
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = intval($stock->mount_new) - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -116,9 +115,6 @@ class FauldController extends Controller
                         } else if ($productJpa->product_status == "MALOGRADO" && $productJpa->condition_product == "POR REVISAR") {
                             $stock->mount_ill_fated = intval($stock->mount_ill_fated) - 1;
                         }
-
-                        $stock->save();
-                        $productJpa->save();
                     }
 
                     $detailSale = new DetailSale();
@@ -130,6 +126,8 @@ class FauldController extends Controller
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
+                    $stock->save();
+                    $productJpa->save();
                 }
             }
             $response->setStatus(200);
