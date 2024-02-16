@@ -226,7 +226,7 @@
                             width: 250px;
                             background-color: rgb(234, 234, 234);
                             font-size: 24px;
-                            font-weight: 600;
+                            font-weight: bold;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
@@ -235,22 +235,24 @@
                     >
                         <span>RUC 20602791816</span>
                         <span>DETALLES DE</span>
-                        <span>CENTRAL</span>
+                        <span>{room_type}</span>
                     </div>
                 </div>
             </div>
             <br />
             <p id="date">{branch_onteraction}, {issue_long_date}</p>
             <div style="margin-top: 12px">
-                <p>Nombre: <strong>{tower_name}</strong></p>
-                <p>Descripción: <strong>{description}</strong></p>
-                <p>Ejecutivo: <strong>{ejecutive}</strong></p>
+                <p><strong>Nombre:</strong> {room_name}</p>
+                <p><strong>Descripción:</strong> {description}</p>
+                <p><strong>Ejecutivo:</strong> {ejecutive}</p>
             </div>
+
             <center style="margin-top: 12px">
+                <h2>Imagen</h2>
                 <img
-                    style="width: 500px"
-                    src="https://almacen.fastnetperu.com.pe/api/roomimg/{relative_id}/full"
-                    alt="Imagen Torre"
+                    style="width: 60%; padding: 5px; border:solid 1px #000;"
+                    src="https://almacendev.fastnetperu.com.pe/api/roomimg/{relative_id}/full"
+                    alt="-"
                 />
             </center>
             {images}

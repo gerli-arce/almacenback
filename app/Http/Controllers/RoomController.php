@@ -77,6 +77,7 @@ class RoomController extends Controller
             }
 
             $roomJpa->relative_id = guid::short();
+            $roomJpa->room_type = $request->room_type;
             $roomJpa->creation_date = gTrace::getDate('mysql');
             $roomJpa->_creation_user = $userid;
             $roomJpa->update_date = gTrace::getDate('mysql');
@@ -177,6 +178,7 @@ class RoomController extends Controller
                 'room.name as name',
                 'room.description as description',
                 'room.relative_id as relative_id',
+                'room.room_type as room_type',
                 'room._creation_user as _creation_user',
                 'room.creation_date as creation_date',
                 'room._update_user as _update_user',
@@ -187,10 +189,13 @@ class RoomController extends Controller
             ])
             ->join('users', 'room._creation_user', 'users.id')
             ->join('people', 'users._person', 'people.id')
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->where('room.room_type', $request->room_type);
 
             // if (!$request->all || !gValidate::check($role->permissions, 'views', 'see_trash')) {
             // }
+
+
 
             if (!$request->all) {
                 $query->whereNotNull('room.status');
@@ -991,9 +996,6 @@ class RoomController extends Controller
 
             $RoomJpa = Room::find($request->id);
 
-
-
-            
             $PhotographsByRoomJpa = PhotographsByRoom::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
             ->where('_room', $RoomJpa->id)->whereNotNUll('status')
             ->orderBy('id', 'desc')
@@ -1019,18 +1021,25 @@ class RoomController extends Controller
                     <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                     <center>
                         <img 
-                        <img src='https://almacen.fastnetperu.com.pe/api/roomimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;'>
+                        <img src='https://almacendev.fastnetperu.com.pe/api/roomimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;'>
                     </center>
                 </div>
                 ";
                 $count +=1;
             }
 
+            $room_type = "OFICINA";
+
+            if($RoomJpa->room_type == "ROOM"){
+                $room_type = "CENTRAL";
+            }
+
             $template = str_replace(
                 [
                     '{branch_onteraction}',
                     '{issue_long_date}',
-                    '{tower_name}',
+                    '{room_type}',
+                    '{room_name}',
                     '{description}',
                     '{relative_id}',
                     '{latitude}',
@@ -1042,6 +1051,7 @@ class RoomController extends Controller
                 [
                     $branch_->name,
                     gTrace::getDate('long'),
+                    $room_type,
                     $RoomJpa->name,
                     $RoomJpa->description,
                     $RoomJpa->relative_id,
