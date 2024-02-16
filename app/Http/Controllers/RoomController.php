@@ -1021,7 +1021,17 @@ class RoomController extends Controller
                     <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                     <center>
                         <img 
-                        <img src='https://almacendev.fastnetperu.com.pe/api/roomimgs/{$image->id}/full' alt='-' style='background-color: #38414a; object-fit: contain; object-position: center center; cursor: pointer; max-width: 650px; max-height: 700px; width: auto; height: auto;'>
+                        <img src='https://almacen.fastnetperu.com.pe/api/roomimgs/{$image->id}/full' alt='-' 
+                        style='
+                            border: solid 1px #000;
+                            object-fit: contain; 
+                            object-position: center center; 
+                            max-width: 650px; 
+                            max-height: 700px; 
+                            width: auto; 
+                            height: auto;
+                            padding: 5px;
+                            border-radius: 6px;'>
                     </center>
                 </div>
                 ";
