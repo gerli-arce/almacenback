@@ -277,8 +277,11 @@ class CarsController extends Controller
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
-            })
-                ->where('branch__id', $branch_->id);
+            });
+
+            if(!$request->view_all){
+                $query->where('branch__id', $branch_->id);
+            }
 
             $iTotalDisplayRecords = $query->count();
             $carsJpa = $query
