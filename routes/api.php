@@ -536,6 +536,11 @@ Route::patch('/review_technical', [ReviewTechnicalController::class, 'update']);
 Route::post('/review_technical/paginate', [ReviewTechnicalController::class, 'paginate']);
 Route::get('/review_technicalbill/{id}/{zize}', [ReviewTechnicalController::class, 'image']);
 Route::post('/review_technical/report', [ReviewTechnicalController::class, 'generateReportByReviewTechnical']);
+Route::post('/review_technical/setimage', [ReviewTechnicalController::class, 'setImage']);
+Route::get('/review_technical/image/{id}', [ReviewTechnicalController::class, 'getImages']);
+Route::get('/review_technicalimg/{id}/{zize}', [ReviewTechnicalController::class, 'images']);
+Route::delete('/review_technical/image/{id}', [ReviewTechnicalController::class, 'deleteImage']);
+
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
