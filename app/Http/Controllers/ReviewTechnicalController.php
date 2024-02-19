@@ -508,7 +508,7 @@ class ReviewTechnicalController extends Controller
             }
 
             $PhotographsByReviewTechnicalJpa = PhotographsByReviewTechnical::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            ->where('_plant', $id)->whereNotNUll('status')
+            ->where('_review', $id)->whereNotNUll('status')
             ->orderBy('id', 'desc')
             ->get();
 
