@@ -12,6 +12,7 @@ use App\Models\ViewChangesCar;
 use App\Models\ViewReviewTechnicalByCar;
 use App\Models\PhotographsByReviewTechnical;
 use App\Models\ViewUsers;
+use App\Models\User;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -74,6 +75,37 @@ class ReviewTechnicalController extends Controller
                 $counter++;
             }
 
+            $PhotographsByReviewTechnicalJpa = PhotographsByReviewTechnical::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_review',$request->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images= '';
+            $count = 1;
+
+            foreach($PhotographsByReviewTechnicalJpa as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='http://almacen.fastnetperu.com.pe/api/review_technicalimg/{$image->id}/full' alt='-' 
+                       class='evidences'
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+
             $template = str_replace(
                 [
                     '{id}',
@@ -87,6 +119,7 @@ class ReviewTechnicalController extends Controller
                     '{description}',
                     '{total}',
                     '{summary}',
+                    '{images}'
                 ],
                 [
                     $request->id,
@@ -100,6 +133,7 @@ class ReviewTechnicalController extends Controller
                     $request->description,
                     $request->price_all,
                     $summary,
+                    $images
                 ],
                 $template
             );

@@ -14,6 +14,7 @@ use App\Models\ReviewCar;
 use App\Models\ViewCheckByReview;
 use App\Models\ViewReviewCar;
 use App\Models\ViewUsers;
+use App\Models\User;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -110,9 +111,44 @@ class ChecklistController extends Controller
                 }
                 $sumary .= "</tbody></table>";
             }
+
+
+
+            $ImagesByReview = ImagesByReview::select(['id', 'description', '_creation_user', 'creation_date'])
+            ->where('_review',  $request->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images= '';
+            $count = 1;
+
+            foreach($ImagesByReview as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='http://almacen.fastnetperu.com.pe/api/checklistimgs/{$image->id}/full' alt='-' 
+                       class='evidences'
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+
             $template = str_replace(
                 [
                     '{tables}',
+                    '{images}',
                     '{num_checklist}',
                     '{placa}',
                     '{color}',
@@ -124,6 +160,7 @@ class ChecklistController extends Controller
                 ],
                 [
                     $sumary,
+                    $images,
                     $request->id,
                     $request->car['placa'],
                     $request->car['color'],

@@ -99,14 +99,14 @@
         }
 
         table tbody td {
-            border: 1px solid #222222;
+            border: 1px solid #2222229c;
         }
 
         table thead td {
             text-align: center;
             font-weight: bold;
-            background-color: #60708863;
-            border: 1px solid #222222;
+            background-color: #869cbc37;
+            border: 1px solid #2222229c;
             color: #212635 !important;
         }
 
@@ -178,6 +178,21 @@
         .sucursal-recepcion,
         .responsable-recepcion {
             margin: 0;
+        }
+
+        .evidences {
+            background-color: #ffffff;
+            object-fit: contain;
+            object-position: center center;
+            cursor: pointer;
+            max-width: 650px;
+            max-height: 700px;
+            width: auto;
+            height: auto;
+            margin-top: 20px;
+            border: solid 2px #171c2b86;
+            border-radius: 10px;
+            padding: 10px;
         }
 
         p {
@@ -255,6 +270,10 @@
         <center class="text-bold" style="margin-top: 8px">Resumen</center>
         <div style="font-size: 9px;">
             {tables}
+        </div>
+
+        <div>
+            {images}
         </div>
 
     </main>

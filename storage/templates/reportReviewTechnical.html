@@ -192,6 +192,22 @@
             padding: 5px;
         }
 
+        .evidences {
+            background-color: #ffffff;
+            object-fit: contain;
+            object-position: center center;
+            cursor: pointer;
+            max-width: 650px;
+            max-height: 700px;
+            width: auto;
+            height: auto;
+            margin-top: 20px;
+            border: solid 2px #171c2b86;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+
         @media all {
             div.page-break {
                 display: block;
@@ -283,8 +299,12 @@
         <br>
         <center style='page-break-before: always;'>
             <h3>FACTURA</h3>
-            <img src="https://almacendev.fastnetperu.com.pe/api/review_technicalbill/{id_img}/full" class="img_bill" alt="">
+            <img src="https://almacen.fastnetperu.com.pe/api/review_technicalbill/{id_img}/full" class="img_bill" alt="">
         </center>
+
+        <div>
+            {images}
+        </div>
     </main>
 </body>
 
