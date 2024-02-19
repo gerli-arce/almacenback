@@ -168,8 +168,24 @@ class ReviewTechnicalController extends Controller
             $reviewTechnicalByCarJpa->status = "1";
             $reviewTechnicalByCarJpa->save();
 
+            $reviewData = [
+                'id' => $reviewTechnicalByCarJpa->id,
+                '_car' => $reviewTechnicalByCarJpa->_car,
+                'date' => $reviewTechnicalByCarJpa->date,
+                'components' => json_decode($reviewTechnicalByCarJpa->components),
+                'description' => $reviewTechnicalByCarJpa->description,
+                '_technical' => $reviewTechnicalByCarJpa->_technical,
+                'price_all' => $reviewTechnicalByCarJpa->price_all,
+                'creation_date' => $reviewTechnicalByCarJpa->creation_date,
+                '_creation_user' => $reviewTechnicalByCarJpa->_creation_user,
+                'update_date' => $reviewTechnicalByCarJpa->update_date,
+                '_update_user' => $reviewTechnicalByCarJpa->_update_user,
+                'status' => $reviewTechnicalByCarJpa->status,
+            ];
+
             $response->setStatus(200);
             $response->setMessage('Revisión técnica creada correctamente');
+            $response->setData($reviewData);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
@@ -452,8 +468,8 @@ class ReviewTechnicalController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-            $PhotographsByPlant = PhotographsByPlant::find($request->id);
-            $PhotographsByPlant->description = $request->description;
+            $PhotographsByReviewTechnicalJpa = PhotographsByReviewTechnical::find($request->id);
+            $PhotographsByReviewTechnicalJpa->description = $request->description;
 
             if (
                 isset($request->image_type) &&
@@ -465,15 +481,15 @@ class ReviewTechnicalController extends Controller
                     $request->image_mini != "none" &&
                     $request->image_full != "none"
                 ) {
-                    $PhotographsByPlant->image_type = $request->image_type;
-                    $PhotographsByPlant->image_mini = base64_decode($request->image_mini);
-                    $PhotographsByPlant->image_full = base64_decode($request->image_full);
+                    $PhotographsByReviewTechnicalJpa->image_type = $request->image_type;
+                    $PhotographsByReviewTechnicalJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByReviewTechnicalJpa->image_full = base64_decode($request->image_full);
                 } 
             } 
            
-            $PhotographsByPlant->_update_user = $userid;
-            $PhotographsByPlant->update_date = gTrace::getDate('mysql');
-            $PhotographsByPlant->save();
+            $PhotographsByReviewTechnicalJpa->_update_user = $userid;
+            $PhotographsByReviewTechnicalJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByReviewTechnicalJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Imagen guardada correctamente');
