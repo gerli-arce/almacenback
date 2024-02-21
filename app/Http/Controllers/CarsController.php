@@ -15,11 +15,11 @@ use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewCars;
 use App\Models\ViewProductsByCar;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class CarsController extends Controller
 {
@@ -279,7 +279,7 @@ class CarsController extends Controller
                 }
             });
 
-            if(!$request->view_all){
+            if (!$request->view_all) {
                 $query->where('branch__id', $branch_->id);
             }
 
@@ -790,6 +790,138 @@ class CarsController extends Controller
 
     }
 
+    public function reportByCar(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportCar.html');
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $productByCarJpa = ViewProductsByCar::where('car__id', $request->id)->whereNotNull('status')->get();
+
+            $stock_car = [];
+
+            foreach ($productByCarJpa as $products) {
+                $product = gJSON::restore($products->toArray(), '__');
+                $stock_car[] = $product;
+            }
+
+            $models = array();
+            foreach ($stock_car as $product) {
+                $model = $relativeId = $unity = "";
+                if ($product['product']['type'] === "EQUIPO") {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                } else {
+                    $model = $product['product']['model']['model'];
+                    $relativeId = $product['product']['model']['relative_id'];
+                    $unity = $product['product']['model']['unity']['name'];
+                }
+                $mount_new = $product['mount_new'];
+                $mount_second = $product['mount_second'];
+                $mount_ill_fated = $product['mount_ill_fated'];
+                if (isset($models[$model])) {
+                    $models[$model]['mount_new'] += $mount_new;
+                    $models[$model]['mount_second'] += $mount_second;
+                    $models[$model]['mount_ill_fated'] += $mount_ill_fated;
+                } else {
+                    $models[$model] = array(
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
+                        'unity' => $unity,
+                    );
+                }
+            }
+            $count = 1;
+            $products = array_values($models);
+            foreach ($products as $detail) {
+                $sumary .= "
+                <tr>
+                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_new']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_second']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['mount_ill_fated']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                </tr>
+                ";
+                $count = $count + 1;
+            }
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{placa}',
+                    '{num_chasis}',
+                    '{year}',
+                    '{color}',
+                    '{model}',
+                    '{soat}',
+                    '{type}',
+                    '{expiration_date_soat}',
+                    '{technical}',
+                    '{license}',
+                    '{branch_car}',
+                    '{description}',
+                    '{id_car}',
+                    '{summary}',
+                ],
+                [
+                    $request->id,
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->placa,
+                    $request->num_chasis,
+                    $request->year,
+                    $request->color,
+                    $request->model['model'],
+                    $request->soat,
+                    $request->car_type,
+                    $request->expiration_date_soat,
+                    $request->person['name'] . ' ' . $request->person['lastname'],
+                    $request->license,
+                    $request->branch['name'],
+                    $request->description,
+                    $request->id,
+                    $sumary,
+                ],
+                $template
+            );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function reportProductsByCar(Request $request)
     {
         try {
@@ -883,7 +1015,7 @@ class CarsController extends Controller
                     gTrace::getDate('long'),
                     $request->placa,
                     $request->color,
-                    $request->person['name'].' '.$request->person['lastname'],
+                    $request->person['name'] . ' ' . $request->person['lastname'],
                     $sumary,
                 ],
                 $template
