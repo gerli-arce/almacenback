@@ -406,8 +406,24 @@ class ReviewTechnicalController extends Controller
             $reviewTechnicalByCarJpa->_update_user = $userid;
             $reviewTechnicalByCarJpa->save();
 
+            $reviewData = [
+                'id' => $reviewTechnicalByCarJpa->id,
+                '_car' => $reviewTechnicalByCarJpa->_car,
+                'date' => $reviewTechnicalByCarJpa->date,
+                'components' => json_decode($reviewTechnicalByCarJpa->components),
+                'description' => $reviewTechnicalByCarJpa->description,
+                '_technical' => $reviewTechnicalByCarJpa->_technical,
+                'price_all' => $reviewTechnicalByCarJpa->price_all,
+                'creation_date' => $reviewTechnicalByCarJpa->creation_date,
+                '_creation_user' => $reviewTechnicalByCarJpa->_creation_user,
+                'update_date' => $reviewTechnicalByCarJpa->update_date,
+                '_update_user' => $reviewTechnicalByCarJpa->_update_user,
+                'status' => $reviewTechnicalByCarJpa->status,
+            ];
+
             $response->setStatus(200);
             $response->setMessage('Revisión técnica actualizada correctamente');
+            $response->setData($reviewData);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
