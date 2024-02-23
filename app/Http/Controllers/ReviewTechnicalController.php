@@ -65,11 +65,17 @@ class ReviewTechnicalController extends Controller
             $counter = 1;
             foreach ($ReviewTechnicalByCarJpa->components as $component) {
 
+                $price_unity = isset($component['price_unity']) ? $component['price_unity'] : $component['price'];
+                $mount = isset($component['mount']) ? $component['mount'] : 1;
+                $price_total = isset($component['price_total']) ? $component['price_total'] : $component['price'];
+                
                 $summary .= "
                         <tr>
                             <td><center >{$counter}</center></td>
                             <td><center >{$component['component']}</center></td>
-                            <td><center >S/{$component['price']}</center></td>
+                            <td><center >S/{$price_unity}</center></td>
+                            <td><center >S/{$mount}</center></td>
+                            <td><center >S/{$price_total}</center></td>
                         </tr>
                     ";
                 $counter++;
