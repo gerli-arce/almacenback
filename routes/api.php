@@ -153,6 +153,7 @@ Route::post('/technicals/search/stock', [TechnicalsController::class, 'getStockP
 Route::post('/technicals/report/records', [TechnicalsController::class, 'generateReportBySearch']);
 Route::post('/technicals/report/records/epp', [TechnicalsController::class, 'generateReportBySearchEPP']);
 Route::delete('/technicals/stock/delete', [TechnicalsController::class, 'deleteStockTechnical']);
+Route::post('/technicals/products/report', [TechnicalsController::class, 'generateReportsProductsByTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);
@@ -518,6 +519,7 @@ Route::post('/checklist/report', [ChecklistController::class, 'generateReportByR
 Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
 Route::post('/checklist/setimage', [ChecklistController::class, 'setImage']);
 Route::get('/checklist/image/{id}', [ChecklistController::class, 'getImages']);
+Route::delete('/checklist/image/{id}', [ChecklistController::class, 'deleteImage']);
 Route::get('/checklistimgs/{id}/{zize}', [ChecklistController::class, 'images']);
 Route::delete('/checklist/image/{id}', [ChecklistController::class, 'deleteImage']);
 Route::patch('/checklist/setimage', [ChecklistController::class, 'updateImage']);

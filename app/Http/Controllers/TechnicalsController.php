@@ -1693,7 +1693,7 @@ class TechnicalsController extends Controller
                 'view_sales.update_date as update_date',
                 'view_sales.status as status',
             ])
-            ->distinct()
+                ->distinct()
                 ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                 ->orderBy('view_sales.id', 'desc')
                 ->where('view_sales.technical_id', $request->technical)
@@ -1726,8 +1726,8 @@ class TechnicalsController extends Controller
                 $dateStart = date('Y-m-d', strtotime($request->date_start));
                 $dateEnd = date('Y-m-d', strtotime($request->date_end));
                 $query->whereBetween('view_sales.date_sale', [$dateStart, $dateEnd])
-                ->where('view_sales.technical_id', $request->technical)
-                ->where('branch__correlative', $branch);
+                    ->where('view_sales.technical_id', $request->technical)
+                    ->where('branch__correlative', $branch);
             }
 
             $iTotalDisplayRecords = $query->count();
@@ -2223,6 +2223,136 @@ class TechnicalsController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportsProductsByTechnical(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar registros de técnicos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportProductsTechnical.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $dat_technical = People::find($request->id);
+
+            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
+                ->whereNotNull('status')->get();
+
+            $products = array();
+            foreach ($ViewProductByTechnicalJpa as $productJpa) {
+                $person = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $person;
+            }
+
+            $count = 1;
+
+            $summary = "";
+
+            foreach($products as $product){
+                
+                $url = "https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini";
+
+                $image = "
+                    <div>
+                        <center>
+                            <img src='{$url}' class='img_stock'>
+                        </center>
+                    </div>
+                    ";
+
+                $product_ = "
+                    <div>
+                        <p><strong>{$product['product']['model']['model']}</strong></p>
+                    </div>
+                    ";
+                $detail = '';
+
+                if($product['product']['type'] == 'MATERIAL'){
+                    $detail =
+                    "
+                    <center>{$product['product']['model']['unity']['name']} </center>
+                    ";
+                }else{
+                    $detail = "
+                    <div>
+                        <p><strong>Mac:</strong>{$product['product']['mac']}</p>
+                        <p><strong>Serie:</strong>{$product['product']['serie']}</p>
+                    </div>
+                    ";
+                }
+
+                 $summary .="
+                 <tr>
+                    <td><center>{$count}</center></td>
+                    <td><center>{$image}</center></td>
+                    <td><center>{$product_}</center></td>
+                    <td><center>". ($product['mount_new'] == floor($product['mount_new']) ? floor($product['mount_new']) : $product['mount_new']) ."</center></td>
+                    <td><center>". ($product['mount_second'] == floor($product['mount_second']) ? floor($product['mount_second']) : $product['mount_second']) ."</center></td>
+                    <td><center>".($product['mount_ill_fated'] == floor($product['mount_ill_fated']) ? floor($product['mount_ill_fated']) : $product['mount_ill_fated']) ."</center></td>
+                    <td>{$detail}</td>
+                </tr>
+                 
+                 "; 
+                 $count++;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_interaction}',
+                    '{issue_long_date}',
+                    '{user_generate}',
+                    '{people}',
+                    '{people_names}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    'TÉCNICO',
+                    $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Guia.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setData($ViewProductByTechnicalJpa->toArray());
+            // $response->setMessage('operacion correcta');
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()

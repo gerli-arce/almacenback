@@ -335,13 +335,13 @@ class TowerController extends Controller
             }
 
             if (isset($request->name)) {
-                $verifyCatJpa = Tower::select(['id', 'name'])
-                    ->where('name', $request->name)
-                    ->where('id', '!=', $request->id)
-                    ->first();
-                if ($verifyCatJpa) {
-                    throw new Exception("Error: La torre ya existe");
-                }
+                //$verifyCatJpa = Tower::select(['id', 'name'])
+                 //   ->where('name', $request->name)
+                 //   ->where('id', $request->id)
+                 //   ->first();
+                //if ($verifyCatJpa) {
+                 //   throw new Exception("Error: La torre ya existe");
+               // }
                 $towerJpa->name = $request->name;
             }
 

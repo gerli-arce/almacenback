@@ -499,7 +499,9 @@ class ReviewTechnicalController extends Controller
 
             $PhotographsByReviewTechnicalJpa = new PhotographsByReviewTechnical();
             $PhotographsByReviewTechnicalJpa->_review = $request->_review;
-            $PhotographsByReviewTechnicalJpa->description = $request->description;
+            if(isset($request->description)){
+                $PhotographsByReviewTechnicalJpa->description = $request->description;
+            }
 
             if (
                 isset($request->image_type) &&
