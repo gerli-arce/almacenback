@@ -442,6 +442,42 @@ class ReviewTechnicalController extends Controller
 
     }
 
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'update')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+
+            $reviewTechnicalByCarJpa = ReviewTechnicalByCar::find($request->id);
+           
+            $reviewTechnicalByCarJpa->update_date = gTrace::getDate('mysql');
+            $reviewTechnicalByCarJpa->_update_user = $userid;
+            $reviewTechnicalByCarJpa->status = null;
+            $reviewTechnicalByCarJpa->save();
+        
+            $response->setStatus(200);
+            $response->setMessage('Revisión técnica eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+
+    }
+
+
     public function setImage(Request $request)
     {
         $response = new Response();
@@ -451,7 +487,7 @@ class ReviewTechnicalController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
                 throw new Exception("No tienes permisos para actualizar");
             }
 
@@ -514,7 +550,7 @@ class ReviewTechnicalController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
                 throw new Exception("No tienes permisos para actualizar");
             }
 
@@ -569,7 +605,7 @@ class ReviewTechnicalController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
                 throw new Exception("No tienes permisos para actualizar");
             }
 
@@ -657,7 +693,7 @@ class ReviewTechnicalController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
                 throw new Exception("No tienes permisos para actualizar");
             }
 

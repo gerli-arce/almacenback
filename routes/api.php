@@ -534,6 +534,7 @@ Route::post('/changes_car/restore', [ChangesCarController::class, 'restore']);
 // REVIEW TECHNICAL CAR
 Route::post('/review_technical', [ReviewTechnicalController::class, 'store']);
 Route::patch('/review_technical', [ReviewTechnicalController::class, 'update']);
+Route::delete('/review_technical', [ReviewTechnicalController::class, 'delete']);
 Route::post('/review_technical/paginate', [ReviewTechnicalController::class, 'paginate']);
 Route::get('/review_technicalbill/{id}/{zize}', [ReviewTechnicalController::class, 'image']);
 Route::post('/review_technical/report', [ReviewTechnicalController::class, 'generateReportByReviewTechnical']);
