@@ -381,9 +381,9 @@ class TechnicalsController extends Controller
                 ->whereNot('type', 'LEND')
                 ->where('_model', $request->product['model']['id'])->first();
 
-            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
-            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
-            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
+            $productByTechnicalJpa->mount_new += $request->mount_new;
+            $productByTechnicalJpa->mount_second += $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated += $request->mount_ill_fated;
 
             $productJpa = Product::find($request->product['id']);
 
