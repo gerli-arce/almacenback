@@ -154,6 +154,7 @@ Route::post('/technicals/report/records', [TechnicalsController::class, 'generat
 Route::post('/technicals/report/records/epp', [TechnicalsController::class, 'generateReportBySearchEPP']);
 Route::delete('/technicals/stock/delete', [TechnicalsController::class, 'deleteStockTechnical']);
 Route::post('/technicals/products/report', [TechnicalsController::class, 'generateReportsProductsByTechnical']);
+Route::post('/technicals/products/report/epp', [TechnicalsController::class, 'generateReportsEPPByTechnical']);
 
 // EJECUTIVE
 Route::post('/ejecutives', [EjecutivesController::class, 'store']);
