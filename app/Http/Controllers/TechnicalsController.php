@@ -2255,7 +2255,7 @@ class TechnicalsController extends Controller
 
             $dat_technical = People::find($request->id);
 
-            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
+            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'PRODUCTO')
                 ->whereNotNull('status')->get();
 
             $products = array();
