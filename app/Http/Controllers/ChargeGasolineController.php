@@ -8,6 +8,7 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
+use App\Models\ViewUsers;
 use App\Models\ChargeGasoline;
 use App\Models\ViewChargeGasolineByCar;
 use Dompdf\Dompdf;
@@ -34,6 +35,8 @@ class ChargeGasolineController extends Controller
             if (
                 !isset($request->_technical) ||
                 !isset($request->_car) ||
+                !isset($request->price_all) ||
+                !isset($request->gasoline_type) ||
                 !isset($request->date)
             ) {
                 throw new Exception("Error en los datos de entrada");
@@ -43,6 +46,7 @@ class ChargeGasolineController extends Controller
             $ChargeGasolineJpa->_technical = $request->_technical;
             $ChargeGasolineJpa->_car = $request->_car;
             $ChargeGasolineJpa->date = $request->date;
+            $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
             if (isset($request->description)) {
                 $ChargeGasolineJpa->description = $request->description;
             }
@@ -107,10 +111,23 @@ class ChargeGasolineController extends Controller
                 throw new Exception('No se encontró la revisión técnica');
             }
 
-            $ChargeGasolineJpa->_technical = $request->_technical;
-            $ChargeGasolineJpa->date = $request->date;
+            if(isset($request->_technical)){
+                $ChargeGasolineJpa->_technical = $request->_technical;
+            }
+
+            if(isset($request->date)){
+                $ChargeGasolineJpa->date = $request->date;
+            }
+
+            if(isset($request->price_all)){
+                $ChargeGasolineJpa->price_all = $request->price_all;
+            }
+
+            if(isset($request->gasoline_type)){
+                $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
+            }
+
             $ChargeGasolineJpa->description = $request->description;
-            $ChargeGasolineJpa->price_all = $request->price_all;
 
             if (
                 isset($request->image_type) &&
@@ -326,7 +343,7 @@ class ChargeGasolineController extends Controller
             $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
             $ChargeGasolineJpa->_update_user = $userid;
             $ChargeGasolineJpa->save();
-            
+
             $response->setStatus(200);
             $response->setMessage('Carga de gasolina restaurada correctamente');
         } catch (\Throwable $th) {
@@ -339,5 +356,58 @@ class ChargeGasolineController extends Controller
             );
         }
     }
+
+    public function generateReportByCar(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportChargeGasoline.html');
+
+            $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::find($request->id);
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+       
+            $summary = '';
+
+
+            $template = str_replace(
+                [
+                    '{summary}',
+                ],
+                [
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 
 }
