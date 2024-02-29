@@ -15,7 +15,7 @@ use App\Http\Controllers\{
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
-    ChangesCarController, ReviewTechnicalController
+    ChangesCarController, ReviewTechnicalController, ChargeGasolineController
 };
 
 /*
@@ -547,6 +547,12 @@ Route::get('/review_technical/image/{id}', [ReviewTechnicalController::class, 'g
 Route::get('/review_technicalimg/{id}/{zize}', [ReviewTechnicalController::class, 'images']);
 Route::delete('/review_technical/image/{id}', [ReviewTechnicalController::class, 'deleteImage']);
 
+
+// CHARGE GASOLINE
+Route::post('/charge_gasoline', [ChargeGasolineController::class, 'store']);
+Route::patch('/charge_gasoline', [ChargeGasolineController::class, 'update']);
+Route::delete('/charge_gasoline', [ChargeGasolineController::class, 'delete']);
+Route::post('/charge_gasoline/paginate', [ChargeGasolineController::class, 'paginate']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
