@@ -225,6 +225,119 @@ class ChargeGasolineController extends Controller
         }
     }
 
+    public function image($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
 
+            $reviewJpa = ChargeGasoline::select([
+                "charge_gasoline.image_$size as image_content",
+                'charge_gasoline.image_type',
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$reviewJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$reviewJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $reviewJpa->image_content;
+            $type = $reviewJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/factura-default.png';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function delete(Request $request, $id){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+            $ChargeGasolineJpa = ChargeGasoline::find($id);
+            if (!$ChargeGasolineJpa) {
+                throw new Exception('No se encontró la carga de gasolina');
+            }
+            $ChargeGasolineJpa->status = null;
+            $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
+            $ChargeGasolineJpa->_update_user = $userid;
+            $ChargeGasolineJpa->save();
+            $response->setStatus(200);
+            $response->setMessage('Carga de gasolina eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para realizar esta acción");
+            }
+
+            $ChargeGasolineJpa = ChargeGasoline::find($request->id);
+            if (!$ChargeGasolineJpa) {
+                throw new Exception('No se encontró la carga de gasolina');
+            }
+            
+            $ChargeGasolineJpa->status = 1;
+            $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
+            $ChargeGasolineJpa->_update_user = $userid;
+            $ChargeGasolineJpa->save();
+            
+            $response->setStatus(200);
+            $response->setMessage('Carga de gasolina restaurada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
 }

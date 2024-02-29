@@ -551,8 +551,12 @@ Route::delete('/review_technical/image/{id}', [ReviewTechnicalController::class,
 // CHARGE GASOLINE
 Route::post('/charge_gasoline', [ChargeGasolineController::class, 'store']);
 Route::patch('/charge_gasoline', [ChargeGasolineController::class, 'update']);
-Route::delete('/charge_gasoline', [ChargeGasolineController::class, 'delete']);
+Route::delete('/charge_gasoline/{id}', [ChargeGasolineController::class, 'delete']);
+Route::post('/charge_gasoline/restore', [ChargeGasolineController::class, 'restore']);
 Route::post('/charge_gasoline/paginate', [ChargeGasolineController::class, 'paginate']);
+Route::get('/charge_gasolineimg/{id}/{zize}', [ChargeGasolineController::class, 'image']);
+
+
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
