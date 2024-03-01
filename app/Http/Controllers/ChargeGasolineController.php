@@ -383,12 +383,25 @@ class ChargeGasolineController extends Controller
        
             $summary = '';
 
-
             $template = str_replace(
                 [
+                    '{id}',
+                    '{placa}',
+                    '{technical}',
+                    '{date}',
+                    '{gasoline}',
+                    '{price_all}',
+                    '{description}',
                     '{summary}',
                 ],
                 [
+                    $ViewChargeGasolineByCarJpa->id,
+                    $request->car['placa'],
+                    $ViewChargeGasolineByCarJpa->technical__name.' '. $ViewChargeGasolineByCarJpa->technical__lastname,
+                    $ViewChargeGasolineByCarJpa->date,
+                    $ViewChargeGasolineByCarJpa->gasoline_type,
+                    $ViewChargeGasolineByCarJpa->price_all,
+                    $ViewChargeGasolineByCarJpa->description,
                     $summary,
                 ],
                 $template

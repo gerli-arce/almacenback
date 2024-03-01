@@ -95,10 +95,13 @@
 
         table td {
             vertical-align: middle;
+            padding: 5px 10px;
+            font-size: 14px;
         }
 
         table tbody td {
             border: 1px solid #222222;
+            font-size: 14px;
         }
 
         table thead td {
@@ -107,11 +110,16 @@
             background-color: #60708863;
             border: 1px solid #222222;
             color: #212635 !important;
+            font-size: 18px;
         }
 
-        table td {
-            vertical-align: middle;
-            padding: 5px 10px;
+        table tbody .n {
+            font-weight: bold;
+            background-color: #313e5228;
+            border: 1px solid #222222;
+            color: #212635 !important;
+            font-size: 14px;
+            width: 50%;;
         }
 
         #total_hours {
@@ -216,7 +224,6 @@
         }
     </style>
 </head>
-
 <body>
     <main>
         <div style="display: inline; font-size: 13px">
@@ -251,81 +258,52 @@
                         ">
                     <span>RUC 20602791816</span>
                     <br>
-                    <span>R. TÉCNICA</span>
+                    <span>COMBUSTIBLE</span>
                     <br>
-                    <span>RT-{id}</span>
+                    <span>CR-{id}</span>
                 </div>
             </div>
         </div>
-        <br />
-        <div style="display: inline; font-size: 13px"">
-            <div style=" max-width: 50%; display: inline-block">
-            <p><strong>PLACA:</strong> {placa}</p>
-            <p><strong>COLOR:</strong> {color}</p>
-            <p><strong>TAR. DE PROP.:</strong> {property_card}</p>
-        </div>
-
-        <div style="
-            max-width: 50%;
-            display: inline-block;
-            margin-left: 90px;
-        ">
-            <p><strong>TÉCNICO:</strong> {technical}</p>
-            <p><strong>FECHA:</strong> {date}</p>
-            <p><strong>RES. DE REVI.:</strong> {risponsible}</p>
-        </div>
-        <p><strong>DESCRIPCIÓN:</strong> {description}</p>
-        <center class="text-bold" style="margin-top: 8px">
-            <h3>RESUMEN</h3>
-        </center>
         <table>
             <thead>
-                <tr colspan="2">
-                    <td>
+                <tr>
+                    <td colspan="2">
                         <center>CARGA DE COMBUSTIBLE</center>
                     </td>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>PLACA</td>
+                    <td class="n">PLACA</td>
                     <td>{placa}</td>
                 </tr>
                 <tr>
-                    <td>TÉCNICO</td>
+                    <td class="n">TÉCNICO</td>
                     <td>{technical}</td>
                 </tr>
                 <tr>
-                    <td>FECHA</td>
+                    <td class="n">FECHA</td>
                     <td>{date}</td>
                 </tr>
                 <tr>
-                    <td>COMBUSTIBLE</td>
+                    <td class="n">COMBUSTIBLE</td>
                     <td>{gasoline}</td>
                 </tr>
                 <tr>
-                    <td>MONTO TOTAL</td>
-                    <td>{price_all}</td>
+                    <td class="n">MONTO TOTAL</td>
+                    <td>S/{price_all}</td>
                 </tr>
-
-                {summary}
                 <tr>
-                    <td colspan="4">
-                        <center>Total</center>
-                    </td>
-                    <td style="background-color: yellow;" ><center><sytong>S/{total}</sytong></center></td>
+                    <td class="n">DESCRIPCIÓN</td>
+                    <td>{description}</td>
                 </tr>
             </tbody>
         </table>
         <br>
         <center style='page-break-before: always;'>
             <h3>FACTURA</h3>
-            <img src="https://almacen.fastnetperu.com.pe/api/review_technicalbill/{id_img}/full" class="img_bill" alt="">
+            <img src="https://almacen.fastnetperu.com.pe/api/charge_gasolineimg/{id}/full" class="img_bill" alt="">
         </center>
-
-        <div>
-            {images}
-        </div>
     </main>
 </body>
 
