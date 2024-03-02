@@ -422,5 +422,69 @@ class ChargeGasolineController extends Controller
         }
     }
 
+    public function generateReportdetails(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportChargeGasolineDetails.html');
+
+            $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::find($request->id);
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+       
+            $summary = '';
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{placa}',
+                    '{technical}',
+                    '{date}',
+                    '{gasoline}',
+                    '{price_all}',
+                    '{description}',
+                    '{summary}',
+                ],
+                [
+                    $ViewChargeGasolineByCarJpa->id,
+                    $request->car['placa'],
+                    $ViewChargeGasolineByCarJpa->technical__name.' '. $ViewChargeGasolineByCarJpa->technical__lastname,
+                    $ViewChargeGasolineByCarJpa->date,
+                    $ViewChargeGasolineByCarJpa->gasoline_type,
+                    $ViewChargeGasolineByCarJpa->price_all,
+                    $ViewChargeGasolineByCarJpa->description,
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 
 }
