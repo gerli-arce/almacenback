@@ -111,19 +111,19 @@ class ChargeGasolineController extends Controller
                 throw new Exception('No se encontró la revisión técnica');
             }
 
-            if(isset($request->_technical)){
+            if (isset($request->_technical)) {
                 $ChargeGasolineJpa->_technical = $request->_technical;
             }
 
-            if(isset($request->date)){
+            if (isset($request->date)) {
                 $ChargeGasolineJpa->date = $request->date;
             }
 
-            if(isset($request->price_all)){
+            if (isset($request->price_all)) {
                 $ChargeGasolineJpa->price_all = $request->price_all;
             }
 
-            if(isset($request->gasoline_type)){
+            if (isset($request->gasoline_type)) {
                 $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
             }
 
@@ -221,8 +221,7 @@ class ChargeGasolineController extends Controller
             $charges_gasoline = array();
             foreach ($ChargesCarJpa as $ChargecarJpa) {
                 $review = gJSON::restore($ChargecarJpa->toArray(), '__');
-                $charges_gasoline[] = $review
-                ;
+                $charges_gasoline[] = $review;
             }
 
             $response->setStatus(200);
@@ -292,7 +291,8 @@ class ChargeGasolineController extends Controller
         }
     }
 
-    public function delete(Request $request, $id){
+    public function delete(Request $request, $id)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -323,7 +323,8 @@ class ChargeGasolineController extends Controller
         }
     }
 
-    public function restore(Request $request){
+    public function restore(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -338,7 +339,7 @@ class ChargeGasolineController extends Controller
             if (!$ChargeGasolineJpa) {
                 throw new Exception('No se encontró la carga de gasolina');
             }
-            
+
             $ChargeGasolineJpa->status = 1;
             $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
             $ChargeGasolineJpa->_update_user = $userid;
@@ -380,7 +381,7 @@ class ChargeGasolineController extends Controller
                 'person__name',
                 'person__lastname',
             ])->where('id', $userid)->first();
-       
+
             $summary = '';
 
             $template = str_replace(
@@ -397,7 +398,7 @@ class ChargeGasolineController extends Controller
                 [
                     $ViewChargeGasolineByCarJpa->id,
                     $request->car['placa'],
-                    $ViewChargeGasolineByCarJpa->technical__name.' '. $ViewChargeGasolineByCarJpa->technical__lastname,
+                    $ViewChargeGasolineByCarJpa->technical__name . ' ' . $ViewChargeGasolineByCarJpa->technical__lastname,
                     $ViewChargeGasolineByCarJpa->date,
                     $ViewChargeGasolineByCarJpa->gasoline_type,
                     $ViewChargeGasolineByCarJpa->price_all,
@@ -410,7 +411,6 @@ class ChargeGasolineController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Instlación.pdf');
-
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
@@ -422,7 +422,8 @@ class ChargeGasolineController extends Controller
         }
     }
 
-    public function generateReportdetails(Request $request){
+    public function generateReportdetailsByCar(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -436,7 +437,88 @@ class ChargeGasolineController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportChargeGasolineDetails.html');
 
-            $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::find($request->id);
+
+
+            $query = ViewChargeGasolineByCar::where('_car', $request->car['id'])
+            ->orderBy('date', 'desc');
+
+
+            if(isset($request->date_start) && isset($request->date_end)){
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                $query->where('date','>=', $dateStart)->where('date','<=', $dateEnd)
+                ;
+            }
+
+            $ViewChargeGasolineByCarJpa = $query->get();
+
+            $summary = '';
+
+
+            $changesGasolineJpa = array();
+            $price_all = 0;
+            $num_charges = 0;
+            foreach ($ViewChargeGasolineByCarJpa as $ChargegasolineJpa) {
+                $chargeGasoline = gJSON::restore($ChargegasolineJpa->toArray(), '__');
+                $price_all += $chargeGasoline['price_all'];
+                $num_charges++;
+                if($request->add_bills){
+                    $summary .="
+                        <div style='page-break-before: always;'>
+                            <table class='table-details'>
+                                <thead>
+                                    <tr>
+                                        <td colspan='2'>
+                                            CARGA DE {$chargeGasoline['gasoline_type']}
+                                        </td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class='n'>TÉCNICO</td>
+                                        <td>{$chargeGasoline['technical']['name']} {$chargeGasoline['technical']['lastname']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>FECHA</td>
+                                        <td>{$chargeGasoline['date']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>TIPO DE COMBUSTIBLE</td>
+                                        <td>{$chargeGasoline['gasoline_type']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>MONTO TOTAL</td>
+                                        <td>S/{$chargeGasoline['price_all']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>EJECUTIVO</td>
+                                        <td>{$chargeGasoline['person_creation']['name']} {$chargeGasoline['person_creation']['lastname']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n'>DESCRIPCIÓN</td>
+                                        <td>{$chargeGasoline['description']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class='n' colspan='2'>
+                                            <center>FACTURA</center>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan='2'>
+                                            <center>
+                                                <img src='https://almacen.fastnetperu.com.pe/api/charge_gasolineimg/{$chargeGasoline['id']}/full' class='img_bill'>
+                                            </center>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                               
+                            </table>
+                        <div>
+                    ";
+                }
+
+                $changesGasolineJpa[] = $chargeGasoline;
+            }
 
             $user = ViewUsers::select([
                 'id',
@@ -444,28 +526,22 @@ class ChargeGasolineController extends Controller
                 'person__name',
                 'person__lastname',
             ])->where('id', $userid)->first();
-       
-            $summary = '';
 
             $template = str_replace(
                 [
-                    '{id}',
                     '{placa}',
-                    '{technical}',
-                    '{date}',
-                    '{gasoline}',
+                    '{num_charges}',
+                    '{date_start}',
+                    '{date_end}',
                     '{price_all}',
-                    '{description}',
                     '{summary}',
                 ],
                 [
-                    $ViewChargeGasolineByCarJpa->id,
                     $request->car['placa'],
-                    $ViewChargeGasolineByCarJpa->technical__name.' '. $ViewChargeGasolineByCarJpa->technical__lastname,
-                    $ViewChargeGasolineByCarJpa->date,
-                    $ViewChargeGasolineByCarJpa->gasoline_type,
-                    $ViewChargeGasolineByCarJpa->price_all,
-                    $ViewChargeGasolineByCarJpa->description,
+                    $num_charges,
+                    $request->date_start,
+                    $request->date_end,
+                    $price_all,
                     $summary,
                 ],
                 $template
@@ -473,8 +549,7 @@ class ChargeGasolineController extends Controller
 
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Instlación.pdf');
-
+            return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
@@ -485,6 +560,4 @@ class ChargeGasolineController extends Controller
             );
         }
     }
-
-
 }

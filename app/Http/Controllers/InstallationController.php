@@ -666,6 +666,13 @@ class InstallationController extends Controller
                                 ->whereNotNull('status')
                                 ->whereNot('type', 'LEND')
                                 ->where('_model', $product['product']['model']['id'])->first();
+
+                            if(!$productByTechnicalJpa){
+                                throw new Exception('Producto de tecnico no encontrado: 
+                                '.$product['product']['model']['model'].
+                                ' ID:'.$product['product']['model']['id']
+                                );
+                            }
                             if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
                                     $mount_dif = intval($detailSale->mount_new) - intval($product['mount_new']);

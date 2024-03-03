@@ -556,6 +556,7 @@ Route::post('/charge_gasoline/restore', [ChargeGasolineController::class, 'resto
 Route::post('/charge_gasoline/paginate', [ChargeGasolineController::class, 'paginate']);
 Route::get('/charge_gasolineimg/{id}/{zize}', [ChargeGasolineController::class, 'image']);
 Route::post('/charge_gasoline/report', [ChargeGasolineController::class, 'generateReportByCar']);
+Route::post('/charge_gasoline/report/detail', [ChargeGasolineController::class, 'generateReportdetailsByCar']);
 
 
 
