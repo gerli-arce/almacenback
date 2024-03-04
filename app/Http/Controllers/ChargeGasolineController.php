@@ -442,14 +442,13 @@ class ChargeGasolineController extends Controller
 
 
             $query = ViewChargeGasolineByCar::where('_car', $request->car['id'])
-            ->orderBy('date', 'desc');
+                ->orderBy('date', 'desc');
 
 
-            if(isset($request->date_start) && isset($request->date_end)){
+            if (isset($request->date_start) && isset($request->date_end)) {
                 $dateStart = date('Y-m-d', strtotime($request->date_start));
                 $dateEnd = date('Y-m-d', strtotime($request->date_end));
-                $query->where('date','>=', $dateStart)->where('date','<=', $dateEnd)
-                ;
+                $query->where('date', '>=', $dateStart)->where('date', '<=', $dateEnd);
             }
 
             $ViewChargeGasolineByCarJpa = $query->get();
@@ -464,10 +463,10 @@ class ChargeGasolineController extends Controller
                 $chargeGasoline = gJSON::restore($ChargegasolineJpa->toArray(), '__');
                 $price_all += $chargeGasoline['price_all'];
                 $num_charges++;
-                if($request->add_bills){
-                    $summary .="
+                if ($request->add_bills) {
+                    $summary .= "
                         <div style='page-break-before: always;'>
-                            <table class='table-details'>
+                            <table>
                                 <thead>
                                     <tr>
                                         <td colspan='2'>
@@ -577,154 +576,153 @@ class ChargeGasolineController extends Controller
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
-
+            
+            $HOST = 'https://almacendev.fastnetperu.com.pe/api';
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
-
             $ViewCarsJpa = ViewCars::where('branch__id', $branch_->id)->orderBy('id', 'desc')->whereNotNull('status')->get();
+
+            $summary = '';
 
             $viewcarsJpa = array();
 
-            foreach($ViewCarsJpa as $ViewCarJpa){
+            $price_all = 0;
+            $mount_cars = 0;
+            $charges_all = 0;
+
+            $cars = '';
+            foreach ($ViewCarsJpa as $ViewCarJpa) {
                 $viewCar = gJSON::restore($ViewCarJpa->toArray(), '__');
-
                 $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::where('_car', $viewCar['id'])
-                ->orderBy('date', 'desc')->get();
-
+                    ->orderBy('date', 'desc')->get();
+                $mount_cars++;
                 $chanrgesGasoline = array();
-                foreach($ViewChargeGasolineByCarJpa as $ChangeGasolineJpa){
+
+                $mount_charges_by_car = 0;
+                $price_all_by_car = 0;
+                $charges_gasoline = '';
+                foreach ($ViewChargeGasolineByCarJpa as $ChangeGasolineJpa) {
                     $chargeGasoline = gJSON::restore($ChangeGasolineJpa->toArray(), '__');
+                    $price_all += $chargeGasoline['price_all'];
+                    $charges_all++;
+                    $mount_charges_by_car++;
+                    $price_all_by_car += $chargeGasoline['price_all'];
                     $chanrgesGasoline[] = $chargeGasoline;
+
+                    $charges_gasoline .="
+                            <tr>
+                                <td colspan='2'><center>----------------------------------------</center></td>
+                            </tr>
+                            <tr>
+                                <td colspan='2' class='s'><center>{$chargeGasoline['gasoline_type']}</center></td>
+                            </tr>
+                            <tr>
+                                <td class='sn'>TÉCNICO</td>
+                                <td>{$chargeGasoline['technical']['name']} {$chargeGasoline['technical']['lastname']}</td>
+                            </tr>
+                            <tr>
+                                <td class='sn'>FECHA</td>
+                                <td>{$chargeGasoline['date']}</td>
+                            </tr>
+                            <tr>
+                                <td class='sn'>MONTO TOTAL</td>
+                                <td>S/{$chargeGasoline['price_all']}</td>
+                            </tr>
+                            <tr>
+                                <td class='sn'>EJECUTIVO</td>
+                                <td>{$chargeGasoline['person_creation']['name']} {$chargeGasoline['person_creation']['lastname']}</td>
+                            </tr>
+                            <tr>
+                                <td class='sn'>DESCRIPCIÓN</td>
+                                <td>{$chargeGasoline['description']}</td>
+                            </tr>
+                            <tr>
+                                <td class='sn' colspan='2'>
+                                    <center>FACTURA</center>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class='sn' colspan='2'>
+                                    <center>
+                                        <img src='{$HOST}/charge_gasolineimg/{$chargeGasoline['id']}/full' class='img_bill'>
+                                    </center>
+                                </td>
+                            </tr>
+                      
+                    ";
                 }
 
                 $viewCar['charges'] = $chanrgesGasoline;
 
                 $viewcarsJpa[] = $viewCar;
+
+                $cars .="
+                <table>
+                    <thead>
+                        <tr>
+                            <td colspan='2'>
+                                <center>{$viewCar['placa']} - {$viewCar['color']}</center>
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class='n'>CARGAS TOTALES</td>
+                            <td><center>{$mount_charges_by_car}</center></td>
+                        </tr>
+                        <tr>
+                            <td class='n'>MONTO TOTAL</td>
+                            <td><center>S/{$price_all_by_car}</center></td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' class='n'><center>{$viewCar['model']['model']}</center></td>
+                        </tr>
+                        <tr>
+                            <td colspan='2'>
+                                <center>
+                                    <img src='{$HOST}/carimg/{$viewCar['id']}/full' class='img_bill'>
+                                </center>                           
+                            </td>
+                        </tr>
+                        {$charges_gasoline}
+                    </tbody>
+                </table>
+                ";
             }
 
-
-
-
-            // $query = ViewChargeGasolineByCar::where('_car', $request->car['id'])
-            // ->orderBy('date', 'desc');
-
-            // if(isset($request->date_start) && isset($request->date_end)){
-            //     $dateStart = date('Y-m-d', strtotime($request->date_start));
-            //     $dateEnd = date('Y-m-d', strtotime($request->date_end));
-            //     $query->where('date','>=', $dateStart)->where('date','<=', $dateEnd)
-            //     ;
-            // }
-
-            // $ViewChargeGasolineByCarJpa = $query->get();
-
-            // $summary = '';
-
-            // $changesGasolineJpa = array();
-            // $price_all = 0;
-            // $num_charges = 0;
-            // foreach ($ViewChargeGasolineByCarJpa as $ChargegasolineJpa) {
-            //     $chargeGasoline = gJSON::restore($ChargegasolineJpa->toArray(), '__');
-            //     $price_all += $chargeGasoline['price_all'];
-            //     $num_charges++;
-            //     if($request->add_bills){
-            //         $summary .="
-            //             <div style='page-break-before: always;'>
-            //                 <table class='table-details'>
-            //                     <thead>
-            //                         <tr>
-            //                             <td colspan='2'>
-            //                                 CARGA DE {$chargeGasoline['gasoline_type']}
-            //                             </td>
-            //                         </tr>
-            //                     </thead>
-            //                     <tbody>
-            //                         <tr>
-            //                             <td class='n'>TÉCNICO</td>
-            //                             <td>{$chargeGasoline['technical']['name']} {$chargeGasoline['technical']['lastname']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n'>FECHA</td>
-            //                             <td>{$chargeGasoline['date']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n'>TIPO DE COMBUSTIBLE</td>
-            //                             <td>{$chargeGasoline['gasoline_type']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n'>MONTO TOTAL</td>
-            //                             <td>S/{$chargeGasoline['price_all']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n'>EJECUTIVO</td>
-            //                             <td>{$chargeGasoline['person_creation']['name']} {$chargeGasoline['person_creation']['lastname']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n'>DESCRIPCIÓN</td>
-            //                             <td>{$chargeGasoline['description']}</td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td class='n' colspan='2'>
-            //                                 <center>FACTURA</center>
-            //                             </td>
-            //                         </tr>
-            //                         <tr>
-            //                             <td colspan='2'>
-            //                                 <center>
-            //                                     <img src='https://almacen.fastnetperu.com.pe/api/charge_gasolineimg/{$chargeGasoline['id']}/full' class='img_bill'>
-            //                                 </center>
-            //                             </td>
-            //                         </tr>
-            //                     </tbody>
-                               
-            //                 </table>
-            //             <div>
-            //         ";
-            //     }
-
-            //     $changesGasolineJpa[] = $chargeGasoline;
-            // }
-
-            // $user = ViewUsers::select([
-            //     'id',
-            //     'username',
-            //     'person__name',
-            //     'person__lastname',
-            // ])->where('id', $userid)->first();
-
-            // $template = str_replace(
-            //     [
-            //         '{placa}',
-            //         '{num_charges}',
-            //         '{date_start}',
-            //         '{date_end}',
-            //         '{price_all}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         $request->car['placa'],
-            //         $num_charges,
-            //         $request->date_start,
-            //         $request->date_end,
-            //         $price_all,
-            //         $summary,
-            //     ],
-            //     $template
-            // );
-
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
-
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('operacion correcta');
-            $response->setData($viewcarsJpa);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{num_cars}',
+                    '{num_charges}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{price_all}',
+                    '{cars}',
+                ],
+                [
+                    $mount_cars,
+                    $charges_all,
+                    $request->date_start,
+                    $request->date_end,
+                    $price_all,
+                    $cars,
+                ],
+                $template
             );
 
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('operacion correcta');
+            // $response->setData($viewcarsJpa);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
