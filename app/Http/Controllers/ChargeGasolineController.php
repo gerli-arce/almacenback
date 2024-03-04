@@ -576,14 +576,13 @@ class ChargeGasolineController extends Controller
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
-            
-            $HOST = 'https://almacendev.fastnetperu.com.pe/api';
+
+            $HOST = 'https://almacen.fastnetperu.com.pe/api';
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
             $ViewCarsJpa = ViewCars::where('branch__id', $branch_->id)->orderBy('id', 'desc')->whereNotNull('status')->get();
 
-            $summary = '';
 
             $viewcarsJpa = array();
 
@@ -594,8 +593,16 @@ class ChargeGasolineController extends Controller
             $cars = '';
             foreach ($ViewCarsJpa as $ViewCarJpa) {
                 $viewCar = gJSON::restore($ViewCarJpa->toArray(), '__');
-                $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::where('_car', $viewCar['id'])
-                    ->orderBy('date', 'desc')->get();
+                $query = ViewChargeGasolineByCar::where('_car', $viewCar['id'])
+                    ->orderBy('date', 'desc');
+
+                if (isset($request->date_start) && isset($request->date_end)) {
+                    $dateStart = date('Y-m-d', strtotime($request->date_start));
+                    $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                    $query->where('date', '>=', $dateStart)->where('date', '<=', $dateEnd);
+                }
+
+                $ViewChargeGasolineByCarJpa = $query->get();
                 $mount_cars++;
                 $chanrgesGasoline = array();
 
@@ -610,7 +617,7 @@ class ChargeGasolineController extends Controller
                     $price_all_by_car += $chargeGasoline['price_all'];
                     $chanrgesGasoline[] = $chargeGasoline;
 
-                    $charges_gasoline .="
+                        $charges_gasoline .= "
                             <tr>
                                 <td colspan='2'><center>----------------------------------------</center></td>
                             </tr>
@@ -649,7 +656,6 @@ class ChargeGasolineController extends Controller
                                     </center>
                                 </td>
                             </tr>
-                      
                     ";
                 }
 
@@ -657,7 +663,9 @@ class ChargeGasolineController extends Controller
 
                 $viewcarsJpa[] = $viewCar;
 
-                $cars .="
+                if ($request->add_bills) {
+
+                    $cars .= "
                 <table>
                     <thead>
                         <tr>
@@ -689,6 +697,11 @@ class ChargeGasolineController extends Controller
                     </tbody>
                 </table>
                 ";
+                }else{
+                    $cars='
+                    <center><h3><i>NO SE MUESTRAN LOS DETALLES</i></h3></center>
+                    ';
+                }
             }
 
             $template = str_replace(
@@ -715,14 +728,6 @@ class ChargeGasolineController extends Controller
             $pdf->render();
             return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
 
-            // $response = new Response();
-            // $response->setStatus(200);
-            // $response->setMessage('operacion correcta');
-            // $response->setData($viewcarsJpa);
-            // return response(
-            //     $response->toArray(),
-            //     $response->getStatus()
-            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
