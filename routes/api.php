@@ -557,6 +557,7 @@ Route::post('/charge_gasoline/paginate', [ChargeGasolineController::class, 'pagi
 Route::get('/charge_gasolineimg/{id}/{zize}', [ChargeGasolineController::class, 'image']);
 Route::post('/charge_gasoline/report', [ChargeGasolineController::class, 'generateReportByCar']);
 Route::post('/charge_gasoline/report/detail', [ChargeGasolineController::class, 'generateReportdetailsByCar']);
+Route::post('/charge_gasoline/report/general', [ChargeGasolineController::class, 'generateReportGeneral']);
 
 
 

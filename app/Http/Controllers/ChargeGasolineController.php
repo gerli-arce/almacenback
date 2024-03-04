@@ -9,6 +9,8 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\ViewUsers;
+use App\Models\ViewCars;
+use App\Models\Branch;
 use App\Models\ChargeGasoline;
 use App\Models\ViewChargeGasolineByCar;
 use Dompdf\Dompdf;
@@ -550,6 +552,179 @@ class ChargeGasolineController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportGeneral(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
+
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+
+            $ViewCarsJpa = ViewCars::where('branch__id', $branch_->id)->orderBy('id', 'desc')->whereNotNull('status')->get();
+
+            $viewcarsJpa = array();
+
+            foreach($ViewCarsJpa as $ViewCarJpa){
+                $viewCar = gJSON::restore($ViewCarJpa->toArray(), '__');
+
+                $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::where('_car', $viewCar['id'])
+                ->orderBy('date', 'desc')->get();
+
+                $chanrgesGasoline = array();
+                foreach($ViewChargeGasolineByCarJpa as $ChangeGasolineJpa){
+                    $chargeGasoline = gJSON::restore($ChangeGasolineJpa->toArray(), '__');
+                    $chanrgesGasoline[] = $chargeGasoline;
+                }
+
+                $viewCar['charges'] = $chanrgesGasoline;
+
+                $viewcarsJpa[] = $viewCar;
+            }
+
+
+
+
+            // $query = ViewChargeGasolineByCar::where('_car', $request->car['id'])
+            // ->orderBy('date', 'desc');
+
+            // if(isset($request->date_start) && isset($request->date_end)){
+            //     $dateStart = date('Y-m-d', strtotime($request->date_start));
+            //     $dateEnd = date('Y-m-d', strtotime($request->date_end));
+            //     $query->where('date','>=', $dateStart)->where('date','<=', $dateEnd)
+            //     ;
+            // }
+
+            // $ViewChargeGasolineByCarJpa = $query->get();
+
+            // $summary = '';
+
+            // $changesGasolineJpa = array();
+            // $price_all = 0;
+            // $num_charges = 0;
+            // foreach ($ViewChargeGasolineByCarJpa as $ChargegasolineJpa) {
+            //     $chargeGasoline = gJSON::restore($ChargegasolineJpa->toArray(), '__');
+            //     $price_all += $chargeGasoline['price_all'];
+            //     $num_charges++;
+            //     if($request->add_bills){
+            //         $summary .="
+            //             <div style='page-break-before: always;'>
+            //                 <table class='table-details'>
+            //                     <thead>
+            //                         <tr>
+            //                             <td colspan='2'>
+            //                                 CARGA DE {$chargeGasoline['gasoline_type']}
+            //                             </td>
+            //                         </tr>
+            //                     </thead>
+            //                     <tbody>
+            //                         <tr>
+            //                             <td class='n'>TÉCNICO</td>
+            //                             <td>{$chargeGasoline['technical']['name']} {$chargeGasoline['technical']['lastname']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n'>FECHA</td>
+            //                             <td>{$chargeGasoline['date']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n'>TIPO DE COMBUSTIBLE</td>
+            //                             <td>{$chargeGasoline['gasoline_type']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n'>MONTO TOTAL</td>
+            //                             <td>S/{$chargeGasoline['price_all']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n'>EJECUTIVO</td>
+            //                             <td>{$chargeGasoline['person_creation']['name']} {$chargeGasoline['person_creation']['lastname']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n'>DESCRIPCIÓN</td>
+            //                             <td>{$chargeGasoline['description']}</td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td class='n' colspan='2'>
+            //                                 <center>FACTURA</center>
+            //                             </td>
+            //                         </tr>
+            //                         <tr>
+            //                             <td colspan='2'>
+            //                                 <center>
+            //                                     <img src='https://almacen.fastnetperu.com.pe/api/charge_gasolineimg/{$chargeGasoline['id']}/full' class='img_bill'>
+            //                                 </center>
+            //                             </td>
+            //                         </tr>
+            //                     </tbody>
+                               
+            //                 </table>
+            //             <div>
+            //         ";
+            //     }
+
+            //     $changesGasolineJpa[] = $chargeGasoline;
+            // }
+
+            // $user = ViewUsers::select([
+            //     'id',
+            //     'username',
+            //     'person__name',
+            //     'person__lastname',
+            // ])->where('id', $userid)->first();
+
+            // $template = str_replace(
+            //     [
+            //         '{placa}',
+            //         '{num_charges}',
+            //         '{date_start}',
+            //         '{date_end}',
+            //         '{price_all}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         $request->car['placa'],
+            //         $num_charges,
+            //         $request->date_start,
+            //         $request->date_end,
+            //         $price_all,
+            //         $summary,
+            //     ],
+            //     $template
+            // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('operacion correcta');
+            $response->setData($viewcarsJpa);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
