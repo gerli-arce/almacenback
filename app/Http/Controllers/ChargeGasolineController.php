@@ -54,6 +54,8 @@ class ChargeGasolineController extends Controller
                 $ChargeGasolineJpa->description = $request->description;
             }
             $ChargeGasolineJpa->price_all = $request->price_all;
+            $ChargeGasolineJpa->igv = $request->igv;
+            $ChargeGasolineJpa->price_engraved = $request->price_engraved;
 
             if (
                 isset($request->image_type) &&
@@ -140,6 +142,14 @@ class ChargeGasolineController extends Controller
 
             if (isset($request->price_all)) {
                 $ChargeGasolineJpa->price_all = $request->price_all;
+            }
+
+            if (isset($request->igv)) {
+                $ChargeGasolineJpa->igv = $request->igv;
+            }
+
+            if (isset($request->price_engraved)) {
+                $ChargeGasolineJpa->price_engraved = $request->price_engraved;
             }
 
             if (isset($request->gasoline_type)) {
