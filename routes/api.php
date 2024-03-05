@@ -558,7 +558,11 @@ Route::get('/charge_gasolineimg/{id}/{zize}', [ChargeGasolineController::class, 
 Route::post('/charge_gasoline/report', [ChargeGasolineController::class, 'generateReportByCar']);
 Route::post('/charge_gasoline/report/detail', [ChargeGasolineController::class, 'generateReportdetailsByCar']);
 Route::post('/charge_gasoline/report/general', [ChargeGasolineController::class, 'generateReportGeneral']);
-
+Route::post('/charge_gasoline/setimage', [ChargeGasolineController::class, 'setImage']);
+Route::patch('/charge_gasoline/setimage', [ChargeGasolineController::class, 'updateImage']);
+Route::get('/charge_gasoline/image/{id}', [ChargeGasolineController::class, 'getImages']);
+Route::delete('/charge_gasoline/image/{id}', [ChargeGasolineController::class, 'deleteImage']);
+Route::get('/charge_gasolineimgs/{id}/{zize}', [ChargeGasolineController::class, 'images']);
 
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);

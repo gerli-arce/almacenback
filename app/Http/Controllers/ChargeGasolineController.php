@@ -13,6 +13,7 @@ use App\Models\ViewCars;
 use App\Models\Branch;
 use App\Models\ChargeGasoline;
 use App\Models\ViewChargeGasolineByCar;
+use App\Models\PhotographsByChargeGasoline;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -81,8 +82,24 @@ class ChargeGasolineController extends Controller
             $ChargeGasolineJpa->status = "1";
             $ChargeGasolineJpa->save();
 
+            $res = [
+                'id' => $ChargeGasolineJpa->id,
+                '_technical' => $ChargeGasolineJpa->_technical,
+                '_car' => $ChargeGasolineJpa->_car,
+                'date' => $ChargeGasolineJpa->date,
+                'gasoline_type' => $ChargeGasolineJpa->gasoline_type,
+                'description' => $ChargeGasolineJpa->description,
+                'price_all' => $ChargeGasolineJpa->price_all,
+                'creation_date' => $ChargeGasolineJpa->creation_date,
+                '_creation_user' => $ChargeGasolineJpa->_creation_user,
+                'update_date' => $ChargeGasolineJpa->update_date,
+                '_update_user' => $ChargeGasolineJpa->_update_user,
+                'status' => $ChargeGasolineJpa->status,
+            ];
+
             $response->setStatus(200);
             $response->setMessage('Carga de gasolina creada correctamente');
+            $response->setData($res);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
@@ -155,8 +172,24 @@ class ChargeGasolineController extends Controller
             $ChargeGasolineJpa->_update_user = $userid;
             $ChargeGasolineJpa->save();
 
+            $res = [
+                'id' => $ChargeGasolineJpa->id,
+                '_technical' => $ChargeGasolineJpa->_technical,
+                '_car' => $ChargeGasolineJpa->_car,
+                'date' => $ChargeGasolineJpa->date,
+                'gasoline_type' => $ChargeGasolineJpa->gasoline_type,
+                'description' => $ChargeGasolineJpa->description,
+                'price_all' => $ChargeGasolineJpa->price_all,
+                'creation_date' => $ChargeGasolineJpa->creation_date,
+                '_creation_user' => $ChargeGasolineJpa->_creation_user,
+                'update_date' => $ChargeGasolineJpa->update_date,
+                '_update_user' => $ChargeGasolineJpa->_update_user,
+                'status' => $ChargeGasolineJpa->status,
+            ];
+
             $response->setStatus(200);
             $response->setMessage('Revisión técnica actualizada correctamente');
+            $response->setData($res);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
@@ -352,6 +385,245 @@ class ChargeGasolineController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $modelJpa = PhotographsByChargeGasoline::select([
+                "photographs_by_charge_gasoline.image_$size as image_content",
+                'photographs_by_charge_gasoline.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$modelJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$modelJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $modelJpa->image_content;
+            $type = $modelJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->_charge_gasoline)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $imagesByReviewJpa = new PhotographsByChargeGasoline();
+            $imagesByReviewJpa->_charge_gasoline = $request->_charge_gasoline;
+            $imagesByReviewJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $imagesByReviewJpa->image_type = $request->image_type;
+                    $imagesByReviewJpa->image_mini = base64_decode($request->image_mini);
+                    $imagesByReviewJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $imagesByReviewJpa->_creation_user = $userid;
+            $imagesByReviewJpa->creation_date = gTrace::getDate('mysql');
+            $imagesByReviewJpa->status = "1";
+            $imagesByReviewJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
+            ->where('_charge_gasoline', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($ImagesByReview->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'read', 'update')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $ImagesByReviewJpa = PhotographsByChargeGasoline::find($request->id);
+            $ImagesByReviewJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $ImagesByReviewJpa->image_type = $request->image_type;
+                    $ImagesByReviewJpa->image_mini = base64_decode($request->image_mini);
+                    $ImagesByReviewJpa->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $ImagesByReviewJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen actualizada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $ImagesByReviewJpa = PhotographsByChargeGasoline::find($id);
+            $ImagesByReviewJpa->status = null;
+            $ImagesByReviewJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
         } finally {
             return response(
                 $response->toArray(),
