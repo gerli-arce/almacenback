@@ -577,18 +577,27 @@ class ChargeGasolineController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
 
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
             $HOST = 'https://almacen.fastnetperu.com.pe/api';
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
             $ViewCarsJpa = ViewCars::where('branch__id', $branch_->id)->orderBy('id', 'desc')->whereNotNull('status')->get();
 
-
             $viewcarsJpa = array();
 
             $price_all = 0;
             $mount_cars = 0;
             $charges_all = 0;
+            $num_charges_gasoline = 0;
+            $num_charges_petroleo = 0;
+            $num_charges_glp = 0;
 
             $cars = '';
             foreach ($ViewCarsJpa as $ViewCarJpa) {
@@ -617,7 +626,15 @@ class ChargeGasolineController extends Controller
                     $price_all_by_car += $chargeGasoline['price_all'];
                     $chanrgesGasoline[] = $chargeGasoline;
 
-                        $charges_gasoline .= "
+                    if($chargeGasoline['gasoline_type']== "GASOLINA"){
+                            $num_charges_gasoline++;
+                    }else if($chargeGasoline['gasoline_type']== "PETROLEO"){
+                            $num_charges_petroleo++;
+                    }else if($chargeGasoline['gasoline_type']== "GLP"){
+                            $num_charges_glp++;
+                    }
+
+                    $charges_gasoline .= "
                             <tr>
                                 <td colspan='2'><center>----------------------------------------</center></td>
                             </tr>
@@ -697,8 +714,8 @@ class ChargeGasolineController extends Controller
                     </tbody>
                 </table>
                 ";
-                }else{
-                    $cars='
+                } else {
+                    $cars = '
                     <center><h3><i>NO SE MUESTRAN LOS DETALLES</i></h3></center>
                     ';
                 }
@@ -706,7 +723,13 @@ class ChargeGasolineController extends Controller
 
             $template = str_replace(
                 [
+                    '{branch}',
+                    '{ejecutive}',
+                    '{date_creation}',
                     '{num_cars}',
+                    '{num_charges_gasoline}',
+                    '{num_charges_petroleo}',
+                    '{num_charges_glp}',
                     '{num_charges}',
                     '{date_start}',
                     '{date_end}',
@@ -714,7 +737,13 @@ class ChargeGasolineController extends Controller
                     '{cars}',
                 ],
                 [
+                    $branch_->name,
+                    $user->person__name.' '.$user->person__lastname,
+                    gTrace::getDate('mysql'),
                     $mount_cars,
+                    $num_charges_gasoline,
+                    $num_charges_petroleo,
+                    $num_charges_glp,
                     $charges_all,
                     $request->date_start,
                     $request->date_end,
@@ -727,7 +756,6 @@ class ChargeGasolineController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('REPORTE DE CARGAS DE COMBUSTIBLE.pdf');
-
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
