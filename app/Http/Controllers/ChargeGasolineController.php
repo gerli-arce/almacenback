@@ -10,6 +10,7 @@ use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\ViewUsers;
 use App\Models\ViewCars;
+use App\Models\User;
 use App\Models\Branch;
 use App\Models\ChargeGasoline;
 use App\Models\ViewChargeGasolineByCar;
@@ -666,6 +667,36 @@ class ChargeGasolineController extends Controller
                 'person__lastname',
             ])->where('id', $userid)->first();
 
+            $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
+            ->where('_charge_gasoline', $request->id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images= '';
+            $count = 1;
+
+            foreach($ImagesByReview as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-' 
+                       class='evidences'
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
             $summary = '';
 
             $template = str_replace(
@@ -676,8 +707,11 @@ class ChargeGasolineController extends Controller
                     '{date}',
                     '{gasoline}',
                     '{price_all}',
+                    '{igv}',
+                    '{price_engraved}',
                     '{description}',
                     '{summary}',
+                    '{images}',
                 ],
                 [
                     $ViewChargeGasolineByCarJpa->id,
@@ -686,8 +720,11 @@ class ChargeGasolineController extends Controller
                     $ViewChargeGasolineByCarJpa->date,
                     $ViewChargeGasolineByCarJpa->gasoline_type,
                     $ViewChargeGasolineByCarJpa->price_all,
+                    $ViewChargeGasolineByCarJpa->igv,
+                    $ViewChargeGasolineByCarJpa->price_engraved,
                     $ViewChargeGasolineByCarJpa->description,
                     $summary,
+                    $images,
                 ],
                 $template
             );
