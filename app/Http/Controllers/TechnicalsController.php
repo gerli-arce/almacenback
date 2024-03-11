@@ -2256,7 +2256,14 @@ class TechnicalsController extends Controller
             $dat_technical = People::find($request->id);
 
             $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'PRODUCTO')
-                ->whereNotNull('status')->get();
+                ->whereNotNull('status')
+                ->where(function ($q) use ($request) {
+                    $q->where('mount_new', '>', 0);
+                    $q->orWhere('mount_second', '>', 0);
+                    $q->orWhere('mount_ill_fated', '>', 0);
+                })
+                ->whereNot('type', 'LEND')
+                ->get();
 
             $products = array();
             foreach ($ViewProductByTechnicalJpa as $productJpa) {
@@ -2268,8 +2275,8 @@ class TechnicalsController extends Controller
 
             $summary = "";
 
-            foreach($products as $product){
-                
+            foreach ($products as $product) {
+
                 $url = "https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini";
 
                 $image = "
@@ -2287,12 +2294,12 @@ class TechnicalsController extends Controller
                     ";
                 $detail = '';
 
-                if($product['product']['type'] == 'MATERIAL'){
+                if ($product['product']['type'] == 'MATERIAL') {
                     $detail =
-                    "
+                        "
                     <center>{$product['product']['model']['unity']['name']} </center>
                     ";
-                }else{
+                } else {
                     $detail = "
                     <div>
                         <p><strong>Mac:</strong>{$product['product']['mac']}</p>
@@ -2301,19 +2308,19 @@ class TechnicalsController extends Controller
                     ";
                 }
 
-                 $summary .="
+                $summary .= "
                  <tr>
                     <td><center>{$count}</center></td>
                     <td><center>{$image}</center></td>
                     <td><center>{$product_}</center></td>
-                    <td><center>". ($product['mount_new'] == floor($product['mount_new']) ? floor($product['mount_new']) : $product['mount_new']) ."</center></td>
-                    <td><center>". ($product['mount_second'] == floor($product['mount_second']) ? floor($product['mount_second']) : $product['mount_second']) ."</center></td>
-                    <td><center>".($product['mount_ill_fated'] == floor($product['mount_ill_fated']) ? floor($product['mount_ill_fated']) : $product['mount_ill_fated']) ."</center></td>
+                    <td><center>" . ($product['mount_new'] == floor($product['mount_new']) ? floor($product['mount_new']) : $product['mount_new']) . "</center></td>
+                    <td><center>" . ($product['mount_second'] == floor($product['mount_second']) ? floor($product['mount_second']) : $product['mount_second']) . "</center></td>
+                    <td><center>" . ($product['mount_ill_fated'] == floor($product['mount_ill_fated']) ? floor($product['mount_ill_fated']) : $product['mount_ill_fated']) . "</center></td>
                     <td>{$detail}</td>
                 </tr>
-                 
-                 "; 
-                 $count++;
+
+                 ";
+                $count++;
             }
 
             $template = str_replace(
@@ -2385,8 +2392,16 @@ class TechnicalsController extends Controller
 
             $dat_technical = People::find($request->id);
 
-            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)->where('type', 'EPP')
-                ->whereNotNull('status')->get();
+            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
+                ->where('type', 'EPP')
+                ->whereNotNull('status')
+                ->where(function ($q) use ($request) {
+                    $q->where('mount_new', '>', 0);
+                    $q->orWhere('mount_second', '>', 0);
+                    $q->orWhere('mount_ill_fated', '>', 0);
+                })
+                ->whereNot('type', 'LEND')
+                ->get();
 
             $products = array();
             foreach ($ViewProductByTechnicalJpa as $productJpa) {
@@ -2398,8 +2413,8 @@ class TechnicalsController extends Controller
 
             $summary = "";
 
-            foreach($products as $product){
-                
+            foreach ($products as $product) {
+
                 $url = "https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini";
 
                 $image = "
@@ -2417,12 +2432,12 @@ class TechnicalsController extends Controller
                     ";
                 $detail = '';
 
-                if($product['product']['type'] == 'MATERIAL'){
+                if ($product['product']['type'] == 'MATERIAL') {
                     $detail =
-                    "
+                        "
                     <center>{$product['product']['model']['unity']['name']} </center>
                     ";
-                }else{
+                } else {
                     $detail = "
                     <div>
                         <p><strong>Mac:</strong>{$product['product']['mac']}</p>
@@ -2431,19 +2446,19 @@ class TechnicalsController extends Controller
                     ";
                 }
 
-                 $summary .="
+                $summary .= "
                  <tr>
                     <td><center>{$count}</center></td>
                     <td><center>{$image}</center></td>
                     <td><center>{$product_}</center></td>
-                    <td><center>". ($product['mount_new'] == floor($product['mount_new']) ? floor($product['mount_new']) : $product['mount_new']) ."</center></td>
-                    <td><center>". ($product['mount_second'] == floor($product['mount_second']) ? floor($product['mount_second']) : $product['mount_second']) ."</center></td>
-                    <td><center>".($product['mount_ill_fated'] == floor($product['mount_ill_fated']) ? floor($product['mount_ill_fated']) : $product['mount_ill_fated']) ."</center></td>
+                    <td><center>" . ($product['mount_new'] == floor($product['mount_new']) ? floor($product['mount_new']) : $product['mount_new']) . "</center></td>
+                    <td><center>" . ($product['mount_second'] == floor($product['mount_second']) ? floor($product['mount_second']) : $product['mount_second']) . "</center></td>
+                    <td><center>" . ($product['mount_ill_fated'] == floor($product['mount_ill_fated']) ? floor($product['mount_ill_fated']) : $product['mount_ill_fated']) . "</center></td>
                     <td>{$detail}</td>
                 </tr>
-                 
-                 "; 
-                 $count++;
+
+                 ";
+                $count++;
             }
 
             $template = str_replace(

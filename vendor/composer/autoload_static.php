@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit66624e3a529372758eb42c58101c58b4
+class ComposerStaticInitfcbe03ad6904f5802513056ff962e134
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -625,6 +625,7 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
         'App\\Http\\Controllers\\CarsController' => __DIR__ . '/../..' . '/app/Http/Controllers/CarsController.php',
         'App\\Http\\Controllers\\CategoriesController' => __DIR__ . '/../..' . '/app/Http/Controllers/CategoriesController.php',
         'App\\Http\\Controllers\\ChangesCarController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChangesCarController.php',
+        'App\\Http\\Controllers\\ChargeGasolineController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChargeGasolineController.php',
         'App\\Http\\Controllers\\ChecklistController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChecklistController.php',
         'App\\Http\\Controllers\\ClientsController' => __DIR__ . '/../..' . '/app/Http/Controllers/ClientsController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
@@ -684,6 +685,7 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
         'App\\Models\\Cars' => __DIR__ . '/../..' . '/app/Models/Cars.php',
         'App\\Models\\Category' => __DIR__ . '/../..' . '/app/Models/Category.php',
         'App\\Models\\ChangesCar' => __DIR__ . '/../..' . '/app/Models/ChangesCar.php',
+        'App\\Models\\ChargeGasoline' => __DIR__ . '/../..' . '/app/Models/ChargeGasoline.php',
         'App\\Models\\CheckByReview' => __DIR__ . '/../..' . '/app/Models/CheckByReview.php',
         'App\\Models\\CheckListCar' => __DIR__ . '/../..' . '/app/Models/CheckListCar.php',
         'App\\Models\\DetailSale' => __DIR__ . '/../..' . '/app/Models/DetailSale.php',
@@ -701,6 +703,7 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
         'App\\Models\\People' => __DIR__ . '/../..' . '/app/Models/People.php',
         'App\\Models\\Peoples' => __DIR__ . '/../..' . '/app/Models/Peoples.php',
         'App\\Models\\Permission' => __DIR__ . '/../..' . '/app/Models/Permission.php',
+        'App\\Models\\PhotographsByChargeGasoline' => __DIR__ . '/../..' . '/app/Models/PhotographsByChargeGasoline.php',
         'App\\Models\\PhotographsByPlant' => __DIR__ . '/../..' . '/app/Models/PhotographsByPlant.php',
         'App\\Models\\PhotographsByReviewTechnical' => __DIR__ . '/../..' . '/app/Models/PhotographsByReviewTechnical.php',
         'App\\Models\\PhotographsByRoom' => __DIR__ . '/../..' . '/app/Models/PhotographsByRoom.php',
@@ -732,6 +735,7 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
         'App\\Models\\View' => __DIR__ . '/../..' . '/app/Models/View.php',
         'App\\Models\\ViewCars' => __DIR__ . '/../..' . '/app/Models/ViewCars.php',
         'App\\Models\\ViewChangesCar' => __DIR__ . '/../..' . '/app/Models/ViewChangesCar.php',
+        'App\\Models\\ViewChargeGasolineByCar' => __DIR__ . '/../..' . '/app/Models/ViewChargeGasolineByCar.php',
         'App\\Models\\ViewCheckByReview' => __DIR__ . '/../..' . '/app/Models/ViewCheckByReview.php',
         'App\\Models\\ViewComponentsByPart' => __DIR__ . '/../..' . '/app/Models/ViewComponentsByPart.php',
         'App\\Models\\ViewDetailEntry' => __DIR__ . '/../..' . '/app/Models/ViewDetailEntry.php',
@@ -4694,6 +4698,7 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
         'PharIo\\Manifest\\ManifestLoader' => __DIR__ . '/..' . '/phar-io/manifest/src/ManifestLoader.php',
         'PharIo\\Manifest\\ManifestLoaderException' => __DIR__ . '/..' . '/phar-io/manifest/src/exceptions/ManifestLoaderException.php',
         'PharIo\\Manifest\\ManifestSerializer' => __DIR__ . '/..' . '/phar-io/manifest/src/ManifestSerializer.php',
+        'PharIo\\Manifest\\NoEmailAddressException' => __DIR__ . '/..' . '/phar-io/manifest/src/exceptions/NoEmailAddressException.php',
         'PharIo\\Manifest\\PhpElement' => __DIR__ . '/..' . '/phar-io/manifest/src/xml/PhpElement.php',
         'PharIo\\Manifest\\PhpExtensionRequirement' => __DIR__ . '/..' . '/phar-io/manifest/src/values/PhpExtensionRequirement.php',
         'PharIo\\Manifest\\PhpVersionRequirement' => __DIR__ . '/..' . '/phar-io/manifest/src/values/PhpVersionRequirement.php',
@@ -7372,10 +7377,10 @@ class ComposerStaticInit66624e3a529372758eb42c58101c58b4
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit66624e3a529372758eb42c58101c58b4::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit66624e3a529372758eb42c58101c58b4::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit66624e3a529372758eb42c58101c58b4::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit66624e3a529372758eb42c58101c58b4::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitfcbe03ad6904f5802513056ff962e134::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitfcbe03ad6904f5802513056ff962e134::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitfcbe03ad6904f5802513056ff962e134::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitfcbe03ad6904f5802513056ff962e134::$classMap;
 
         }, null, ClassLoader::class);
     }
