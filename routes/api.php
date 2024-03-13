@@ -551,6 +551,7 @@ Route::delete('/review_technical/image/{id}', [ReviewTechnicalController::class,
 // CHARGE GASOLINE
 Route::post('/charge_gasoline', [ChargeGasolineController::class, 'store']);
 Route::patch('/charge_gasoline', [ChargeGasolineController::class, 'update']);
+Route::get('/charge_gasoline/{id}', [ChargeGasolineController::class, 'getById']);
 Route::delete('/charge_gasoline/{id}', [ChargeGasolineController::class, 'delete']);
 Route::post('/charge_gasoline/restore', [ChargeGasolineController::class, 'restore']);
 Route::post('/charge_gasoline/paginate', [ChargeGasolineController::class, 'paginate']);

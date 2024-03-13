@@ -114,6 +114,44 @@ class ChargeGasolineController extends Controller
         }
     }
 
+    public function getById(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+    
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+    
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para ver la revisión técnica');
+            }
+    
+            $ChargeCarJpa = ViewChargeGasolineByCar::select('*')
+                ->where('id', $id)
+                ->first();
+    
+            if (!$ChargeCarJpa) {
+                throw new Exception('Carga de gasolina no encontrada');
+            }
+    
+            $review = gJSON::restore($ChargeCarJpa->toArray(), '__');
+    
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($review);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine() . 'FL: ' . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function update(Request $request)
     {
         $response = new Response();
