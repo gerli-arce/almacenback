@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\gLibraries\gTrace;
+use App\gLibraries\gJson;
 use App\gLibraries\gValidate;
 use App\Models\ChargeGasoline;
 use App\Models\Response;
 use App\Models\TravelExpenses;
+use App\Models\ViewTravelExpenses;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 
 class TravelExpensesController extends Controller
 {
@@ -35,6 +39,7 @@ class TravelExpensesController extends Controller
             }
 
             $TravelExpensesJpa = new TravelExpenses();
+            $TravelExpensesJpa->_technical = $request->technical['id'];
             $TravelExpensesJpa->mobility_type = $request->mobility_type;
             $TravelExpensesJpa->date_expense = $request->date_expense;
             $TravelExpensesJpa->description = $request->description_charge_gasoline;
@@ -105,7 +110,7 @@ class TravelExpensesController extends Controller
                 $ChargeGasolineJpa->status = "1";
                 $ChargeGasolineJpa->save();
 
-                $TravelExpensesJpa->_change_gasoline->$ChargeGasolineJpa->id;
+                $TravelExpensesJpa->_change_gasoline = $ChargeGasolineJpa->id;
                 $TravelExpensesJpa->_car = $request->car_movility;
             }
 
@@ -128,4 +133,84 @@ class TravelExpensesController extends Controller
             );
         }
     }
+
+    public function paginate(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $query = ViewTravelExpenses::select('*')
+                ->orderBy($request->order['column'], $request->order['dir']);
+
+            if (!$request->all) {
+                $query->whereNotNull('status');
+            }
+
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                if ($column == 'date' || $column == '*') {
+                    $q->orWhere('date', $type, $value);
+                }
+                if ($column == 'mobility_type' || $column == '*') {
+                    $q->orWhere('mobility_type', $type, $value);
+                }
+                if ($column == 'date_expense' || $column == '*') {
+                    $q->orWhere('date_expense', $type, $value);
+                }
+                if ($column == 'price_all' || $column == '*') {
+                    $q->orWhere('price_all', $type, $value);
+                }
+                if ($column == 'description' || $column == '*') {
+                    $q->orWhere('description', $type, $value);
+                }
+                if ($column == 'status' || $column == '*') {
+                    $q->orWhere('status', $type, $value);
+                }
+            })->where('_technical', $request->_technical);
+
+            $iTotalDisplayRecords = $query->count();
+            $ChargesCarJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $charges_gasoline = array();
+            foreach ($ChargesCarJpa as $ChargecarJpa) {
+                $review = gJSON::restore($ChargecarJpa->toArray(), '__');
+                $charges_gasoline[] = $review;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewTravelExpenses::where('_car', $request->_car)->count());
+            $response->setData($charges_gasoline);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine() . 'FL: ' . $th->getFile());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
 }

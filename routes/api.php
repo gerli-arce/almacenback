@@ -569,6 +569,7 @@ Route::get('/charge_gasolineimgs/{id}/{zize}', [ChargeGasolineController::class,
 Route::post('/travel_expenses', [TravelExpensesController::class, 'store']);
 Route::patch('/travel_expenses', [TravelExpensesController::class, 'update']);
 Route::delete('/travel_expenses', [TravelExpensesController::class, 'delete']);
+Route::post('/travel_expenses/paginate', [TravelExpensesController::class, 'paginate']);
 
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
