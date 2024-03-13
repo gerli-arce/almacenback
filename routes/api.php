@@ -15,7 +15,7 @@ use App\Http\Controllers\{
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
-    ChangesCarController, ReviewTechnicalController, ChargeGasolineController
+    ChangesCarController, ReviewTechnicalController, ChargeGasolineController, TravelExpensesController
 };
 
 /*
@@ -563,6 +563,12 @@ Route::patch('/charge_gasoline/setimage', [ChargeGasolineController::class, 'upd
 Route::get('/charge_gasoline/image/{id}', [ChargeGasolineController::class, 'getImages']);
 Route::delete('/charge_gasoline/image/{id}', [ChargeGasolineController::class, 'deleteImage']);
 Route::get('/charge_gasolineimgs/{id}/{zize}', [ChargeGasolineController::class, 'images']);
+
+
+// TRAVEL EXPENSES
+Route::post('/travel_expenses', [TravelExpensesController::class, 'store']);
+Route::patch('/travel_expenses', [TravelExpensesController::class, 'update']);
+Route::delete('/travel_expenses', [TravelExpensesController::class, 'delete']);
 
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
