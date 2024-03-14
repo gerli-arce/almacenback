@@ -627,6 +627,7 @@ class TravelExpensesController extends Controller
                     '{issue_long_date}',
                     '{description}',
                     '{technical}',
+                    '{date}',
                     '{movility}',
                     '{summary}',
                     '{total}'
@@ -637,6 +638,7 @@ class TravelExpensesController extends Controller
                     gTrace::getDate('long'),
                     strtoupper($TravelExpenses['description']),
                     strtoupper($request->technical['name'].' '.$request->technical['lastname']),
+                    $request->date_expense,
                     $item_transport,
                     $summary,
                     $TravelExpenses['price_all']
