@@ -30,7 +30,7 @@ class TravelExpensesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'create')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'create')) {
                 throw new Exception("No tienes permisos para realizar esta acción");
             }
 
@@ -171,7 +171,7 @@ class TravelExpensesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos');
             }
 
@@ -246,7 +246,7 @@ class TravelExpensesController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'update')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'update')) {
                 throw new Exception("No tienes permisos para realizar esta acción");
             }
 
@@ -437,7 +437,7 @@ class TravelExpensesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception("No tienes permisos para realizar esta acción");
             }
             $TravelExpensesJpa = TravelExpenses::find($request->id);
@@ -469,7 +469,7 @@ class TravelExpensesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'travel_expenses', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception("No tienes permisos para realizar esta acción");
             }
             $TravelExpensesJpa = TravelExpenses::find($request->id);
@@ -499,7 +499,7 @@ class TravelExpensesController extends Controller
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos');
             }
             $options = new Options();
