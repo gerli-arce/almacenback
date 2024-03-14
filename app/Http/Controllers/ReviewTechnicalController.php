@@ -74,7 +74,7 @@ class ReviewTechnicalController extends Controller
                             <td><center >{$counter}</center></td>
                             <td><center >{$component['component']}</center></td>
                             <td><center >S/{$price_unity}</center></td>
-                            <td><center >S/{$mount}</center></td>
+                            <td><center >{$mount}</center></td>
                             <td><center >S/{$price_total}</center></td>
                         </tr>
                     ";

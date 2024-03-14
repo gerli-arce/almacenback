@@ -6,9 +6,14 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\ChargeGasoline;
+use App\Models\Branch;
 use App\Models\Response;
 use App\Models\TravelExpenses;
 use App\Models\ViewTravelExpenses;
+use App\Models\ViewUsers;
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -481,6 +486,172 @@ class TravelExpensesController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'LN: ' . $th->getLine());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function GenerareReportByExpense(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportExpense.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $TravelExpenses = TravelExpenses::select([
+                'id',
+                '_change_gasoline',
+                '_car',
+                '_technical',
+                'mobility_type',
+                'date_expense',
+                'expenses',
+                'expense_price_all',
+                'price_drive',
+                'description',
+                'price_all',
+                '_creation_user',
+                'creation_date',
+                '_update_user',
+                'update_date',
+                'status',
+            ])->find($request->id);
+
+            $TravelExpenses->expenses = gJSON::parse($TravelExpenses->expenses);
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+       
+            $summary = '';
+            $item_transport = '';
+
+            if($TravelExpenses['mobility_type'] == "MOVILIDAD"){
+                $ChargeGasolineJpa = ChargeGasoline::select([
+                    'id',
+                    'gasoline_type',
+                    'price_all',
+                    'igv',
+                    'price_engraved'
+                    ])->where('id', $TravelExpenses['_change_gasoline'])->first();
+
+                $item_transport .= "
+                <tr>
+                    <td><center >1</center></td>
+                    <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}</center></td>
+                    <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
+                    <td><center >1</center></td>
+                    <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
+                </tr>
+                ";
+            }else{
+                $item_transport .= "
+                <tr>
+                    <td><center >1</center></td>
+                    <td><center >TRANSPORTE - {$TravelExpenses['mobility_type']}</center></td>
+                    <td><center >S/{$TravelExpenses['price_drive']}</center></td>
+                    <td><center >1</center></td>
+                    <td><center >S/{$TravelExpenses['price_drive']}</center></td>
+                </tr>
+                ";
+            }
+
+            $counter = 1;
+            foreach ($TravelExpenses->expenses as $expenses) {
+
+                $price_unity = isset($expenses['price_unity']) ? $expenses['price_unity'] : $expenses['price'];
+                $mount = isset($expenses['mount']) ? $expenses['mount'] : 1;
+                $price_total = isset($expenses['price_total']) ? $expenses['price_total'] : $expenses['price'];
+                
+                $summary .= "
+                        <tr>
+                            <td><center >{$counter}</center></td>
+                            <td><center >".strtoupper($expenses['description'])."</center></td>
+                            <td><center >S/{$price_unity}</center></td>
+                            <td><center >{$mount}</center></td>
+                            <td><center >S/{$price_total}</center></td>
+                        </tr>
+                    ";
+                $counter++;
+            }
+
+            // // $PhotographsByReviewTechnicalJpa = PhotographsByReviewTechnical::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            // ->where('_review',$request->id)->whereNotNUll('status')
+            // ->orderBy('id', 'desc')
+            // ->get();
+
+            // $images= '';
+            // $count = 1;
+
+            // foreach($PhotographsByReviewTechnicalJpa as $image){
+
+            //     $userCreation = User::select([
+            //         'users.id as id',
+            //         'users.username as username',
+            //     ])
+            //         ->where('users.id', $image->_creation_user)->first();
+
+            //     $images .= "
+            //     <div style='page-break-before: always;'>
+            //         <p><strong>{$count}) {$image->description}</strong></p>
+            //         <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+            //         <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+            //         <center>
+            //             <img src='http://almacen.fastnetperu.com.pe/api/review_technicalimg/{$image->id}/full' alt='-' 
+            //            class='evidences'
+            //         </center>
+            //     </div>
+            //     ";
+            //     $count +=1;
+            // }
+
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{description}',
+                    '{technical}',
+                    '{movility}',
+                    '{summary}',
+                    '{total}'
+                ],
+                [
+                    $request->id,
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    strtoupper($TravelExpenses['description']),
+                    strtoupper($request->technical['name'].' '.$request->technical['lastname']),
+                    $item_transport,
+                    $summary,
+                    $TravelExpenses['price_all']
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()

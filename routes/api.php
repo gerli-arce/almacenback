@@ -573,6 +573,7 @@ Route::delete('/travel_expenses', [TravelExpensesController::class, 'delete']);
 Route::post('/travel_expenses/restore', [TravelExpensesController::class, 'restore']);
 Route::post('/travel_expenses/paginate', [TravelExpensesController::class, 'paginate']);
 Route::get('/travel_expensesimg/{id}/{zize}', [TravelExpensesController::class, 'image']);
+Route::post('/travel_expenses/report', [TravelExpensesController::class, 'GenerareReportByExpense']);
 
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
