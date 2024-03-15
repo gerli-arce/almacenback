@@ -1061,7 +1061,7 @@ class TowerController extends Controller
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
                 } else {
                     $productJpa->disponibility = 'DISPONIBLE';
-                    $productJpa->condition_product = "REGRESO DE TORRE: ".TowerJpa->name." POR CANCELACIÓN DE LIQUIDACIÓN";
+                    $productJpa->condition_product = "REGRESO DE TORRE: ".$TowerJpa->name." POR CANCELACIÓN DE LIQUIDACIÓN";
 
                     if ($productJpa->product_status == "NUEVO") {
                         $stock->mount_new = $stock->mount_new + 1;

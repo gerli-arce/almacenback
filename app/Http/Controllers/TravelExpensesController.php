@@ -6,11 +6,14 @@ use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\ChargeGasoline;
+use App\Models\PhotographsByChargeGasoline;
 use App\Models\Branch;
+use App\Models\Cars;
 use App\Models\Response;
 use App\Models\TravelExpenses;
 use App\Models\ViewTravelExpenses;
 use App\Models\ViewUsers;
+use App\Models\User;
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -512,6 +515,8 @@ class TravelExpensesController extends Controller
             $template = file_get_contents('../storage/templates/reportExpense.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $images= '';
+            $id_bill = 0;
 
             $TravelExpenses = TravelExpenses::select([
                 'id',
@@ -531,6 +536,8 @@ class TravelExpensesController extends Controller
                 'update_date',
                 'status',
             ])->find($request->id);
+
+            $url_bill = 'travel_expensesimg/'.$TravelExpenses->id;
 
             $TravelExpenses->expenses = gJSON::parse($TravelExpenses->expenses);
 
@@ -552,17 +559,60 @@ class TravelExpensesController extends Controller
                     'igv',
                     'price_engraved'
                     ])->where('id', $TravelExpenses['_change_gasoline'])->first();
+                $url_bill = 'charge_gasolineimg/'.$ChargeGasolineJpa->id;
+                $CarJpa = Cars::select([
+                    'id',
+                    'placa',
+                    'color',
+                    'status'
+                ])->find($TravelExpenses->_car);
+                if(!$CarJpa){
+                    throw new Exception('No se encontro el vehiculo');
+                }
 
                 $item_transport .= "
                 <tr>
                     <td><center >1</center></td>
-                    <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}</center></td>
+                    <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}(<strong>{$CarJpa->placa}</strong>)</center></td>
                     <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
                     <td><center >1</center></td>
                     <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
                 </tr>
                 ";
+
+                $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
+                ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
+                ->orderBy('id', 'desc')
+                ->get();
+    
+                
+                $count = 1;
+    
+                foreach($ImagesByReview as $image){
+    
+                    $userCreation = User::select([
+                        'users.id as id',
+                        'users.username as username',
+                    ])
+                        ->where('users.id', $image->_creation_user)->first();
+    
+                    $images .= "
+                    <div style='page-break-before: always;'>
+                        <p><strong>{$count}) {$image->description}</strong></p>
+                        <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                        <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                        <center>
+                            <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-' 
+                           class='evidences'
+                        </center>
+                    </div>
+                    ";
+                    $count +=1;
+                }
+    
+
             }else{
+                $id_bill = $TravelExpenses['id'];
                 $item_transport .= "
                 <tr>
                     <td><center >1</center></td>
@@ -593,35 +643,7 @@ class TravelExpensesController extends Controller
                 $counter++;
             }
 
-            // // $PhotographsByReviewTechnicalJpa = PhotographsByReviewTechnical::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            // ->where('_review',$request->id)->whereNotNUll('status')
-            // ->orderBy('id', 'desc')
-            // ->get();
-
-            // $images= '';
-            // $count = 1;
-
-            // foreach($PhotographsByReviewTechnicalJpa as $image){
-
-            //     $userCreation = User::select([
-            //         'users.id as id',
-            //         'users.username as username',
-            //     ])
-            //         ->where('users.id', $image->_creation_user)->first();
-
-            //     $images .= "
-            //     <div style='page-break-before: always;'>
-            //         <p><strong>{$count}) {$image->description}</strong></p>
-            //         <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
-            //         <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
-            //         <center>
-            //             <img src='http://almacen.fastnetperu.com.pe/api/review_technicalimg/{$image->id}/full' alt='-' 
-            //            class='evidences'
-            //         </center>
-            //     </div>
-            //     ";
-            //     $count +=1;
-            // }
+            
 
 
             $template = str_replace(
@@ -634,7 +656,9 @@ class TravelExpensesController extends Controller
                     '{date}',
                     '{movility}',
                     '{summary}',
-                    '{total}'
+                    '{total}',
+                    '{url_bill}',
+                    '{images}',
                 ],
                 [
                     $request->id,
@@ -645,7 +669,9 @@ class TravelExpensesController extends Controller
                     $request->date_expense,
                     $item_transport,
                     $summary,
-                    $TravelExpenses['price_all']
+                    $TravelExpenses['price_all'],
+                    $url_bill,
+                    $images,
                 ],
                 $template
             );
