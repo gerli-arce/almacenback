@@ -136,14 +136,14 @@ class TravelExpensesController extends Controller
                 '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null, 
             ];
     
-            if ($request->mobility_type === 'AUTOMÓVIL') {
+            if ($request->mobility_type === 'AUTOMOVIL') {
                 $res['car_movility'] = $ChargeGasolineJpa->_car;
                 $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
                 $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
                 $res['price_igv'] = $ChargeGasolineJpa->igv;
                 $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
             }else{
-                $res['price_drive'] = $ChargeGasolineJpa->price_drive;
+                $res['price_drive'] = $TravelExpensesJpa->price_drive;
             }
     
             $response->setStatus(200);
@@ -354,14 +354,14 @@ class TravelExpensesController extends Controller
                 '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null, 
             ];
     
-            if ($request->mobility_type === 'AUTOMÓVIL') {
+            if ($request->mobility_type === 'AUTOMOVIL') {
                 $res['car_movility'] = $ChargeGasolineJpa->_car;
                 $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
                 $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
                 $res['price_igv'] = $ChargeGasolineJpa->igv;
                 $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
             }else{
-                $res['price_drive'] = $ChargeGasolineJpa->price_drive;
+                $res['price_drive'] = $TravelExpensesJpa->price_drive;
             }
     
 
