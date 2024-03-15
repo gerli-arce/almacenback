@@ -489,6 +489,7 @@ Route::post('/car/record', [CarsController::class, 'setProductsByCars']);
 Route::post('/car/products/paginate', [CarsController::class, 'paginateProductsByCar']);
 Route::post('/car/products/report', [CarsController::class, 'reportProductsByCar']);
 Route::post('/car/report', [CarsController::class, 'reportByCar']);
+Route::post('/car/get/technical/{id}', [CarsController::class, 'getCarByTechnical']);
 
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);

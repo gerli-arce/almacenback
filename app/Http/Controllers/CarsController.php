@@ -219,6 +219,35 @@ class CarsController extends Controller
         }
     }
 
+    public function getCarByTechnical(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos para listar los movilidades  de ' . $branch);
+            }
+
+            $carJpa = ViewCars::select('*')->whereNotNull('status')->where('person__id', $id)->first();
+            $car = gJSON::restore($carJpa->toArray(), '__');
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData([$car]);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function paginate(Request $request)
     {
         $response = new Response();

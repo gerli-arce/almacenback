@@ -47,7 +47,9 @@ class TravelExpensesController extends Controller
             $TravelExpensesJpa->mobility_type = $request->mobility_type;
             $TravelExpensesJpa->date_expense = $request->date_expense;
             $TravelExpensesJpa->description = $request->description_charge_gasoline;
-            $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
+            if(isset($request->expense_price_all)){
+                $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
+            }
             $TravelExpensesJpa->price_all = $request->price_all;
             $TravelExpensesJpa->expenses = json_encode($request->expenses);
 
@@ -267,7 +269,9 @@ class TravelExpensesController extends Controller
             $TravelExpensesJpa->mobility_type = $request->mobility_type;
             $TravelExpensesJpa->date_expense = $request->date_expense;
             $TravelExpensesJpa->description = $request->description_charge_gasoline;
-            $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
+            if(isset($request->expense_price_all)){
+                $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
+            }
             $TravelExpensesJpa->price_all = $request->price_all;
             $TravelExpensesJpa->expenses = json_encode($request->expenses);
 
