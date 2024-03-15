@@ -233,9 +233,12 @@ class CarsController extends Controller
             }
 
             $carJpa = ViewCars::select('*')->whereNotNull('status')->where('person__id', $id)->first();
+            if(!$carJpa){
+                throw new Exception('No se encontro la movilidad');
+            }
             $car = gJSON::restore($carJpa->toArray(), '__');
             $response->setStatus(200);
-            $response->setMessage('Operación correcta');
+            $response->setMessage('Movilidad cargada');
             $response->setData([$car]);
         } catch (\Throwable $th) {
             $response->setStatus(400);
