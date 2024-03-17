@@ -491,6 +491,14 @@ Route::post('/car/products/report', [CarsController::class, 'reportProductsByCar
 Route::post('/car/report', [CarsController::class, 'reportByCar']);
 Route::post('/car/get/technical/{id}', [CarsController::class, 'getCarByTechnical']);
 
+Route::post('/car/setimage', [CarsController::class, 'setImage']);
+Route::patch('/car/setimage', [CarsController::class, 'updateImage']);
+Route::get('/car/image/{id}', [CarsController::class, 'getImages']);
+Route::get('/carimgs/{id}/{zize}', [CarsController::class, 'images']);
+Route::delete('/car/image/{id}', [CarsController::class, 'deleteImage']);
+
+
+
 // PARTS CAR
 Route::get('/car_part', [PartsCarsController::class, 'index']);
 Route::post('/car_part', [PartsCarsController::class, 'store']);

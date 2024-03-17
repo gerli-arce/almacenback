@@ -15,6 +15,7 @@ use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewCars;
 use App\Models\ViewProductsByCar;
+use App\Models\PhotographsByCar;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -1065,5 +1066,252 @@ class CarsController extends Controller
             );
         }
     }
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            // if (
+            //     !isset($request->_review) && !isset($request->_car)
+            // ) {
+            //     throw new Exception("Error: No deje campos vacíos");
+            // }
+
+            $PhotographsByCar = new PhotographsByCar();
+            $PhotographsByCar->_car = $request->_car;
+            if(isset($request->description)){
+                $PhotographsByCar->description = $request->description;
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByCar->image_type = $request->image_type;
+                    $PhotographsByCar->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByCar->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByCar->_creation_user = $userid;
+            $PhotographsByCar->creation_date = gTrace::getDate('mysql');
+            $PhotographsByCar->_update_user = $userid;
+            $PhotographsByCar->update_date = gTrace::getDate('mysql');
+            $PhotographsByCar->status = "1";
+            $PhotographsByCar->save();
+
+            $response->setStatus(200);
+            $response->setMessage('');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByCarJpa = PhotographsByCar::find($request->id);
+            $PhotographsByCarJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByCarJpa->image_type = $request->image_type;
+                    $PhotographsByCarJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByCarJpa->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $PhotographsByCarJpa->_update_user = $userid;
+            $PhotographsByCarJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByCarJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByCarJpa = PhotographsByCar::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_car', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByCarJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByCarJpa = PhotographsByCar::select([
+                "photographs_by_car.image_$size as image_content",
+                'photographs_by_car.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$PhotographsByCarJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$PhotographsByCarJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $PhotographsByCarJpa->image_content;
+            $type = $PhotographsByCarJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByCarJpa = PhotographsByCar::find($id);
+            $PhotographsByCarJpa->_update_user = $userid;
+            $PhotographsByCarJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByCarJpa->status = null;
+            $PhotographsByCarJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 
 }
