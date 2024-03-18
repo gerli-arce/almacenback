@@ -1468,6 +1468,10 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
+            if(!isset($request->search['technical'])){
+                throw new Exception("Para la busqueda deve enviar un tecnico");
+            }
+
             $query = ViewSales::select([
                 'view_sales.id as id',
                 'view_sales.client_id as client_id',
@@ -1590,6 +1594,11 @@ class TechnicalsController extends Controller
             if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
                 throw new Exception('No tienes permisos para listar las salidas');
             }
+
+            if(!isset($request->search['technical'])){
+                throw new Exception("Para la busqueda deve enviar un tecnico");
+            }
+
 
             $query = ViewSales::select([
                 'view_sales.id as id',
