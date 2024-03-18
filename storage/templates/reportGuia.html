@@ -88,6 +88,8 @@
             table {
                 width: 100%;
                 border-spacing: 0;
+                margin-top: 20px;
+                margin-bottom: 10px;
             }
 
             table td {
@@ -95,15 +97,18 @@
             }
 
             table tbody td {
-                border-bottom: 1px solid #222222;
+                border: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #323a46;
-                color: #ffffff !important;
+                background-color: #60708863;
+                border: 1px solid #222222;
+                color: #212635 !important;
             }
+            
+           
 
             table td {
                 vertical-align: middle;
@@ -189,17 +194,6 @@
     </head>
 
     <body>
-        <!-- <header>
-            <img
-                id="softwareintegration"
-                src="https://almacendev.fastnetperu.com.pe/img/logo-light.png"
-                alt="Logo fastnet"
-            />
-            <div id="num_guia">
-                <h1>Nº GUIA: [{num_guia}]</h1>
-            </div>
-            <!-- <img i src="https://almacendev.fastnetperu.com.pe/api/profile/c85b4958/mini" alt="Logo de Software Developers World"> 
-        </header> -->
         <footer>
             <div>
                 FASTNETPERU E.I.R.L<br />
@@ -210,11 +204,6 @@
             </div>
         </footer>
         <main>
-            <!-- <p style="margin: 0px; padding: 0px" id="date">
-                {branch_name}, {issue_long_date}
-            </p>
-            <br /> -->
-
             <div style="display: inline; font-size: 13px">
                 <div style="max-width: 50%; display: inline-block">
                     <img
@@ -242,27 +231,26 @@
                     <div
                         style="
                             height: 140px;
-                            width:250px;
+                            width: 250px;
                             background-color: rgb(234, 234, 234);
-                            font-size: 24px;
-                            font-weight: 600;
+                            font-size: 22px;
+                            font-weight: bold;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
                             border: solid 2px #000;
                         "
                     >
-                <span>RUC 20602791816</span>
-                <span>GUIA </span>
-                <span>ELECTRÓNICA </span>
-                <br>
-                <span>FAS-{num_guia}</span>
-                </div>
+                        <p>RUC 20602791816</p>
+                        <p>GUIA</p>
+                        <p>ELECTRÓNICA</p>
+                        <p>FAS-{num_guia}</p>
+                    </div>
                 </div>
             </div>
             <br />
 
-            <div style="display: inline; font-size: 13px">
+            <div style="display: inline; font-size: 11px">
                 <div style="max-width: 50%; display: inline-block">
                     <p style="margin: 0px; padding: 0px">Sucursal de envio:</p>
                     <strong style="margin: 0px; padding: 0px"
@@ -300,7 +288,7 @@
             </div>
             <br />
             <hr />
-            <div style="display: inline; font-size: 13px; margin-top: 5px">
+            <div style="display: inline; font-size: 11px; margin-top: 5px">
                 <div style="max-width: 50%; display: inline-block">
                     <p>Fecha de envio:</p>
                     <strong>{date_send}</strong>
@@ -325,19 +313,20 @@
                     <p>Precio de transporte:</p>
                     <strong> S/.{transport_price} </strong>
                 </div>
-                <!-- <div>
-                    <p>Descripción</p>
-                    <strong style="font-size: 13px;"> {description} </strong>
-                </div> -->
+                <div>
+                    <p style="font-size: 11px;"><strong>Descripción: </strong>{description}</p>
+                </div>
             </div>
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table>
+            <table style="font-size: 12px;">
                 <thead>
                     <tr>
-                        <td>ITEM</td>
-                        <td>CANT.</td>
-                        <td>UNID.</td>
+                        <td>#</td>
                         <td>DESCRIPCIÓN</td>
+                        <td>UNID.</td>
+                        <td>NUEVOS</td>
+                        <td>SEGUNDA</td>
+                        <td>MALOGRADOS</td>
                     </tr>
                 </thead>
                 <tbody>

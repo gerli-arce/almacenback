@@ -86,6 +86,8 @@
             table {
                 width: 100%;
                 border-spacing: 0;
+                margin-top: 20px;
+                margin-bottom: 10px;
             }
 
             table td {
@@ -93,14 +95,15 @@
             }
 
             table tbody td {
-                border-bottom: 1px solid #222222;
+                border: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #323a46;
-                color: #ffffff !important;
+                background-color: #60708863;
+                border: 1px solid #222222;
+                color: #212635 !important;
             }
 
             table td {
@@ -226,69 +229,40 @@
                             width: 250px;
                             background-color: rgb(234, 234, 234);
                             font-size: 24px;
-                            font-weight: 600;
+                            font-weight: bold;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
                             border: solid 2px #000;
                         "
                     >
-                        <span>RUC 20602791816</span>
-                        <span>STOCK DE </span>
-                        <span>PROYECTO</span>
-                        <br />
+                        <p>RUC 20602791816</p>
+                        <p>STOCK DE </p>
+                        <p>PROYECTO</p>
+                        <p>PR-{id}</p>
                     </div>
                 </div>
             </div>
             <br />
             <p id="date">{branch_onteraction}, {issue_long_date}</p>
-            <p>Nombre del proyecto: <strong>{project_name}</strong></p>
-            <p>Lider: <strong>{leader}</strong></p>
+            <p><strong>Proyecto: </strong>{project_name}</p>
+            <p><strong>Lider: </strong>{leader}</p>
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table style="height: 370px">
+            <table style="height: 370px; ; font-size: 12px">
                 <thead>
                     <tr>
-                        <td>ITEM</td>
-                        <td>CANT.</td>
-                        <td>UNID.</td>
+                        <td>#</td>
                         <td>DESCRIPCIÓN</td>
+                        <td>UNIDAD</td>
+                        <td>NUEVOS</td>
+                        <td>SEGUNDA</td>
                     </tr>
                 </thead>
                 <tbody>
                     {summary}
                 </tbody>
             </table>
-            <!-- <br />
-            <div style="display: inline; font-size: 13px">
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-top: 100px;
-                        margin-left: 100px;
-                    "
-                >
-                    <center>
-                        <p>_____________________________</p>
-                        <p>Firma del remitente:</p>
-                        <p>{remitente}</p>
-                    </center>
-                </div>
-                <div
-                    style="
-                        max-width: 50%;
-                        display: inline-block;
-                        margin-left: 50px;
-                    "
-                >
-                    <center>
-                        <p>_____________________________</p>
-                        <p>Firma del receptor:</p>
-                        <p>{reseptor}</p>
-                    </center>
-                </div>
-            </div> -->
         </main>
     </body>
 </html>

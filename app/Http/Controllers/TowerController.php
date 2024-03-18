@@ -1874,16 +1874,19 @@ class TowerController extends Controller
             foreach ($products as $detail) {
                 $sumary .= "
                 <tr>
-                    <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center>{$count}</center></td>
+                    <td>{$detail['model']}</td>
+                    <td><center>{$detail['unity']}</center></td>
                     <td>
-                        <center style='font-size:12px;color:green;'>
-                            Nu:{$detail['mount_new']} | 
-                            Se:{$detail['mount_second']} | 
-                            Ma:{$detail['mount_ill_fated']}
+                        <center>
+                            {$detail['mount_new']}
                         </center>
                     </td>
-                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                    <td>
+                        <center>
+                            {$detail['mount_second']}
+                        </center>
+                    </td>
                 </tr>
                 ";
                 $count = $count + 1;

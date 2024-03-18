@@ -176,15 +176,23 @@ class ParcelsCreatedController extends Controller
                 $sumary .= "
                 <tr>
                     <td><center style='font-size:12px;'>{$count}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
                     <td>
                         <center style='font-size:12px;'>
-                            Nu:<strong>{$detail['mount_new']}</strong> |
-                            Se:<strong>{$detail['mount_second']}</strong> |
-                            Ma:<strong>{$detail['mount_ill_fated']}</strong>
+                            <strong>{$detail['mount_new']}</strong> 
                         </center>
                     </td>
-                    <td><center style='font-size:12px;'>{$detail['unity']}</center></td>
-                    <td><center style='font-size:12px;'>{$detail['model']}</center></td>
+                    <td>
+                        <center style='font-size:12px;'>
+                            <strong>{$detail['mount_second']}</strong>
+                        </center>
+                    </td>
+                    <td>
+                        <center style='font-size:12px;'>
+                            <strong>{$detail['mount_ill_fated']}</strong>
+                        </center>
+                    </td>
                 </tr>
                 ";
 

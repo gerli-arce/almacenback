@@ -1107,12 +1107,20 @@ class ParcelsRegistersController extends Controller
                     <strong>{$product['branch']['name']}</strong>
                 </div>
                 ";
+                $disponivility = 'DISPONIBLE';
+                $color_row = 'disponible';
+                if ($product['disponibility'] != 'DISPONIBLE') {
+                    $disponivility = 'LIQUIDADO';
+                    $color_row = "liquidado";
+                }
+                
                 $sumary.="
                 <tr>
                     <td>{$count}</td>
                     <td>{$datos}</td>
                     <td>{$estado}</td>
                     <td>{$sucursal}</td>
+                    <td class='{$color_row}' ><strong>{$disponivility}</strong></td>
                 </tr>
                 ";
                 $count +=1;

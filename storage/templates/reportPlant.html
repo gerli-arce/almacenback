@@ -86,6 +86,8 @@
             table {
                 width: 100%;
                 border-spacing: 0;
+                margin-top: 20px;
+                margin-bottom: 10px;
             }
 
             table td {
@@ -93,14 +95,15 @@
             }
 
             table tbody td {
-                border-bottom: 1px solid #222222;
+                border: 1px solid #222222;
             }
 
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #323a46;
-                color: #ffffff !important;
+                background-color: #60708863;
+                border: 1px solid #222222;
+                color: #212635 !important;
             }
 
             table td {
@@ -225,38 +228,38 @@
                             height: 140px;
                             width:250px;
                             background-color: rgb(234, 234, 234);
-                            font-size: 24px;
-                            font-weight: 600;
+                            font-size: 22px;
+                            font-weight: bold;
                             text-align: center;
                             border-radius: 12px;
                             font-family: sans-serif;
                             border: solid 2px #000;
                         "
                     >
-                <span>RUC 20602791816</span>
-                <span>LIQUIDACION </span>
-                <span>ELECTRÓNICA </span>
-                <br>
-                <span>NUM-{id}</span>
+                <p>RUC 20602791816</p>
+                <p>LIQUIDACION </p>
+                <p>ELECTRÓNICA </p>
+                <p>NUM-{id}</p>
                 </div>
                 </div>
             </div>
             <br />
             <p id="date">{branch_onteraction}, {issue_long_date}</p>
-            <p>Nombre del proyecto: <strong>{project_name}</strong></p>
-            <p>Lider: <strong>{leader}</strong></p>
-            <p>Fecha Inicio: <strong>{date_start}</strong></p>
-            <p>Fecha Fin: <strong>{date_end}</strong></p>
-            <p style="margin-top: 8px;">Descripción: <strong>{description}</strong></p>
+            <p><strong>Nombre del proyecto: </strong>{project_name}</p>
+            <p><strong>Lider: </strong>{leader}</p>
+            <p><strong>Fecha Inicio: </strong{date_start}></p>
+            <p><strong>Fecha Fin: </strong>{date_end}</p>
+            <p style="margin-top: 8px;"><strong>Descripción: </strong>{description}</p>
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
-            <table style="height: 370px">
+            <table style="height: 370px; font-size: 12px;">
                 <thead>
                     <tr>
-                        <td>ITEM</td>
-                        <td>CANT.</td>
-                        <td>UNID.</td>
+                        <td>#</td>
                         <td>DESCRIPCIÓN</td>
+                        <td>UNID.</td>
+                        <td>NUEVOS</td>
+                        <td>SEGUNDA</td>
                     </tr>
                 </thead>
                 <tbody>
