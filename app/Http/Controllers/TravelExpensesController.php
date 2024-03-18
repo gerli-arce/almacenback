@@ -576,6 +576,7 @@ class TravelExpensesController extends Controller
                     <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}(<strong>{$CarJpa->placa}</strong>)</center></td>
                     <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
                     <td><center >1</center></td>
+                    <td><center >| |</center></td>
                     <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
                 </tr>
                 ";
@@ -619,6 +620,7 @@ class TravelExpensesController extends Controller
                     <td><center >TRANSPORTE - {$TravelExpenses['mobility_type']}</center></td>
                     <td><center >S/{$TravelExpenses['price_drive']}</center></td>
                     <td><center >1</center></td>
+                    <td><center >| |</center></td>
                     <td><center >S/{$TravelExpenses['price_drive']}</center></td>
                 </tr>
                 ";
@@ -629,6 +631,7 @@ class TravelExpensesController extends Controller
 
                 $price_unity = isset($expenses['price_unity']) ? $expenses['price_unity'] : $expenses['price'];
                 $mount = isset($expenses['mount']) ? $expenses['mount'] : 1;
+                $days = isset($expenses['days']) ? $expenses['days'] : 1;
                 $price_total = isset($expenses['price_total']) ? $expenses['price_total'] : $expenses['price'];
                 
                 $summary .= "
@@ -637,6 +640,7 @@ class TravelExpensesController extends Controller
                             <td><center >".strtoupper($expenses['description'])."</center></td>
                             <td><center >S/{$price_unity}</center></td>
                             <td><center >{$mount}</center></td>
+                            <td><center >{$days}</center></td>
                             <td><center >S/{$price_total}</center></td>
                         </tr>
                     ";
