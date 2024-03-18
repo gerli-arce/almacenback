@@ -5,16 +5,15 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJson;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\ChargeGasoline;
-use App\Models\PhotographsByChargeGasoline;
 use App\Models\Branch;
 use App\Models\Cars;
+use App\Models\ChargeGasoline;
+use App\Models\PhotographsByChargeGasoline;
 use App\Models\Response;
 use App\Models\TravelExpenses;
+use App\Models\User;
 use App\Models\ViewTravelExpenses;
 use App\Models\ViewUsers;
-use App\Models\User;
-
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -38,7 +37,6 @@ class TravelExpensesController extends Controller
             }
 
             if (
-                !isset($request->mobility_type) ||
                 !isset($request->date_expense) ||
                 !isset($request->price_all)
             ) {
@@ -47,81 +45,84 @@ class TravelExpensesController extends Controller
 
             $TravelExpensesJpa = new TravelExpenses();
             $TravelExpensesJpa->_technical = $request->technical['id'];
-            $TravelExpensesJpa->mobility_type = $request->mobility_type;
+
+            if ($request->movility) {
+                $TravelExpensesJpa->mobility_type = $request->mobility_type;
+                if ($request->mobility_type == "PASAJERO") {
+                    $TravelExpensesJpa->price_drive = $request->price_drive;
+                    if (
+                        isset($request->image_type) &&
+                        isset($request->image_mini) &&
+                        isset($request->image_full)
+                    ) {
+                        if (
+                            $request->image_type != "none" &&
+                            $request->image_mini != "none" &&
+                            $request->image_full != "none"
+                        ) {
+                            $TravelExpensesJpa->image_type = $request->image_type;
+                            $TravelExpensesJpa->image_mini = base64_decode($request->image_mini);
+                            $TravelExpensesJpa->image_full = base64_decode($request->image_full);
+                        } else {
+                            $TravelExpensesJpa->image_type = null;
+                            $TravelExpensesJpa->image_mini = null;
+                            $TravelExpensesJpa->image_full = null;
+                        }
+                    }
+
+                } else {
+
+                    $ChargeGasolineJpa = new ChargeGasoline();
+                    $ChargeGasolineJpa->_technical = $request->technical['id'];
+                    $ChargeGasolineJpa->_car = $request->car_movility;
+                    $ChargeGasolineJpa->date = $request->date_expense;
+                    $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
+                    if (isset($request->description_charge_gasoline)) {
+                        $ChargeGasolineJpa->description = $request->description_charge_gasoline;
+                    }
+                    $ChargeGasolineJpa->price_all = $request->price_gasoline;
+                    $ChargeGasolineJpa->igv = $request->price_igv;
+                    $ChargeGasolineJpa->price_engraved = $request->price_engraved;
+
+                    if (
+                        isset($request->image_type) &&
+                        isset($request->image_mini) &&
+                        isset($request->image_full)
+                    ) {
+                        if (
+                            $request->image_type != "none" &&
+                            $request->image_mini != "none" &&
+                            $request->image_full != "none"
+                        ) {
+                            $ChargeGasolineJpa->image_type = $request->image_type;
+                            $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
+                            $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                        } else {
+                            $ChargeGasolineJpa->image_type = null;
+                            $ChargeGasolineJpa->image_mini = null;
+                            $ChargeGasolineJpa->image_full = null;
+                        }
+                    }
+
+                    $ChargeGasolineJpa->creation_date = gTrace::getDate('mysql');
+                    $ChargeGasolineJpa->_creation_user = $userid;
+                    $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
+                    $ChargeGasolineJpa->_update_user = $userid;
+                    $ChargeGasolineJpa->status = "1";
+                    $ChargeGasolineJpa->save();
+
+                    $TravelExpensesJpa->_change_gasoline = $ChargeGasolineJpa->id;
+                    $TravelExpensesJpa->_car = $request->car_movility;
+                }
+            }
+
             $TravelExpensesJpa->date_expense = $request->date_expense;
             $TravelExpensesJpa->description = $request->description_charge_gasoline;
-            if(isset($request->expense_price_all)){
+            if (isset($request->expense_price_all)) {
                 $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
             }
             $TravelExpensesJpa->price_all = $request->price_all;
             $TravelExpensesJpa->expenses = json_encode($request->expenses);
-
-            if ($request->mobility_type == "PASAJERO") {
-                $TravelExpensesJpa->price_drive = $request->price_drive;
-                if (
-                    isset($request->image_type) &&
-                    isset($request->image_mini) &&
-                    isset($request->image_full)
-                ) {
-                    if (
-                        $request->image_type != "none" &&
-                        $request->image_mini != "none" &&
-                        $request->image_full != "none"
-                    ) {
-                        $TravelExpensesJpa->image_type = $request->image_type;
-                        $TravelExpensesJpa->image_mini = base64_decode($request->image_mini);
-                        $TravelExpensesJpa->image_full = base64_decode($request->image_full);
-                    } else {
-                        $TravelExpensesJpa->image_type = null;
-                        $TravelExpensesJpa->image_mini = null;
-                        $TravelExpensesJpa->image_full = null;
-                    }
-                }
-
-            } else {
-
-                $ChargeGasolineJpa = new ChargeGasoline();
-                $ChargeGasolineJpa->_technical = $request->technical['id'];
-                $ChargeGasolineJpa->_car = $request->car_movility;
-                $ChargeGasolineJpa->date = $request->date_expense;
-                $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
-                if (isset($request->description_charge_gasoline)) {
-                    $ChargeGasolineJpa->description = $request->description_charge_gasoline;
-                }
-                $ChargeGasolineJpa->price_all = $request->price_gasoline;
-                $ChargeGasolineJpa->igv = $request->price_igv;
-                $ChargeGasolineJpa->price_engraved = $request->price_engraved;
-
-                if (
-                    isset($request->image_type) &&
-                    isset($request->image_mini) &&
-                    isset($request->image_full)
-                ) {
-                    if (
-                        $request->image_type != "none" &&
-                        $request->image_mini != "none" &&
-                        $request->image_full != "none"
-                    ) {
-                        $ChargeGasolineJpa->image_type = $request->image_type;
-                        $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
-                        $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
-                    } else {
-                        $ChargeGasolineJpa->image_type = null;
-                        $ChargeGasolineJpa->image_mini = null;
-                        $ChargeGasolineJpa->image_full = null;
-                    }
-                }
-
-                $ChargeGasolineJpa->creation_date = gTrace::getDate('mysql');
-                $ChargeGasolineJpa->_creation_user = $userid;
-                $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
-                $ChargeGasolineJpa->_update_user = $userid;
-                $ChargeGasolineJpa->status = "1";
-                $ChargeGasolineJpa->save();
-
-                $TravelExpensesJpa->_change_gasoline = $ChargeGasolineJpa->id;
-                $TravelExpensesJpa->_car = $request->car_movility;
-            }
 
             $TravelExpensesJpa->creation_date = gTrace::getDate('mysql');
             $TravelExpensesJpa->_creation_user = $userid;
@@ -131,26 +132,27 @@ class TravelExpensesController extends Controller
             $TravelExpensesJpa->save();
 
             $res = [
-                'id' => $TravelExpensesJpa->id, 
-                'mobility_type' => $TravelExpensesJpa->mobility_type,
+                'id' => $TravelExpensesJpa->id,
                 'date_expense' => $TravelExpensesJpa->date_expense,
                 'description' => $TravelExpensesJpa->description,
                 'expense_price_all' => $TravelExpensesJpa->expense_price_all,
                 'price_all' => $TravelExpensesJpa->price_all,
                 'expenses' => json_decode($TravelExpensesJpa->expenses),
-                '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null, 
+                '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null,
             ];
-    
-            if ($request->mobility_type === 'AUTOMOVIL') {
-                $res['car_movility'] = $ChargeGasolineJpa->_car;
-                $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
-                $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
-                $res['price_igv'] = $ChargeGasolineJpa->igv;
-                $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
-            }else{
-                $res['price_drive'] = $TravelExpensesJpa->price_drive;
+
+            if ($request->movility) {
+                if ($request->mobility_type === 'AUTOMOVIL') {
+                    $res['car_movility'] = $ChargeGasolineJpa->_car;
+                    $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
+                    $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
+                    $res['price_igv'] = $ChargeGasolineJpa->igv;
+                    $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
+                } else {
+                    $res['price_drive'] = $TravelExpensesJpa->price_drive;
+                }
             }
-    
+
             $response->setStatus(200);
             $response->setMessage('Gasto de viaje creado correctamente');
             $response->setData($res);
@@ -193,7 +195,7 @@ class TravelExpensesController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-               
+
                 if ($column == 'mobility_type' || $column == '*') {
                     $q->where('mobility_type', $type, $value);
                 }
@@ -262,60 +264,18 @@ class TravelExpensesController extends Controller
             }
 
             if (
-                !isset($request->mobility_type) ||
                 !isset($request->date_expense) ||
                 !isset($request->price_all)
             ) {
                 throw new Exception("Error en los datos de entrada");
             }
 
-            $TravelExpensesJpa->mobility_type = $request->mobility_type;
-            $TravelExpensesJpa->date_expense = $request->date_expense;
-            $TravelExpensesJpa->description = $request->description_charge_gasoline;
-            if(isset($request->expense_price_all)){
-                $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
-            }
-            $TravelExpensesJpa->price_all = $request->price_all;
-            $TravelExpensesJpa->expenses = json_encode($request->expenses);
+            if ($request->movility) {
+                $TravelExpensesJpa->mobility_type = $request->mobility_type;
+                $ChargeGasolineJpa = null;
 
-            $ChargeGasolineJpa = null;
-
-            if ($request->mobility_type == "PASAJERO") {
-                $TravelExpensesJpa->price_drive = $request->price_drive;
-
-                if (
-                    isset($request->image_type) &&
-                    isset($request->image_mini) &&
-                    isset($request->image_full)
-                ) {
-                    if (
-                        $request->image_type != "none" &&
-                        $request->image_mini != "none" &&
-                        $request->image_full != "none"
-                    ) {
-                        $TravelExpensesJpa->image_type = $request->image_type;
-                        $TravelExpensesJpa->image_mini = base64_decode($request->image_mini);
-                        $TravelExpensesJpa->image_full = base64_decode($request->image_full);
-                    } else {
-                        $TravelExpensesJpa->image_type = null;
-                        $TravelExpensesJpa->image_mini = null;
-                        $TravelExpensesJpa->image_full = null;
-                    }
-                }
-
-            } else {
-
-                $ChargeGasolineJpa = ChargeGasoline::find($TravelExpensesJpa->_change_gasoline);
-
-                if ($ChargeGasolineJpa) {
-                    $ChargeGasolineJpa->date = $request->date_expense;
-                    $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
-                    if (isset($request->description_charge_gasoline)) {
-                        $ChargeGasolineJpa->description = $request->description_charge_gasoline;
-                    }
-                    $ChargeGasolineJpa->price_all = $request->price_gasoline;
-                    $ChargeGasolineJpa->igv = $request->price_igv;
-                    $ChargeGasolineJpa->price_engraved = $request->price_engraved;
+                if ($request->mobility_type == "PASAJERO") {
+                    $TravelExpensesJpa->price_drive = $request->price_drive;
 
                     if (
                         isset($request->image_type) &&
@@ -327,50 +287,94 @@ class TravelExpensesController extends Controller
                             $request->image_mini != "none" &&
                             $request->image_full != "none"
                         ) {
-                            $ChargeGasolineJpa->image_type = $request->image_type;
-                            $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
-                            $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                            $TravelExpensesJpa->image_type = $request->image_type;
+                            $TravelExpensesJpa->image_mini = base64_decode($request->image_mini);
+                            $TravelExpensesJpa->image_full = base64_decode($request->image_full);
                         } else {
-                            $ChargeGasolineJpa->image_type = null;
-                            $ChargeGasolineJpa->image_mini = null;
+                            $TravelExpensesJpa->image_type = null;
+                            $TravelExpensesJpa->image_mini = null;
                             $TravelExpensesJpa->image_full = null;
                         }
                     }
+
                 } else {
-                    throw new Exception("Carga de gasolina no encontrada");
+
+                    $ChargeGasolineJpa = ChargeGasoline::find($TravelExpensesJpa->_change_gasoline);
+
+                    if ($ChargeGasolineJpa) {
+                        $ChargeGasolineJpa->date = $request->date_expense;
+                        $ChargeGasolineJpa->gasoline_type = $request->gasoline_type;
+                        if (isset($request->description_charge_gasoline)) {
+                            $ChargeGasolineJpa->description = $request->description_charge_gasoline;
+                        }
+                        $ChargeGasolineJpa->price_all = $request->price_gasoline;
+                        $ChargeGasolineJpa->igv = $request->price_igv;
+                        $ChargeGasolineJpa->price_engraved = $request->price_engraved;
+
+                        if (
+                            isset($request->image_type) &&
+                            isset($request->image_mini) &&
+                            isset($request->image_full)
+                        ) {
+                            if (
+                                $request->image_type != "none" &&
+                                $request->image_mini != "none" &&
+                                $request->image_full != "none"
+                            ) {
+                                $ChargeGasolineJpa->image_type = $request->image_type;
+                                $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
+                                $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                            } else {
+                                $ChargeGasolineJpa->image_type = null;
+                                $ChargeGasolineJpa->image_mini = null;
+                                $TravelExpensesJpa->image_full = null;
+                            }
+                        }
+                    } else {
+                        throw new Exception("Carga de gasolina no encontrada");
+                    }
+
+                    $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
+                    $ChargeGasolineJpa->_update_user = $userid;
+                    $ChargeGasolineJpa->save();
                 }
 
-                $ChargeGasolineJpa->update_date = gTrace::getDate('mysql');
-                $ChargeGasolineJpa->_update_user = $userid;
-                $ChargeGasolineJpa->save();
             }
+
+            $TravelExpensesJpa->date_expense = $request->date_expense;
+            $TravelExpensesJpa->description = $request->description_charge_gasoline;
+            if (isset($request->expense_price_all)) {
+                $TravelExpensesJpa->expense_price_all = $request->expense_price_all;
+            }
+            $TravelExpensesJpa->price_all = $request->price_all;
+            $TravelExpensesJpa->expenses = json_encode($request->expenses);
 
             $TravelExpensesJpa->update_date = gTrace::getDate('mysql');
             $TravelExpensesJpa->_update_user = $userid;
             $TravelExpensesJpa->save();
 
-
             $res = [
-                'id' => $TravelExpensesJpa->id, 
+                'id' => $TravelExpensesJpa->id,
                 'mobility_type' => $TravelExpensesJpa->mobility_type,
                 'date_expense' => $TravelExpensesJpa->date_expense,
                 'description' => $TravelExpensesJpa->description,
                 'expense_price_all' => $TravelExpensesJpa->expense_price_all,
                 'price_all' => $TravelExpensesJpa->price_all,
                 'expenses' => json_decode($TravelExpensesJpa->expenses),
-                '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null, 
+                '_change_gasoline' => $TravelExpensesJpa->_change_gasoline ?? null,
             ];
-    
-            if ($request->mobility_type === 'AUTOMOVIL') {
-                $res['car_movility'] = $ChargeGasolineJpa->_car;
-                $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
-                $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
-                $res['price_igv'] = $ChargeGasolineJpa->igv;
-                $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
-            }else{
-                $res['price_drive'] = $TravelExpensesJpa->price_drive;
+
+            if ($request->movility) {
+                if ($request->mobility_type === 'AUTOMOVIL') {
+                    $res['car_movility'] = $ChargeGasolineJpa->_car;
+                    $res['gasoline_type'] = $ChargeGasolineJpa->gasoline_type;
+                    $res['price_gasoline'] = $ChargeGasolineJpa->price_all;
+                    $res['price_igv'] = $ChargeGasolineJpa->igv;
+                    $res['price_engraved'] = $ChargeGasolineJpa->price_engraved;
+                } else {
+                    $res['price_drive'] = $TravelExpensesJpa->price_drive;
+                }
             }
-    
 
             $response->setStatus(200);
             $response->setMessage('Gasto de viaje actualizado correctamente');
@@ -500,7 +504,8 @@ class TravelExpensesController extends Controller
         }
     }
 
-    public function GenerareReportByExpense(Request $request){
+    public function GenerareReportByExpense(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -515,7 +520,7 @@ class TravelExpensesController extends Controller
             $template = file_get_contents('../storage/templates/reportExpense.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
-            $images= '';
+            $images = '';
             $id_bill = 0;
 
             $TravelExpenses = TravelExpenses::select([
@@ -537,7 +542,7 @@ class TravelExpensesController extends Controller
                 'status',
             ])->find($request->id);
 
-            $url_bill = 'travel_expensesimg/'.$TravelExpenses->id;
+            $url_bill = 'travel_expensesimg/' . $TravelExpenses->id;
 
             $TravelExpenses->expenses = gJSON::parse($TravelExpenses->expenses);
 
@@ -547,26 +552,26 @@ class TravelExpensesController extends Controller
                 'person__name',
                 'person__lastname',
             ])->where('id', $userid)->first();
-       
+
             $summary = '';
             $item_transport = '';
 
-            if($TravelExpenses['mobility_type'] == "MOVILIDAD"){
+            if ($TravelExpenses['mobility_type'] == "MOVILIDAD") {
                 $ChargeGasolineJpa = ChargeGasoline::select([
                     'id',
                     'gasoline_type',
                     'price_all',
                     'igv',
-                    'price_engraved'
-                    ])->where('id', $TravelExpenses['_change_gasoline'])->first();
-                $url_bill = 'charge_gasolineimg/'.$ChargeGasolineJpa->id;
+                    'price_engraved',
+                ])->where('id', $TravelExpenses['_change_gasoline'])->first();
+                $url_bill = 'charge_gasolineimg/' . $ChargeGasolineJpa->id;
                 $CarJpa = Cars::select([
                     'id',
                     'placa',
                     'color',
-                    'status'
+                    'status',
                 ])->find($TravelExpenses->_car);
-                if(!$CarJpa){
+                if (!$CarJpa) {
                     throw new Exception('No se encontro el vehiculo');
                 }
 
@@ -582,37 +587,35 @@ class TravelExpensesController extends Controller
                 ";
 
                 $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
-                ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
-                ->orderBy('id', 'desc')
-                ->get();
-    
-                
+                    ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
+                    ->orderBy('id', 'desc')
+                    ->get();
+
                 $count = 1;
-    
-                foreach($ImagesByReview as $image){
-    
+
+                foreach ($ImagesByReview as $image) {
+
                     $userCreation = User::select([
                         'users.id as id',
                         'users.username as username',
                     ])
                         ->where('users.id', $image->_creation_user)->first();
-    
+
                     $images .= "
                     <div style='page-break-before: always;'>
                         <p><strong>{$count}) {$image->description}</strong></p>
                         <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
                         <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                         <center>
-                            <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-' 
+                            <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-'
                            class='evidences'
                         </center>
                     </div>
                     ";
-                    $count +=1;
+                    $count += 1;
                 }
-    
 
-            }else{
+            } else {
                 $id_bill = $TravelExpenses['id'];
                 $item_transport .= "
                 <tr>
@@ -633,11 +636,11 @@ class TravelExpensesController extends Controller
                 $mount = isset($expenses['mount']) ? $expenses['mount'] : 1;
                 $days = isset($expenses['days']) ? $expenses['days'] : 1;
                 $price_total = isset($expenses['price_total']) ? $expenses['price_total'] : $expenses['price'];
-                
+
                 $summary .= "
                         <tr>
                             <td><center >{$counter}</center></td>
-                            <td><center >".strtoupper($expenses['description'])."</center></td>
+                            <td><center >" . strtoupper($expenses['description']) . "</center></td>
                             <td><center >S/{$price_unity}</center></td>
                             <td><center >{$mount}</center></td>
                             <td><center >{$days}</center></td>
@@ -646,9 +649,6 @@ class TravelExpensesController extends Controller
                     ";
                 $counter++;
             }
-
-            
-
 
             $template = str_replace(
                 [
@@ -669,7 +669,7 @@ class TravelExpensesController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     strtoupper($TravelExpenses['description']),
-                    strtoupper($request->technical['name'].' '.$request->technical['lastname']),
+                    strtoupper($request->technical['name'] . ' ' . $request->technical['lastname']),
                     $request->date_expense,
                     $item_transport,
                     $summary,
@@ -694,6 +694,5 @@ class TravelExpensesController extends Controller
             );
         }
     }
-
 
 }
