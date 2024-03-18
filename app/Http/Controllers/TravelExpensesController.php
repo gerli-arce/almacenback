@@ -555,79 +555,86 @@ class TravelExpensesController extends Controller
 
             $summary = '';
             $item_transport = '';
+            $isBill = '';
 
-            if ($TravelExpenses['mobility_type'] == "MOVILIDAD") {
-                $ChargeGasolineJpa = ChargeGasoline::select([
-                    'id',
-                    'gasoline_type',
-                    'price_all',
-                    'igv',
-                    'price_engraved',
-                ])->where('id', $TravelExpenses['_change_gasoline'])->first();
-                $url_bill = 'charge_gasolineimg/' . $ChargeGasolineJpa->id;
-                $CarJpa = Cars::select([
-                    'id',
-                    'placa',
-                    'color',
-                    'status',
-                ])->find($TravelExpenses->_car);
-                if (!$CarJpa) {
-                    throw new Exception('No se encontro el vehiculo');
-                }
-
-                $item_transport .= "
-                <tr>
-                    <td><center >1</center></td>
-                    <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}(<strong>{$CarJpa->placa}</strong>)</center></td>
-                    <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
-                    <td><center >1</center></td>
-                    <td><center >| |</center></td>
-                    <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
-                </tr>
-                ";
-
-                $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
-                    ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
-                    ->orderBy('id', 'desc')
-                    ->get();
-
-                $count = 1;
-
-                foreach ($ImagesByReview as $image) {
-
-                    $userCreation = User::select([
-                        'users.id as id',
-                        'users.username as username',
-                    ])
-                        ->where('users.id', $image->_creation_user)->first();
-
-                    $images .= "
-                    <div style='page-break-before: always;'>
-                        <p><strong>{$count}) {$image->description}</strong></p>
-                        <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
-                        <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
-                        <center>
-                            <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-'
-                           class='evidences'
-                        </center>
-                    </div>
+            if(isset($TravelExpenses['mobility_type'])){
+                if ($TravelExpenses['mobility_type'] == "MOVILIDAD") {
+                    $ChargeGasolineJpa = ChargeGasoline::select([
+                        'id',
+                        'gasoline_type',
+                        'price_all',
+                        'igv',
+                        'price_engraved',
+                    ])->where('id', $TravelExpenses['_change_gasoline'])->first();
+                    $url_bill = 'charge_gasolineimg/' . $ChargeGasolineJpa->id;
+                    $CarJpa = Cars::select([
+                        'id',
+                        'placa',
+                        'color',
+                        'status',
+                    ])->find($TravelExpenses->_car);
+                    if (!$CarJpa) {
+                        throw new Exception('No se encontro el vehiculo');
+                    }
+    
+                    $item_transport .= "
+                    <tr>
+                        <td><center >1</center></td>
+                        <td><center >{$TravelExpenses['mobility_type']} - {$ChargeGasolineJpa->gasoline_type}(<strong>{$CarJpa->placa}</strong>)</center></td>
+                        <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
+                        <td><center >1</center></td>
+                        <td><center ></center></td>
+                        <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
+                    </tr>
                     ";
-                    $count += 1;
+    
+                    $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
+                        ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
+                        ->orderBy('id', 'desc')
+                        ->get();
+    
+                    $count = 1;
+    
+                    foreach ($ImagesByReview as $image) {
+    
+                        $userCreation = User::select([
+                            'users.id as id',
+                            'users.username as username',
+                        ])
+                            ->where('users.id', $image->_creation_user)->first();
+    
+                        $images .= "
+                        <div style='page-break-before: always;'>
+                            <p><strong>{$count}) {$image->description}</strong></p>
+                            <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                            <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                            <center>
+                                <img src='http://almacen.fastnetperu.com.pe/api/charge_gasolineimgs/{$image->id}/full' alt='-'
+                               class='evidences'
+                            </center>
+                        </div>
+                        ";
+                        $count += 1;
+                    }
+    
+                } else {
+                    $id_bill = $TravelExpenses['id'];
+                    $item_transport .= "
+                    <tr>
+                        <td><center >1</center></td>
+                        <td><center >TRANSPORTE - {$TravelExpenses['mobility_type']}</center></td>
+                        <td><center >S/{$TravelExpenses['price_drive']}</center></td>
+                        <td><center >1</center></td>
+                        <td><center ></center></td>
+                        <td><center >S/{$TravelExpenses['price_drive']}</center></td>
+                    </tr>
+                    ";
                 }
-
-            } else {
-                $id_bill = $TravelExpenses['id'];
-                $item_transport .= "
-                <tr>
-                    <td><center >1</center></td>
-                    <td><center >TRANSPORTE - {$TravelExpenses['mobility_type']}</center></td>
-                    <td><center >S/{$TravelExpenses['price_drive']}</center></td>
-                    <td><center >1</center></td>
-                    <td><center >| |</center></td>
-                    <td><center >S/{$TravelExpenses['price_drive']}</center></td>
-                </tr>
-                ";
+            }else{
+                $isBill = 'hide';
             }
+
+           
 
             $counter = 1;
             foreach ($TravelExpenses->expenses as $expenses) {
@@ -662,6 +669,7 @@ class TravelExpensesController extends Controller
                     '{summary}',
                     '{total}',
                     '{url_bill}',
+                    '{isBill}',
                     '{images}',
                 ],
                 [
@@ -675,6 +683,7 @@ class TravelExpensesController extends Controller
                     $summary,
                     $TravelExpenses['price_all'],
                     $url_bill,
+                    $isBill,
                     $images,
                 ],
                 $template
