@@ -15,7 +15,8 @@ use App\Http\Controllers\{
     ParcelsRegistersController, PlantPendingController, EntrysController, 
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
-    ChangesCarController, ReviewTechnicalController, ChargeGasolineController, TravelExpensesController
+    ChangesCarController, ReviewTechnicalController, ChargeGasolineController, TravelExpensesController,
+    ClaimsTypeController
 };
 
 /*
@@ -584,6 +585,14 @@ Route::post('/travel_expenses/paginate', [TravelExpensesController::class, 'pagi
 Route::get('/travel_expensesimg/{id}/{zize}', [TravelExpensesController::class, 'image']);
 Route::post('/travel_expenses/report', [TravelExpensesController::class, 'GenerareReportByExpense']);
 
+
+// CLAIMS TYPE
+Route::post('/claims_type', [ClaimsTypeController::class, 'store']);
+Route::patch('/claims_type', [ClaimsTypeController::class, 'update']);
+Route::delete('/claims_type', [ClaimsTypeController::class, 'delete']);
+Route::post('/claims_type/restore', [ClaimsTypeController::class, 'restore']);
+Route::post('/claims_type/paginate', [ClaimsTypeController::class, 'paginate']);
+Route::post('/claims_type/search', [ClaimsTypeController::class, 'search']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
