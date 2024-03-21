@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\ClaimsType;
+use App\Models\Plans;
 use App\Models\Response;
-use App\Models\ViewReviewCar;
+use App\Models\ViewPlans;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ClaimsTypeController extends Controller
+class PlansController extends Controller
 {
     public function store(Request $request)
     {
@@ -26,20 +27,20 @@ class ClaimsTypeController extends Controller
                 throw new Exception("No tienes permisos para esta acción");
             }
 
-            $ClaimsTypeJpa = new ClaimsType();
-            $ClaimsTypeJpa->claim = $request->claim;
-            $ClaimsTypeJpa->description = $request->description;
+            $PlansJpa = new Plans();
+            $PlansJpa->plan = $request->plan;
+            $PlansJpa->description = $request->description;
 
-            $ClaimsTypeJpa->creation_date = gTrace::getDate('mysql');
-            $ClaimsTypeJpa->_creation_user = $userid;
-            $ClaimsTypeJpa->update_date = gTrace::getDate('mysql');
-            $ClaimsTypeJpa->_update_user = $userid;
-            $ClaimsTypeJpa->status = "1";
-            $ClaimsTypeJpa->save();
+            $PlansJpa->creation_date = gTrace::getDate('mysql');
+            $PlansJpa->_creation_user = $userid;
+            $PlansJpa->update_date = gTrace::getDate('mysql');
+            $PlansJpa->_update_user = $userid;
+            $PlansJpa->status = "1";
+            $PlansJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Se ha creado correctamente');
-            $response->setData($ClaimsTypeJpa->toArray());
+            $response->setData($PlansJpa->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -64,13 +65,13 @@ class ClaimsTypeController extends Controller
                 throw new Exception('No tienes permisos para listar movilidades  de ' . $branch);
             }
 
-            $verifyCarJpa = ClaimsType::select([
+            $verifyCarJpa = Plans::select([
                 'id',
-                'claim',
+                'plan',
             ])->whereNotNull('status')
-                ->WhereRaw("claim LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->WhereRaw("plan LIKE CONCAT('%', ?, '%')", [$request->term])
                 ->orWhereRaw("id LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('claim', 'asc')
+                ->orderBy('plan', 'asc')
                 ->get();
 
             $response->setStatus(200);
@@ -102,7 +103,7 @@ class ClaimsTypeController extends Controller
                 throw new Exception('No tienes permisos para esta acción');
             }
 
-            $query = ClaimsType::select('*')
+            $query = ViewPlans::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -114,11 +115,8 @@ class ClaimsTypeController extends Controller
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-                if ($column == 'id' || $column == '*') {
-                    $q->orWhere('id', $type, $value);
-                }
-                if ($column == 'claim' || $column == '*') {
-                    $q->orWhere('claim', $type, $value);
+                if ($column == 'plan' || $column == '*') {
+                    $q->where('plan', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -126,17 +124,23 @@ class ClaimsTypeController extends Controller
             });
 
             $iTotalDisplayRecords = $query->count();
-            $ClaimsJpa = $query
+            $PlansJpa = $query
                 ->skip($request->start)
                 ->take($request->length)
                 ->get();
+
+                $Plans = array();
+                foreach ($PlansJpa as $PlanJpa) {
+                    $Plan = gJSON::restore($PlanJpa->toArray(), '__');
+                    $Plans[] = $Plan;
+                }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewReviewCar::count());
-            $response->setData($ClaimsJpa->toArray());
+            $response->setITotalRecords(ViewPlans::count());
+            $response->setData($Plans);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -161,12 +165,12 @@ class ClaimsTypeController extends Controller
                 throw new Exception("No tienes permisos para actualizar");
             }
 
-            $ClaimsTypeJpa = ClaimsType::find($request->id);
-            $ClaimsTypeJpa->claim = $request->claim;
-            $ClaimsTypeJpa->description = $request->description;
-            $ClaimsTypeJpa->_update_user = $userid;
-            $ClaimsTypeJpa->update_date = gTrace::getDate('mysql');
-            $ClaimsTypeJpa->save();
+            $PlansJpa = Plans::find($request->id);
+            $PlansJpa->plan = $request->plan;
+            $PlansJpa->description = $request->description;
+            $PlansJpa->_update_user = $userid;
+            $PlansJpa->update_date = gTrace::getDate('mysql');
+            $PlansJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Se ha actualizado correctamente');
@@ -194,9 +198,9 @@ class ClaimsTypeController extends Controller
                 throw new Exception("No tienes permisos para eliminar");
             }
 
-            $ClaimsTypeJpa = ClaimsType::find($request->id);
-            $ClaimsTypeJpa->status = null;
-            $ClaimsTypeJpa->save();
+            $PlansJpa = Plans::find($request->id);
+            $PlansJpa->status = null;
+            $PlansJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Se ha eliminado correctamente');
@@ -224,9 +228,9 @@ class ClaimsTypeController extends Controller
                 throw new Exception("No tienes permisos para restaurar");
             }
 
-            $ClaimsTypeJpa = ClaimsType::find($request->id);
-            $ClaimsTypeJpa->status = 1;
-            $ClaimsTypeJpa->save();
+            $PlansJpa = Plans::find($request->id);
+            $PlansJpa->status = 1;
+            $PlansJpa->save();
 
             $response->setStatus(200);
             $response->setMessage('Se ha restaurado correctamente');
@@ -240,5 +244,4 @@ class ClaimsTypeController extends Controller
             );
         }
     }
-
 }
