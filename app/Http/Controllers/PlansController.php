@@ -129,11 +129,11 @@ class PlansController extends Controller
                 ->take($request->length)
                 ->get();
 
-                $Plans = array();
-                foreach ($PlansJpa as $PlanJpa) {
-                    $Plan = gJSON::restore($PlanJpa->toArray(), '__');
-                    $Plans[] = $Plan;
-                }
+            $Plans = array();
+            foreach ($PlansJpa as $PlanJpa) {
+                $Plan = gJSON::restore($PlanJpa->toArray(), '__');
+                $Plans[] = $Plan;
+            }
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');

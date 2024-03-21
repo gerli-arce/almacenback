@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\ClaimsType;
+use App\Models\ViewClaimType;
 use App\Models\Response;
 use App\Models\ViewReviewCar;
 use Exception;
@@ -102,7 +104,7 @@ class ClaimsTypeController extends Controller
                 throw new Exception('No tienes permisos para esta acción');
             }
 
-            $query = ClaimsType::select('*')
+            $query = ViewClaimType::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -131,12 +133,18 @@ class ClaimsTypeController extends Controller
                 ->take($request->length)
                 ->get();
 
+            $ClaimsType = array();
+            foreach ($ClaimsJpa as $ClaimJpa) {
+                $Claim = gJSON::restore($ClaimJpa->toArray(), '__');
+                $ClaimsType[] = $Claim;
+            }
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewReviewCar::count());
-            $response->setData($ClaimsJpa->toArray());
+            $response->setITotalRecords(ViewClaimType::count());
+            $response->setData($ClaimsType);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
