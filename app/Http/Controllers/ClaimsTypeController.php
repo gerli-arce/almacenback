@@ -49,7 +49,7 @@ class ClaimsTypeController extends Controller
             $ClaimsTypeJpa->save();
 
             $response->setStatus(200);
-            $response->setMessage('El checklist se ha creado correctamente');
+            $response->setMessage('Se ha creado correctamente');
             $response->setData($ClaimsTypeJpa->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
