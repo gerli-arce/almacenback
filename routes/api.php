@@ -16,7 +16,7 @@ use App\Http\Controllers\{
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
     ChangesCarController, ReviewTechnicalController, ChargeGasolineController, TravelExpensesController,
-    ClaimsTypeController, PlansController
+    ClaimsTypeController, PlansController, ClaimsController
 };
 
 /*
@@ -603,6 +603,15 @@ Route::post('/plans/paginate', [PlansController::class, 'paginate']);
 Route::post('/plans/search', [PlansController::class, 'search']);
 
 // CLAIMS
+Route::post('/claims', [ClaimsController::class, 'store']);
+Route::patch('/claims', [ClaimsController::class, 'update']);
+Route::delete('/claims', [ClaimsController::class, 'delete']);
+Route::post('/claims/restore', [ClaimsController::class, 'restore']);
+Route::post('/claims/paginate', [ClaimsController::class, 'paginate']);
+Route::post('/claims/search', [ClaimsController::class, 'search']);
+
+
+
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);
