@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\ClaimsType;
+use App\Models\Plans;
 use App\Models\Claims;
-use App\Models\ViewClaimType;
+use App\Models\ViewModels;
 use App\Models\Response;
-use App\Models\ViewReviewCar;
+use App\Models\ViewClaim;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +74,7 @@ class ClaimsController extends Controller
                 throw new Exception('No tienes permisos para esta acción');
             }
 
-            $query = ViewClaimType::select('*')
+            $query = ViewClaim::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
@@ -90,7 +90,13 @@ class ClaimsController extends Controller
                     $q->orWhere('id', $type, $value);
                 }
                 if ($column == 'claim' || $column == '*') {
-                    $q->orWhere('claim', $type, $value);
+                    $q->orWhere('claim__claim', $type, $value);
+                }
+                if ($column == 'branch' || $column == '*') {
+                    $q->orWhere('branch__name', $type, $value);
+                }
+                if ($column == 'date' || $column == '*') {
+                    $q->orWhere('date', $type, $value);
                 }
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
@@ -106,6 +112,14 @@ class ClaimsController extends Controller
             $ClaimsType = array();
             foreach ($ClaimsJpa as $ClaimJpa) {
                 $Claim = gJSON::restore($ClaimJpa->toArray(), '__');
+                if(isset($Claim['plan_id'])){
+                    $PlansJpa = Plans::find($Claim['plan_id']);
+                    $Claim['plan'] = $PlansJpa;
+                }
+                if(isset($Claim['model_id'])){
+                    $ModelsJpa = ViewModels::find($Claim['model_id']);
+                    $Claim['model'] = $ModelsJpa;
+                }
                 $ClaimsType[] = $Claim;
             }
 
@@ -113,7 +127,7 @@ class ClaimsController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(ViewClaimType::count());
+            $response->setITotalRecords(ViewClaim::count());
             $response->setData($ClaimsType);
         } catch (\Throwable $th) {
             $response->setStatus(400);
