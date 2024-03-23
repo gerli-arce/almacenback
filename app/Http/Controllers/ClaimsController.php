@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
-use App\Models\Plans;
 use App\Models\Claims;
-use App\Models\ViewModels;
+use App\Models\Plans;
 use App\Models\Response;
 use App\Models\ViewClaim;
+use App\Models\ViewModels;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,11 +112,11 @@ class ClaimsController extends Controller
             $ClaimsType = array();
             foreach ($ClaimsJpa as $ClaimJpa) {
                 $Claim = gJSON::restore($ClaimJpa->toArray(), '__');
-                if(isset($Claim['plan_id'])){
+                if (isset($Claim['plan_id'])) {
                     $PlansJpa = Plans::find($Claim['plan_id']);
                     $Claim['plan'] = $PlansJpa;
                 }
-                if(isset($Claim['model_id'])){
+                if (isset($Claim['model_id'])) {
                     $ModelsJpa = ViewModels::find($Claim['model_id']);
                     $Claim['model'] = $ModelsJpa;
                 }
@@ -132,6 +132,125 @@ class ClaimsController extends Controller
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function update(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'update')) {
+                throw new Exception("No tienes permisos para esta acción");
+            }
+
+            $ClaimsJpa = Claims::find($request->id);
+            if (isset($request->_client)) {
+                $ClaimsJpa->_client = $request->_client;
+            }
+            if (isset($request->_claim)) {
+                $ClaimsJpa->_claim = $request->_claim;
+            }
+            if (isset($request->_plan)) {
+                $ClaimsJpa->_plan = $request->_plan;
+            }
+            if (isset($request->_model)) {
+                $ClaimsJpa->_model = $request->_model;
+            }
+            if (isset($request->_branch)) {
+                $ClaimsJpa->_branch = $request->_branch;
+            }
+            if (isset($request->date)) {
+                $ClaimsJpa->date = $request->date;
+            }
+            $ClaimsJpa->description = $request->description;
+            $ClaimsJpa->update_date = gTrace::getDate('mysql');
+            $ClaimsJpa->_update_user = $userid;
+            $ClaimsJpa->status = "1";
+            $ClaimsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Se ha actualizado correctamente');
+            $response->setData($ClaimsJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'delete_restore')) {
+                throw new Exception("No tienes permisos para esta acción");
+            }
+
+            $ClaimsJpa = Claims::find($request->id);
+            $ClaimsJpa->status = null;
+            $ClaimsJpa->update_date = gTrace::getDate('mysql');
+            $ClaimsJpa->_update_user = $userid;
+            $ClaimsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Se ha eliminado correctamente');
+            $response->setData($ClaimsJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'delete_restore')) {
+                throw new Exception("No tienes permisos para esta acción");
+            }
+
+            $ClaimsJpa = Claims::find($request->id);
+            $ClaimsJpa->status = "1";
+            $ClaimsJpa->update_date = gTrace::getDate('mysql');
+            $ClaimsJpa->_update_user = $userid;
+            $ClaimsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Se ha restaurado correctamente');
+            $response->setData($ClaimsJpa->toArray());
+
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
         } finally {
             return response(
                 $response->toArray(),
