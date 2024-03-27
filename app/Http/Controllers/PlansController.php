@@ -57,13 +57,13 @@ class PlansController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
-                throw new Exception('No tienes permisos para listar movilidades  de ' . $branch);
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+            //     throw new Exception('No tienes permisos para listar movilidades  de ' . $branch);
+            // }
 
             $verifyCarJpa = Plans::select([
                 'id',

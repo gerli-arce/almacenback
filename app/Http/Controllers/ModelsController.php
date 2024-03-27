@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\gLibraries\gJson;
+use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
@@ -126,13 +126,13 @@ class ModelsController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
-                throw new Exception('No tienes permisos para listar modelos');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
+            //     throw new Exception('No tienes permisos para listar modelos');
+            // }
 
             $modelsJpa = ViewModels::select([
                 '*',
@@ -167,13 +167,13 @@ class ModelsController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
-                throw new Exception('No tienes permisos para listar modelos');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'models', 'read')) {
+            //     throw new Exception('No tienes permisos para listar modelos');
+            // }
 
             $modelsJpa = ViewModels::find($request->id);
 

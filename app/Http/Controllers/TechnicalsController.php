@@ -33,13 +33,13 @@ class TechnicalsController extends Controller
         $response = new Response();
         try {
 
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
-                throw new Exception('No tienes permisos para listar técnicos');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+            //     throw new Exception('No tienes permisos para listar técnicos');
+            // }
 
             $peopleJpa = ViewPeople::select([
                 'id',
