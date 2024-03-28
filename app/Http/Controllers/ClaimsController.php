@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Claims;
 use App\Models\Plans;
+use App\Models\Branch;
 use App\Models\Response;
 use App\Models\ViewClaim;
 use App\Models\ViewModels;
@@ -274,36 +275,82 @@ class ClaimsController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportChargeGasoline.html');
+            $template = file_get_contents('../storage/templates/reportClaim.html');
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
-            $summary = '';
             $ViewClaimJpa = ViewClaim::find($request->id);
-            $count = 1;
+            $claim = gJSON::restore($ViewClaimJpa->toArray(), '__');
+            if(isset($claim['plan_id'])){
+                $PlanJpa = Plans::find($claim['plan_id']);
+                if($PlanJpa){
+                    $claim['plan'] = $PlanJpa;
+                }
+            }
 
+            if(isset($claim['model_id'])){
+                $ModelsJpa = ViewModels::select([
+                    'id',
+                    'model',
+                    'relative_id',
+                    'status'
+                ])->find($claim['model_id']);
+                if($ModelsJpa){
+                    $claim['model'] = gJSON::restore($ModelsJpa->toArray(), '__');
+                }
+            }
+
+            $model = '';
+            if(isset($claim['model'])){
+                $model = $claim['model']['model'];
+            }
+
+            $plan = '';
+            if(isset($claim['plan'])){
+                $plan = $claim['plan']['plan'];
+            }
 
             $template = str_replace(
                 [
                     '{id}',
-                    '{placa}',
-                    '{technical}',
-                    '{date}',
-                    '{gasoline}',
-                    '{price_all}',
-                    '{igv}',
-                    '{price_engraved}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{client}',
+                    '{branch}',
+                    '{claim}',
                     '{description}',
-                    '{summary}',
-                    '{images}',
+                    '{date}',
+                    '{plan}',
+                    '{model}',
+                    '{ejcecutive}',
                 ],
                 [
-                   
+                   $claim['id'],
+                   $branch_->name,
+                   gTrace::getDate('long'),
+                   $claim['client']['name'].' '.$claim['client']['lastname'],
+                   $claim['branch']['name'],
+                   $claim['claim']['claim'],
+                   $claim['description'],
+                   $claim['date'],
+                   $plan,
+                   $model,
+                   $claim['user_creation']['person']['name'].' '.$claim['user_creation']['person']['lastname'],
                 ],
                 $template
             );
 
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Instlación.pdf');
+            return $pdf->stream('Reclamo.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('Operacion correcta');
+            // $response->setData($claim);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);

@@ -593,7 +593,6 @@ Route::delete('/claims_type', [ClaimsTypeController::class, 'delete']);
 Route::post('/claims_type/restore', [ClaimsTypeController::class, 'restore']);
 Route::post('/claims_type/paginate', [ClaimsTypeController::class, 'paginate']);
 Route::post('/claims_type/search', [ClaimsTypeController::class, 'search']);
-Route::post('/claims_type/report/by/claim', [ClaimsTypeController::class, 'generateReportByClaim']);
 
 // PLANS
 Route::post('/plans', [PlansController::class, 'store']);
@@ -610,6 +609,7 @@ Route::delete('/claims', [ClaimsController::class, 'delete']);
 Route::post('/claims/restore', [ClaimsController::class, 'restore']);
 Route::post('/claims/paginate', [ClaimsController::class, 'paginate']);
 Route::post('/claims/search', [ClaimsController::class, 'search']);
+Route::post('/claims/report/by/claim', [ClaimsController::class, 'generateReportByClaim']);
 
 
 
