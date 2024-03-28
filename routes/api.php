@@ -593,6 +593,7 @@ Route::delete('/claims_type', [ClaimsTypeController::class, 'delete']);
 Route::post('/claims_type/restore', [ClaimsTypeController::class, 'restore']);
 Route::post('/claims_type/paginate', [ClaimsTypeController::class, 'paginate']);
 Route::post('/claims_type/search', [ClaimsTypeController::class, 'search']);
+Route::post('/claims_type/report/by/claim', [ClaimsTypeController::class, 'generateReportByClaim']);
 
 // PLANS
 Route::post('/plans', [PlansController::class, 'store']);

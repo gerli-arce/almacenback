@@ -13,6 +13,8 @@ use App\Models\ViewModels;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class ClaimsController extends Controller
 {
@@ -252,6 +254,60 @@ class ClaimsController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
+    public function generateReportByClaim(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportChargeGasoline.html');
+
+            $summary = '';
+            $ViewClaimJpa = ViewClaim::find($request->id);
+            $count = 1;
+
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{placa}',
+                    '{technical}',
+                    '{date}',
+                    '{gasoline}',
+                    '{price_all}',
+                    '{igv}',
+                    '{price_engraved}',
+                    '{description}',
+                    '{summary}',
+                    '{images}',
+                ],
+                [
+                   
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
