@@ -262,14 +262,13 @@ class ClaimsController extends Controller
         }
     }
 
-
     public function generateReportByClaim(Request $request){
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
                 throw new Exception($message);
             }
-            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
                 throw new Exception('No tienes permisos');
             }
             $options = new Options();
@@ -342,15 +341,99 @@ class ClaimsController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Reclamo.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
-            // $response = new Response();
-            // $response->setStatus(200);
-            // $response->setMessage('Operacion correcta');
-            // $response->setData($claim);
-            // return response(
-            //     $response->toArray(),
-            //     $response->getStatus()
+    public function generateReports(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportsClaims.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $query = ViewClaim::select('*');
+
+            if(isset($request->date_start) && isset($request->date_end)){
+                $query
+                ->whereBetween('date', [$request->date_start, $request->date_end]);
+            }else{
+
+            }
+
+            if(isset($request->branch)){
+                $query->where('_branch', $request->branch);
+            }else{
+
+            }
+
+            if(isset($request->claim)){
+                $query->where('_claim', $request->claim);
+            }else{
+
+            }
+
+            $claimsJpa = $query->get();
+
+            $claims = array();
+            foreach($claimsJpa as $claimJpa){
+                $claim = gJSON::restore($claimJpa->toArray(), '__');
+                $claims[] = $claim;
+            }
+            
+
+
+
+            // $template = str_replace(
+            //     [
+            //         '{id}',
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{client}',
+            //         '{branch}',
+            //         '{claim}',
+            //         '{description}',
+            //         '{date}',
+            //         '{plan}',
+            //         '{model}',
+            //         '{ejcecutive}',
+            //     ],
+            //     [
+            //        $branch_->name,
+            //        gTrace::getDate('long'),
+            //     ],
+            //     $template
             // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reclamo.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('Operacion correcta');
+            $response->setData($claims);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);

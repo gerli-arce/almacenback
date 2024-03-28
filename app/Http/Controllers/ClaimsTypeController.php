@@ -8,7 +8,6 @@ use App\gLibraries\gValidate;
 use App\Models\ClaimsType;
 use App\Models\ViewClaimType;
 use App\Models\Response;
-use App\Models\ViewReviewCar;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
