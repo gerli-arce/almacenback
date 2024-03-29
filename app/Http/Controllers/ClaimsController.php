@@ -5,17 +5,17 @@ namespace App\Http\Controllers;
 use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
+use App\Models\Branch;
 use App\Models\Claims;
 use App\Models\Plans;
-use App\Models\Branch;
 use App\Models\Response;
 use App\Models\ViewClaim;
 use App\Models\ViewModels;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class ClaimsController extends Controller
 {
@@ -262,7 +262,8 @@ class ClaimsController extends Controller
         }
     }
 
-    public function generateReportByClaim(Request $request){
+    public function generateReportByClaim(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -279,32 +280,32 @@ class ClaimsController extends Controller
 
             $ViewClaimJpa = ViewClaim::find($request->id);
             $claim = gJSON::restore($ViewClaimJpa->toArray(), '__');
-            if(isset($claim['plan_id'])){
+            if (isset($claim['plan_id'])) {
                 $PlanJpa = Plans::find($claim['plan_id']);
-                if($PlanJpa){
+                if ($PlanJpa) {
                     $claim['plan'] = $PlanJpa;
                 }
             }
 
-            if(isset($claim['model_id'])){
+            if (isset($claim['model_id'])) {
                 $ModelsJpa = ViewModels::select([
                     'id',
                     'model',
                     'relative_id',
-                    'status'
+                    'status',
                 ])->find($claim['model_id']);
-                if($ModelsJpa){
+                if ($ModelsJpa) {
                     $claim['model'] = gJSON::restore($ModelsJpa->toArray(), '__');
                 }
             }
 
             $model = '';
-            if(isset($claim['model'])){
+            if (isset($claim['model'])) {
                 $model = $claim['model']['model'];
             }
 
             $plan = '';
-            if(isset($claim['plan'])){
+            if (isset($claim['plan'])) {
                 $plan = $claim['plan']['plan'];
             }
 
@@ -323,17 +324,17 @@ class ClaimsController extends Controller
                     '{ejcecutive}',
                 ],
                 [
-                   $claim['id'],
-                   $branch_->name,
-                   gTrace::getDate('long'),
-                   $claim['client']['name'].' '.$claim['client']['lastname'],
-                   $claim['branch']['name'],
-                   $claim['claim']['claim'],
-                   $claim['description'],
-                   $claim['date'],
-                   $plan,
-                   $model,
-                   $claim['user_creation']['person']['name'].' '.$claim['user_creation']['person']['lastname'],
+                    $claim['id'],
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $claim['client']['name'] . ' ' . $claim['client']['lastname'],
+                    $claim['branch']['name'],
+                    $claim['claim']['claim'],
+                    $claim['description'],
+                    $claim['date'],
+                    $plan,
+                    $model,
+                    $claim['user_creation']['person']['name'] . ' ' . $claim['user_creation']['person']['lastname'],
                 ],
                 $template
             );
@@ -352,7 +353,8 @@ class ClaimsController extends Controller
         }
     }
 
-    public function generateReports(Request $request){
+    public function generateReports(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -369,37 +371,49 @@ class ClaimsController extends Controller
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
+
+
             $query = ViewClaim::select('*');
+            if (
+                !isset($request->branch) &&
+                !isset($request->date_start) &&
+                !isset($request->date_end) &&
+                !isset($request->claim)) 
+                {
+                    $minDate = $query->whereNotNull('date')->min('date');
+                    $maxDate = $query->whereNotNull('date')->max('date');
+                
 
-            if(isset($request->date_start) && isset($request->date_end)){
-                $query
-                ->whereBetween('date', [$request->date_start, $request->date_end]);
-            }else{
+            } else {
+                {
+                    if (isset($request->date_start) && isset($request->date_end)) {
+                        $query
+                            ->whereBetween('date', [$request->date_start, $request->date_end]);
+                    } else {
 
-            }
+                    }
+                }
 
-            if(isset($request->branch)){
-                $query->where('_branch', $request->branch);
-            }else{
+                if (isset($request->branch)) {
+                    $query->where('_branch', $request->branch);
+                } else {
 
-            }
+                }
 
-            if(isset($request->claim)){
-                $query->where('_claim', $request->claim);
-            }else{
+                if (isset($request->claim)) {
+                    $query->where('_claim', $request->claim);
+                } else {
 
+                }
             }
 
             $claimsJpa = $query->get();
 
             $claims = array();
-            foreach($claimsJpa as $claimJpa){
+            foreach ($claimsJpa as $claimJpa) {
                 $claim = gJSON::restore($claimJpa->toArray(), '__');
                 $claims[] = $claim;
             }
-            
-
-
 
             // $template = str_replace(
             //     [
@@ -422,18 +436,18 @@ class ClaimsController extends Controller
             //     $template
             // );
 
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
 
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('Operacion correcta');
-            $response->setData($claims);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('Operacion correcta');
+            // $response->setData($claims);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
