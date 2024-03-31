@@ -11,6 +11,7 @@ use App\Models\Plans;
 use App\Models\Response;
 use App\Models\ViewClaim;
 use App\Models\ViewModels;
+use App\Models\ViewUsers;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -371,39 +372,38 @@ class ClaimsController extends Controller
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
 
+            $minDate = $request->date_start;
+            $maxDate = $request->date_end;
 
-            $query = ViewClaim::select('*');
+            $query = ViewClaim::select('*')->whereNotNull('status');
             if (
                 !isset($request->branch) &&
                 !isset($request->date_start) &&
                 !isset($request->date_end) &&
-                !isset($request->claim)) 
-                {
-                    $minDate = $query->whereNotNull('date')->min('date');
-                    $maxDate = $query->whereNotNull('date')->max('date');
-                
-
+                !isset($request->claim)) {
+                $minDate = $query->whereNotNull('date')->min('date');
+                $maxDate = $query->whereNotNull('date')->max('date');
             } else {
                 {
                     if (isset($request->date_start) && isset($request->date_end)) {
                         $query
                             ->whereBetween('date', [$request->date_start, $request->date_end]);
-                    } else {
-
                     }
                 }
 
                 if (isset($request->branch)) {
-                    $query->where('_branch', $request->branch);
-                } else {
-
+                    $query->where('branch__id', $request->branch);
                 }
 
                 if (isset($request->claim)) {
-                    $query->where('_claim', $request->claim);
-                } else {
-
+                    $query->where('claim__id', $request->claim);
                 }
             }
 
@@ -415,26 +415,87 @@ class ClaimsController extends Controller
                 $claims[] = $claim;
             }
 
-            // $template = str_replace(
-            //     [
-            //         '{id}',
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{client}',
-            //         '{branch}',
-            //         '{claim}',
-            //         '{description}',
-            //         '{date}',
-            //         '{plan}',
-            //         '{model}',
-            //         '{ejcecutive}',
-            //     ],
-            //     [
-            //        $branch_->name,
-            //        gTrace::getDate('long'),
-            //     ],
-            //     $template
-            // );
+            $finalClaims = [];
+            $claimsAll = 0;
+            foreach ($claims as $claim) {
+                $branchId = $claim['branch']['id'];
+                $claimId = $claim['claim']['id'];
+
+                if (!array_key_exists($branchId, $finalClaims)) {
+                    $finalClaims[$branchId] = [
+                        "id" => $branchId,
+                        "name" => $claim['branch']['name'],
+                        "claims" => [],
+                    ];
+                }
+                $existingClaim = isset($finalClaims[$branchId]["claims"][$claimId]) ? $finalClaims[$branchId]["claims"][$claimId] : null;
+                if (!$existingClaim) {
+                    $finalClaims[$branchId]["claims"][$claimId] = [
+                        "id" => $claimId,
+                        "claim" => $claim['claim']['claim'],
+                        "count" => 1,
+                    ];
+                } else {
+                    $finalClaims[$branchId]["claims"][$claimId]["count"]++;
+                }
+                $claimsAll++;
+            }
+
+            $summary = "";
+
+            foreach ($finalClaims as $branchId => $branchData) {
+                $branchName = $branchData['name'];
+                $branchTotal = 0; // Initialize branch total count
+
+                $summary .= '<tr>';
+                $summary .= '<td rowspan="' . count($branchData['claims']) . '">' . $branchName . '</td>'; // Rowspan for claims
+                $count = 1;
+
+                $claimsByBranch = 0;
+                foreach($branchData['claims'] as $cl){
+                    $claimsByBranch += $cl['count'];
+                }
+
+                foreach ($branchData['claims'] as $claimId => $claimData) {
+                    $claimName = $claimData['claim'];
+                    $claimCount = $claimData['count'];
+                    $branchTotal += $claimCount; 
+                    $summary .= '<td>' . $claimName . '</td>';
+                    $summary .= '<td align="center">' . $claimCount . '</td>';
+                    if ($count === 1) {
+                        $summary .= '<td rowspan="' . count($branchData['claims']) . '" align="center">' . $claimsByBranch . '</td>';
+                    }
+                    $count++;
+                    $summary .= '</tr>';
+                }
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{ejecutive}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{claims_all}',
+                    '{summary}',
+                    '{description}',
+                    '{date}',
+                    '{plan}',
+                    '{model}',
+                    '{ejcecutive}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $minDate,
+                    $maxDate,
+                    $claimsAll,
+                    $summary,
+                ],
+                $template
+            );
 
             $pdf->loadHTML($template);
             $pdf->render();
@@ -443,7 +504,7 @@ class ClaimsController extends Controller
             // $response = new Response();
             // $response->setStatus(200);
             // $response->setMessage('Operacion correcta');
-            // $response->setData($claims);
+            // $response->setData($finalClaims);
             // return response(
             //     $response->toArray(),
             //     $response->getStatus()
