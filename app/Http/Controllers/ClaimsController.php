@@ -447,26 +447,27 @@ class ClaimsController extends Controller
                 $branchName = $branchData['name'];
                 $branchTotal = 0; // Initialize branch total count
 
-                $summary .= '<tr>';
-                $summary .= '<td rowspan="' . count($branchData['claims']) . '">' . $branchName . '</td>'; // Rowspan for claims
-                $count = 1;
+                $count_claims = count($branchData['claims']);
+                $summary .= "<tr><td rowspan='{$count_claims}'>{$branchName}</td>";
 
                 $claimsByBranch = 0;
                 foreach($branchData['claims'] as $cl){
                     $claimsByBranch += $cl['count'];
                 }
 
-                foreach ($branchData['claims'] as $claimId => $claimData) {
-                    $claimName = $claimData['claim'];
-                    $claimCount = $claimData['count'];
-                    $branchTotal += $claimCount; 
-                    $summary .= '<td>' . $claimName . '</td>';
-                    $summary .= '<td align="center">' . $claimCount . '</td>';
-                    if ($count === 1) {
-                        $summary .= '<td rowspan="' . count($branchData['claims']) . '" align="center">' . $claimsByBranch . '</td>';
+                $count = true;
+
+                foreach ($branchData['claims'] as $claimData) {
+                    if(!$count){
+                        $summary .= "<tr>";
                     }
-                    $count++;
-                    $summary .= '</tr>';
+                    $branchTotal += $claimData['count']; 
+                    $summary .= "<td>{$claimData['claim']}</td><td align='cente'>{$claimData['count']}</td>";
+                    if ($count == 1) {
+                        $summary .= "<td rowspan='{$count_claims}' align='center'>{$claimsByBranch}</td>";
+                        $count = false;
+                    }
+                    $summary .= "</tr>";
                 }
             }
 
@@ -500,15 +501,6 @@ class ClaimsController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Reclamo.pdf');
-
-            // $response = new Response();
-            // $response->setStatus(200);
-            // $response->setMessage('Operacion correcta');
-            // $response->setData($finalClaims);
-            // return response(
-            //     $response->toArray(),
-            //     $response->getStatus()
-            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
