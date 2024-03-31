@@ -113,6 +113,23 @@
                 padding: 5px 10px;
             }
 
+            .title_table_primary {
+                font-weight: bold;
+                color: #212635 !important;
+                text-align: center;
+                background-color: rgba(102, 134, 238, 0.568);
+            }
+
+            .title_table_secundary{
+                font-weight: bold;
+                color: #212635 !important;
+                background-color: #60708863;
+            }
+
+            .title_table_yellow{
+                background-color: #fcff4bbb;
+            }
+
             #total_hours {
                 position: relative;
                 background-color: #323a46;
@@ -287,14 +304,14 @@
                     </tr>
                     <tr>
                         <td  colspan="2">RECLAMOS TOTALES</td>
-                        <td colspan="2" align="center">{claims_all}</td>
+                        <td colspan="2" align="center" class="title_table_yellow">{claims_all}</td>
                     </tr>
-                    <tr><td colspan="4" align="center">DELATALLES</td></tr>
+                    <tr><td colspan="4" class="title_table_secundary" align="center">DELATALLES</td></tr>
                   <tr>
-                    <td>SUCURSALES</td>
-                    <td>RECLAMOS</td>
-                    <td>CATIDAD</td>
-                    <td>TOTAL</td>
+                    <td class="title_table_primary">SUCURSALES</td>
+                    <td class="title_table_primary">RECLAMOS</td>
+                    <td class="title_table_primary">CATIDAD</td>
+                    <td class="title_table_primary">TOTAL</td>
                   </tr>
                   {summary}
                   <!-- <tr>
