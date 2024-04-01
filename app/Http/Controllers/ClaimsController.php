@@ -532,7 +532,7 @@ class ClaimsController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportsClaims.html');
+            $template = file_get_contents('../storage/templates/reportsClaimsReitered.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -543,9 +543,7 @@ class ClaimsController extends Controller
                 'person__lastname',
             ])->where('id', $userid)->first();
 
-            $minDate = $request->date_start;
-            $maxDate = $request->date_end;
-
+            $summary = "";
             // $query = ViewClaim::select('*')->whereNotNull('status');
 
             $GetReitered = ViewClaim::whereNotNull('status')
@@ -553,64 +551,72 @@ class ClaimsController extends Controller
                 ->groupBy('client__id', 'claim__id')
                 ->havingRaw('COUNT(*) > 1')
                 ->get();
-            
-            $rei= array();
 
-            foreach($GetReitered as $ReiteredJpa){
-                $rei = $ReiteredJpa->toArray();
+            $rei = array();
+
+            foreach ($GetReitered as $ReiteredJpa) {
+                $GetRecords = ViewClaim::where('client__id', $ReiteredJpa->client__id)->where('claim__id', $ReiteredJpa->claim__id)->get();
+                $claims = array();
+                foreach ($GetRecords as $record) {
+                    $claims[] = gJSON::restore($record->toArray(), '__');
+                }
+                $rei[] = $claims;
             }
 
-            $GetRecords = ViewClaim::where('client__id', $rei['client__id'])->get();
+            $color = true;
+            $color_val = "bg-secondary";
 
-            // $Reitered = $GetReitered->toArray();
-
-            // foreach ($Reitered as $item) {
-            //     $clientId = $item['client__id'];
+            foreach ($rei as $reiJpa) {
 
 
-            //     // Aquí puedes manejar los registros obtenidos
-            //     foreach ($GetRecords as $record) {
-            //         // Hacer algo con cada registro
-            //     }
-            // }
-            // $claims = array();
-            // foreach ($query as $claimJpa) {
-            //     $claim = gJSON::restore($claimJpa->toArray(), '__');
-            //     $claims[] = $claim;
-            // }
+                foreach ($reiJpa as $record) {
+                    $summary.="
+                    <tr>
+                        <td class='{$color_val}'>{$record['client']['name']}{$record['client']['lastname']}</td>
+                        <td class='{$color_val}'>{$record['claim']['claim']}</td>
+                        <td class='{$color_val}'>{$record['branch']['name']}</td>
+                        <td class='{$color_val}'>{$record['date']}</td>
+                    </tr>
+                    ";
+                }
 
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{ejecutive}',
-            //         '{date_start}',
-            //         '{plan}',
-            //         '{model}',
-            //         '{ejcecutive}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $user->person__name . ' ' . $user->person__lastname,
-            //         $minDate,
-            //         $maxDate,
-            //     ],
-            //     $template
-            // );
 
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
+                if($color){
+                    $color = false;
+                    $color_val = "";
+                }else{
+                    $color = true;
+                    $color_val = "bg-secondary";
+                }
 
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('O');
-            $response->setData($GetRecords->toArray());
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{summary}'
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $summary,
+                ],
+                $template
             );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('O');
+            // $response->setData($rei);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();
