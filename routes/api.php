@@ -611,6 +611,7 @@ Route::post('/claims/paginate', [ClaimsController::class, 'paginate']);
 Route::post('/claims/search', [ClaimsController::class, 'search']);
 Route::post('/claims/report/by/claim', [ClaimsController::class, 'generateReportByClaim']);
 Route::post('/claims/reports', [ClaimsController::class, 'generateReports']);
+Route::post('/claims/reports/reitered', [ClaimsController::class, 'generateReportReitered']);
 
 
 

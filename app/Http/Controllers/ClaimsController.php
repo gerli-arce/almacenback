@@ -96,6 +96,12 @@ class ClaimsController extends Controller
                 if ($column == 'claim' || $column == '*') {
                     $q->orWhere('claim__claim', $type, $value);
                 }
+                if ($column == 'client' || $column == '*') {
+                    $q->orWhere('client__name', $type, $value);
+                }
+                if ($column == 'client' || $column == '*') {
+                    $q->orWhere('client__lastname', $type, $value);
+                }
                 if ($column == 'branch' || $column == '*') {
                     $q->orWhere('branch__name', $type, $value);
                 }
@@ -451,17 +457,17 @@ class ClaimsController extends Controller
                 $summary .= "<tr><td rowspan='{$count_claims}'>{$branchName}</td>";
 
                 $claimsByBranch = 0;
-                foreach($branchData['claims'] as $cl){
+                foreach ($branchData['claims'] as $cl) {
                     $claimsByBranch += $cl['count'];
                 }
 
                 $count = true;
 
                 foreach ($branchData['claims'] as $claimData) {
-                    if(!$count){
+                    if (!$count) {
                         $summary .= "<tr>";
                     }
-                    $branchTotal += $claimData['count']; 
+                    $branchTotal += $claimData['count'];
                     $summary .= "<td>{$claimData['claim']}</td><td align='cente'>{$claimData['count']}</td>";
                     if ($count == 1) {
                         $summary .= "<td rowspan='{$count_claims}' align='center'>{$claimsByBranch}</td>";
@@ -501,6 +507,111 @@ class ClaimsController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Reclamo.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportReitered(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportsClaims.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $minDate = $request->date_start;
+            $maxDate = $request->date_end;
+
+            // $query = ViewClaim::select('*')->whereNotNull('status');
+
+            $GetReitered = ViewClaim::whereNotNull('status')
+                ->select('client__id', 'claim__id', DB::raw('COUNT(*) as count'))
+                ->groupBy('client__id', 'claim__id')
+                ->havingRaw('COUNT(*) > 1')
+                ->get();
+            
+            $rei= array();
+
+            foreach($GetReitered as $ReiteredJpa){
+                $rei = $ReiteredJpa->toArray();
+            }
+
+            $GetRecords = ViewClaim::where('client__id', $rei['client__id'])->get();
+
+            // $Reitered = $GetReitered->toArray();
+
+            // foreach ($Reitered as $item) {
+            //     $clientId = $item['client__id'];
+
+
+            //     // Aquí puedes manejar los registros obtenidos
+            //     foreach ($GetRecords as $record) {
+            //         // Hacer algo con cada registro
+            //     }
+            // }
+            // $claims = array();
+            // foreach ($query as $claimJpa) {
+            //     $claim = gJSON::restore($claimJpa->toArray(), '__');
+            //     $claims[] = $claim;
+            // }
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{ejecutive}',
+            //         '{date_start}',
+            //         '{plan}',
+            //         '{model}',
+            //         '{ejcecutive}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $user->person__name . ' ' . $user->person__lastname,
+            //         $minDate,
+            //         $maxDate,
+            //     ],
+            //     $template
+            // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reclamo.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('O');
+            $response->setData($GetRecords->toArray());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
