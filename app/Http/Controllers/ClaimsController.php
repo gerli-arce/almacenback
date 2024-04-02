@@ -42,6 +42,26 @@ class ClaimsController extends Controller
             $ClaimsJpa->date = $request->date;
             $ClaimsJpa->description = $request->description;
 
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $ClaimsJpa->image_type = $request->image_type;
+                    $ClaimsJpa->image_mini = base64_decode($request->image_mini);
+                    $ClaimsJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
             $ClaimsJpa->creation_date = gTrace::getDate('mysql');
             $ClaimsJpa->_creation_user = $userid;
             $ClaimsJpa->update_date = gTrace::getDate('mysql');
@@ -49,9 +69,22 @@ class ClaimsController extends Controller
             $ClaimsJpa->status = "1";
             $ClaimsJpa->save();
 
+            $responseData = [
+                '_client' => $ClaimsJpa->_client,
+                '_claim' => $ClaimsJpa->_claim,
+                '_plan' => $ClaimsJpa->_plan,
+                '_model' => $ClaimsJpa->_model,
+                '_branch' => $ClaimsJpa->_branch,
+                'date' => $ClaimsJpa->date,
+                'description' => $ClaimsJpa->description,
+                'update_date' => $ClaimsJpa->update_date,
+                '_update_user' => $ClaimsJpa->_update_user,
+                'status' => $ClaimsJpa->status,
+             ];
+
             $response->setStatus(200);
             $response->setMessage('Se ha creado correctamente');
-            $response->setData($ClaimsJpa->toArray());
+            $response->setData($responseData);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -150,6 +183,58 @@ class ClaimsController extends Controller
         }
     }
 
+    public function image($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $ClaimsJpa = Claims::select([
+                "claims.image_$size as image_content",
+                'claims.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$ClaimsJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$ClaimsJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $ClaimsJpa->image_content;
+            $type = $ClaimsJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -182,15 +267,49 @@ class ClaimsController extends Controller
             if (isset($request->date)) {
                 $ClaimsJpa->date = $request->date;
             }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $ClaimsJpa->image_type = $request->image_type;
+                    $ClaimsJpa->image_mini = base64_decode($request->image_mini);
+                    $ClaimsJpa->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
             $ClaimsJpa->description = $request->description;
             $ClaimsJpa->update_date = gTrace::getDate('mysql');
             $ClaimsJpa->_update_user = $userid;
             $ClaimsJpa->status = "1";
             $ClaimsJpa->save();
 
+            $responseData = [
+                '_client' => $ClaimsJpa->_client,
+                '_claim' => $ClaimsJpa->_claim,
+                '_plan' => $ClaimsJpa->_plan,
+                '_model' => $ClaimsJpa->_model,
+                '_branch' => $ClaimsJpa->_branch,
+                'date' => $ClaimsJpa->date,
+                'description' => $ClaimsJpa->description,
+                'update_date' => $ClaimsJpa->update_date,
+                '_update_user' => $ClaimsJpa->_update_user,
+                'status' => $ClaimsJpa->status,
+             ];
+
             $response->setStatus(200);
             $response->setMessage('Se ha actualizado correctamente');
-            $response->setData($ClaimsJpa->toArray());
+            $response->setData($responseData);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . 'ln: ' . $th->getLine());
@@ -319,6 +438,7 @@ class ClaimsController extends Controller
             $template = str_replace(
                 [
                     '{id}',
+                    '{img_id}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{client}',
@@ -331,6 +451,7 @@ class ClaimsController extends Controller
                     '{ejcecutive}',
                 ],
                 [
+                    $claim['id'],
                     $claim['id'],
                     $branch_->name,
                     gTrace::getDate('long'),

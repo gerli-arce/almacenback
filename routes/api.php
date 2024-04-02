@@ -609,6 +609,7 @@ Route::delete('/claims', [ClaimsController::class, 'delete']);
 Route::post('/claims/restore', [ClaimsController::class, 'restore']);
 Route::post('/claims/paginate', [ClaimsController::class, 'paginate']);
 Route::post('/claims/search', [ClaimsController::class, 'search']);
+Route::get('/claimsimg/{id}/{zize}', [ClaimsController::class, 'image']);
 Route::post('/claims/report/by/claim', [ClaimsController::class, 'generateReportByClaim']);
 Route::post('/claims/reports', [ClaimsController::class, 'generateReports']);
 Route::post('/claims/reports/reitered', [ClaimsController::class, 'generateReportReitered']);
