@@ -509,7 +509,7 @@ class ClaimsController extends Controller
             $minDate = $request->date_start;
             $maxDate = $request->date_end;
 
-            $query = ViewClaim::select('*')->whereNotNull('status');
+            $query = ViewClaim::select('*')->whereNotNull('status')->orderBy('id','DESC');
             if (
                 !isset($request->branch) &&
                 !isset($request->date_start) &&
@@ -534,12 +534,45 @@ class ClaimsController extends Controller
                 }
             }
 
-            $claimsJpa = $query->get();
+            $claims_strem = "
+            <tr>
+                <td class='title_table_green' colspan='4'>
+                    <center>TODOS LOS RECLAMOS</center>
+                </td>
+            </tr>
+            <tr>
+                <td class='title_table_brown'><center>Nombres</center></td>
+                <td class='title_table_brown'><center>Sucursal</center></td>
+                <td class='title_table_brown'><center>Reclamo</center></td>
+                <td class='title_table_brown'><center>Fecha</center></td>
+            </tr>
+            ";
 
+            $claimsJpa = $query->get();
+            
+            $color = true;
+            $color_val = "bg-secondary";
             $claims = array();
             foreach ($claimsJpa as $claimJpa) {
                 $claim = gJSON::restore($claimJpa->toArray(), '__');
+                $claims_strem .="
+                <tr>
+                    <td class='{$color_val}'>{$claim['client']['name']} {$claim['client']['name']}</td>
+                    <td class='{$color_val}'>{$claim['branch']['name']}</td>
+                    <td class='{$color_val}'>{$claim['claim']['claim']}</td>
+                    <td class='{$color_val}'><center>{$claim['date']}</center></td>
+                </tr>
+                "; 
                 $claims[] = $claim;
+
+                if($color){
+                    $color = false;
+                    $color_val = "";
+                }else{
+                    $color = true;
+                    $color_val = "bg-secondary";
+                }
+
             }
 
             $finalClaims = [];
@@ -607,6 +640,7 @@ class ClaimsController extends Controller
                     '{date_end}',
                     '{claims_all}',
                     '{summary}',
+                    '{claim_strem}',
                     '{description}',
                     '{date}',
                     '{plan}',
@@ -621,6 +655,8 @@ class ClaimsController extends Controller
                     $maxDate,
                     $claimsAll,
                     $summary,
+                    $claims_strem
+
                 ],
                 $template
             );
@@ -628,6 +664,16 @@ class ClaimsController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Reclamo.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage("th->getMessage() . ' ln:' . h->getLine()");
+            // $response->setData($claims);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
