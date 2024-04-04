@@ -8,7 +8,7 @@ use App\gLibraries\gValidate;
 use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\People;
-use App\Models\Product;
+use App\Models\Validations;
 use App\Models\ProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
@@ -32,8 +32,8 @@ class ValidationController extends Controller
                 throw new Exception($message);
             }
 
-            if (!gValidate::check($role->permissions, $branch, 'installation_pending', 'read')) {
-                throw new Exception('No tienes permisos para listar las instataciónes pendientes');
+            if (!gValidate::check($role->permissions, $branch, 'validations', 'read')) {
+                throw new Exception('No tienes permisos');
             }
 
             $query = viewInstallations::select([
@@ -85,8 +85,58 @@ class ValidationController extends Controller
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
-            $response->setITotalRecords(Viewinstallations::where('status_sale', 'PENDIENTE')->where('branch__correlative', $branch)->count());
+            $response->setITotalRecords(Viewinstallations::count());
             $response->setData($installations);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function store(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'validations', 'create')) {
+                throw new Exception('No tienes permisos para agregar instalaciones');
+            }
+
+            if (
+                !isset($request->validations) ||
+                !isset($request->validation) ||
+                !isset($request->sale)
+            ) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
+            
+            $Validations = new Validations();
+
+            $Validations->_sale = $request->sale;
+            $Validations->validations =  gJSON::stringify($request->validations);
+            $Validations->creation_date = gTrace::getDate('mysql');
+            $Validations->_creation_user = $userid;
+            $Validations->update_date = gTrace::getDate('mysql');
+            $Validations->_update_user = $userid;
+            $Validations->status = "1";
+            $Validations->save();
+
+            $SalesProductsJpa = SalesProducts::find($request->sale);
+            $SalesProductsJpa->validation = $request->validation;
+            $SalesProductsJpa->save();
+            
+            $response->setStatus(200);
+            $response->setMessage('Validacion registrada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
