@@ -107,7 +107,7 @@ class ValidationController extends Controller
             }
 
             if (!gValidate::check($role->permissions, $branch, 'validations', 'create')) {
-                throw new Exception('No tienes permisos para agregar instalaciones');
+                throw new Exception('No tienes permisos para agregar');
             }
 
             if (
@@ -170,6 +170,51 @@ class ValidationController extends Controller
             $response->setStatus(200);
             $response->setMessage('Validacion registrada correctamente');
             $response->setData($Validations->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function update(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'validations', 'update')) {
+                throw new Exception('No tienes permisos para actualizar');
+            }
+
+            if (
+                !isset($request->validations) ||
+                !isset($request->validation) ||
+                !isset($request->id) ||
+                !isset($request->sale)
+            ) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+            
+            $Validations = Validations::find($request->id);
+            $Validations->_sale = $request->sale;
+            $Validations->validations =  gJSON::stringify($request->validations);
+            $Validations->update_date = gTrace::getDate('mysql');
+            $Validations->_update_user = $userid;
+            $Validations->save();
+
+            $SalesProductsJpa = SalesProducts::find($request->sale);
+            $SalesProductsJpa->validation = $request->validation;
+            $SalesProductsJpa->save();
+            
+            $response->setStatus(200);
+            $response->setMessage('Validacion actializada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
