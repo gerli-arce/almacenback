@@ -118,10 +118,8 @@ class ValidationController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
-            $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
             
             $Validations = new Validations();
-
             $Validations->_sale = $request->sale;
             $Validations->validations =  gJSON::stringify($request->validations);
             $Validations->creation_date = gTrace::getDate('mysql');
@@ -137,6 +135,41 @@ class ValidationController extends Controller
             
             $response->setStatus(200);
             $response->setMessage('Validacion registrada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getValidationBySale(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'validations', 'read')) {
+                throw new Exception('No tienes permisos para agregar instalaciones');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $Validations = Validations::where('_sale', $request->id)->first();
+            $Validations->validations = gJSON::parse($Validations->validations);
+
+            $response->setStatus(200);
+            $response->setMessage('Validacion registrada correctamente');
+            $response->setData($Validations->toArray());
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());

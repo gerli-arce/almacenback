@@ -616,10 +616,10 @@ Route::post('/claims/reports/reitered', [ClaimsController::class, 'generateRepor
 
 // VALIDATIONS
 Route::post('/validations', [ValidationController::class, 'store']);
-Route::patch('/validations', [ValidationController::class, 'update']);
-Route::delete('/validations', [ValidationController::class, 'delete']);
-Route::post('/validations/restore', [ValidationController::class, 'restore']);
 Route::post('/validations/paginate', [ValidationController::class, 'paginate']);
+Route::patch('/validations', [ValidationController::class, 'update']);
+Route::post('/validations/get', [ValidationController::class, 'getValidationBySale']);
+Route::post('/validations/restore', [ValidationController::class, 'restore']);
 Route::post('/validations/search', [ValidationController::class, 'search']);
 
 
