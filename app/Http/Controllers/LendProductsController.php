@@ -1362,7 +1362,7 @@ class LendProductsController extends Controller
             }
 
             if ($request->product['type'] == 'MATERIAL') {
-                $ProductByTechnical = ProductByTechnical::where('_technical', $request->technical['id'])
+                $ProductByTechnical = ProductByTechnical::whereNotNull('status')->where('_technical', $request->technical['id'])
                     ->where('type', 'LEND')
                     ->where('_model', $request->product['model']['id'])->first();
             } else {

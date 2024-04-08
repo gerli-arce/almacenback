@@ -56,10 +56,10 @@ class ClaimsController extends Controller
                     $ClaimsJpa->image_mini = base64_decode($request->image_mini);
                     $ClaimsJpa->image_full = base64_decode($request->image_full);
                 } else {
-                    throw new Exception("Una imagen debe ser cargada.");
+                    // throw new Exception("Una imagen debe ser cargada.");
                 }
             } else {
-                throw new Exception("Una imagen debe ser cargada.");
+                // throw new Exception("Una imagen debe ser cargada.");
             }
 
             $ClaimsJpa->creation_date = gTrace::getDate('mysql');
