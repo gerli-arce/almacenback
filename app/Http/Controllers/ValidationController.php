@@ -6,14 +6,12 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
-use App\Models\DetailSale;
-use App\Models\People;
-use App\Models\Validations;
-use App\Models\ProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
-use App\Models\Stock;
+use App\Models\Validations;
 use App\Models\viewInstallations;
+use App\Models\ViewValidations;
+use App\Models\ViewUsers;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -71,9 +69,9 @@ class ValidationController extends Controller
                 }
             })
                 ->where('status_sale', 'PENDIENTE');
-                // ->where('type_operation__operation', 'INSTALACION')
-                // ->where('branch__correlative', $branch);
-                
+            // ->where('type_operation__operation', 'INSTALACION')
+            // ->where('branch__correlative', $branch);
+
             $iTotalDisplayRecords = $query->count();
 
             $installationsPendingJpa = $query
@@ -104,7 +102,8 @@ class ValidationController extends Controller
         }
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -124,10 +123,9 @@ class ValidationController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
-            
             $Validations = new Validations();
             $Validations->_sale = $request->sale;
-            $Validations->validations =  gJSON::stringify($request->validations);
+            $Validations->validations = gJSON::stringify($request->validations);
             $Validations->creation_date = gTrace::getDate('mysql');
             $Validations->_creation_user = $userid;
             $Validations->update_date = gTrace::getDate('mysql');
@@ -137,8 +135,10 @@ class ValidationController extends Controller
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
             $SalesProductsJpa->validation = $request->validation;
+            $SalesProductsJpa->validation_id = $Validations->id;
+            $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
             $SalesProductsJpa->save();
-            
+
             $response->setStatus(200);
             $response->setMessage('Validacion registrada correctamente');
         } catch (\Throwable $th) {
@@ -152,7 +152,8 @@ class ValidationController extends Controller
         }
     }
 
-    public function getValidationBySale(Request $request){
+    public function getValidationBySale(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -187,7 +188,8 @@ class ValidationController extends Controller
         }
     }
 
-    public function update(Request $request){
+    public function update(Request $request)
+    {
         $response = new Response();
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
@@ -207,24 +209,95 @@ class ValidationController extends Controller
             ) {
                 throw new Exception('Error: No deje campos vacíos');
             }
-            
+
             $Validations = Validations::find($request->id);
             $Validations->_sale = $request->sale;
-            $Validations->validations =  gJSON::stringify($request->validations);
+            $Validations->validations = gJSON::stringify($request->validations);
             $Validations->update_date = gTrace::getDate('mysql');
             $Validations->_update_user = $userid;
             $Validations->save();
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
             $SalesProductsJpa->validation = $request->validation;
+            $SalesProductsJpa->validation_id = $Validations->id;
+            // $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
             $SalesProductsJpa->save();
-            
+
             $response->setStatus(200);
             $response->setMessage('Validacion actializada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportByValidation(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportsClaims.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $summary = '';
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{ejecutive}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{claims_all}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $user->person__name . ' ' . $user->person__lastname,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage("th->getMessage() . ' ln:' . h->getLine()");
+            // $response->setData($claims);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()
@@ -299,7 +372,7 @@ class ValidationController extends Controller
     //         ";
 
     //         $claimsJpa = $query->get();
-            
+
     //         $color = true;
     //         $color_val = "bg-secondary";
     //         $claims = array();
@@ -312,7 +385,7 @@ class ValidationController extends Controller
     //                 <td class='{$color_val}'>{$claim['claim']['claim']}</td>
     //                 <td class='{$color_val}'><center>{$claim['date']}</center></td>
     //             </tr>
-    //             "; 
+    //             ";
     //             $claims[] = $claim;
 
     //             if($color){
