@@ -694,7 +694,7 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportChargeGasoline.html');
+            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasoline.html');
 
             $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::find($request->id);
 
@@ -794,7 +794,7 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportChargeGasolineDetails.html');
+            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasolineDetails.html');
 
 
 
@@ -932,7 +932,7 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
+            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasolineGeneral.html');
 
             $user = ViewUsers::select([
                 'id',

@@ -619,6 +619,7 @@ Route::post('/validations', [ValidationController::class, 'store']);
 Route::post('/validations/paginate', [ValidationController::class, 'paginate']);
 Route::patch('/validations', [ValidationController::class, 'update']);
 Route::post('/validations/get', [ValidationController::class, 'getValidationBySale']);
+Route::post('/validations/reports/by/validation', [ValidationController::class, 'generateReportByValidation']);
 Route::post('/validations/reports/general', [ValidationController::class, 'restore']);
 Route::post('/validations/search', [ValidationController::class, 'search']);
 

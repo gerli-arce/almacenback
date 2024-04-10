@@ -251,7 +251,7 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportsClaims.html');
+            $template = file_get_contents('../storage/templates/validations/reportByValidation.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -264,19 +264,39 @@ class ValidationController extends Controller
 
             $summary = '';
 
+            $bg_validation = "bg-green";
+
+            if($request->validation<10){
+                if($request->validation<=5){
+                    $bg_validation = 'bg-red';
+                }else{
+                    $bg_validation = 'bg-yellow';
+                }
+            }
+
+
             $template = str_replace(
                 [
+                    '{id}',
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{ejecutive}',
-                    '{date_start}',
-                    '{date_end}',
-                    '{claims_all}',
+                    '{operation}',
+                    '{type_sale}',
+                    '{client}',
+                    '{validation}',
+                    '{color_validation}',
                 ],
                 [
+                    $request->id,
                     $branch_->name,
                     gTrace::getDate('long'),
-                    $user->person__name . ' ' . $user->person__lastname,
+                    $request->user_creation['person']['name'] . ' ' . $request->user_creation['person']['lastname'],
+                    $request->type_operation['operation'],
+                    str_replace('_', ' ',$request->type_intallation),
+                    $request->client['name'] . ' ' . $request->client['lastname'],
+                    $request->validation,
+                    $bg_validation
                 ],
                 $template
             );

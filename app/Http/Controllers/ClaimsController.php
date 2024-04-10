@@ -401,7 +401,7 @@ class ClaimsController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportClaim.html');
+            $template = file_get_contents('../storage/templates/claims/reportClaim.html');
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
             $ViewClaimJpa = ViewClaim::find($request->id);
@@ -495,7 +495,7 @@ class ClaimsController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportsClaims.html');
+            $template = file_get_contents('../storage/templates/claims/reportsClaims.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -699,7 +699,7 @@ class ClaimsController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportsClaimsReitered.html');
+            $template = file_get_contents('../storage/templates/claims/reportsClaimsReitered.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
