@@ -399,7 +399,6 @@ class ValidationController extends Controller
                         </tr>
                         ";
                     }
-                    
                 }else{
                     if(isset($ValidationsJpa->validations['service_status_group'])){
                         $cuestions .= "
@@ -444,8 +443,6 @@ class ValidationController extends Controller
                         </tr>
                         ";
                     }
-                 
-                  
                 }
     
             }else{
@@ -510,16 +507,6 @@ class ValidationController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Reclamo.pdf');
-
-            // $response = new Response();
-            // $response->setStatus(200);
-            // $response->setMessage("th->getMessage() . ' ln:' . h->getLine()");
-            // $response->setData($claims);
-            // return response(
-            //     $response->toArray(),
-            //     $response->getStatus()
-            // );
-
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
