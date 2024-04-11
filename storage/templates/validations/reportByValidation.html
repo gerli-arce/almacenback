@@ -97,7 +97,7 @@
                 border-spacing: 0;
                 margin-top: 20px;
                 margin-bottom: 10px;
-                /* font-size: 11px; */
+                font-size: 12px;
             }
 
             table td {
@@ -250,14 +250,20 @@
             
             .bg-red{
                 color: red;
+                border: solid 1px red;
+                background-color: rgb(255, 213, 213);
             }
 
             .bg-green{
                 color: green;
+                border: solid 1px green;
+                background-color: rgb(183, 255, 183);
             }
 
             .bg-orange{
                 color: orange;
+                border:solid 1px orange;
+                background-color: rgb(255, 235, 198);
             }
 
             .hide {
@@ -366,7 +372,7 @@
                     </tr>
                     <tr>
                         <td>VALIDACIÓN</td>
-                        <td align="center"  class="{color_validation}">{validation}</td>
+                        <td align="center" style="font-size: 18px;font-weight: bold;" class="{color_validation}">{validation}</td>
                     </tr>
                 </tbody>
             </table>
@@ -377,7 +383,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {summary}
+                    {cuestions}
                 </tbody>
             </table>
         </main>

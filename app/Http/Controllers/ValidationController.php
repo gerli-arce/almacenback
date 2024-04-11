@@ -262,15 +262,219 @@ class ValidationController extends Controller
                 'person__lastname',
             ])->where('id', $userid)->first();
 
-            $summary = '';
+            $cuestions = "";
+
+            $ValidationsJpa = Validations::find($request->validation_id);
+            if($ValidationsJpa && $ValidationsJpa->validations){
+                $ValidationsJpa->validations = gJSON::parse($ValidationsJpa->validations);
+                if($request->type_operation['operation'] == "INSTALACION"){
+                    if(isset($ValidationsJpa->validations['service_status_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
+                        </tr>
+                        ";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
+                            <td'></td>
+                        </tr>
+                        ";
+                    }
+
+                    if(isset($ValidationsJpa->validations['verification_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Le ha explicado el técnico la velocidad contratada, la cantidad de megas que recibe y el estado del cableado?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['verification_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['verification_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Le ha explicado el técnico la velocidad contratada, la cantidad de megas que recibe y el estado del cableado?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['speed_test_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha realizado pruebas de velocidad para verificar que cumple con lo contratado?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['speed_test_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['speed_test_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha realizado pruebas de velocidad para verificar que cumple con lo contratado?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['coverage_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Se ha conectado a internet en diferentes dispositivos para verificar la cobertura en su hogar?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['coverage_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['coverage_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Se ha conectado a internet en diferentes dispositivos para verificar la cobertura en su hogar?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['stability_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha tenido problemas con la estabilidad de la conexión a internet (cortes, intermitencias)?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['stability_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['stability_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha tenido problemas con la estabilidad de la conexión a internet (cortes, intermitencias)?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['security_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha configurado la red Wi-Fi y ha probado la seguridad de la misma para internet?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['security_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['security_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha configurado la red Wi-Fi y ha probado la seguridad de la misma para internet?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['tv_cable_explanation_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Le ha explicado el técnico la calidad de la señal, la cantidad de canales disponibles y el estado del cableado?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_explanation_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_explanation_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Le ha explicado el técnico la calidad de la señal, la cantidad de canales disponibles y el estado del cableado?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['tv_cable_quality_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha verificado la calidad de la imagen y el sonido en diferentes canales de TV cable?
+                            </td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_quality_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_quality_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha verificado la calidad de la imagen y el sonido en diferentes canales de TV cable?
+                            </td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['tv_cable_signal_group'])){
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha experimentado cortes o intermitencias en la señal de TV cable?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_signal_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_signal_group']}</td>
+                        </tr>
+                        ";
+                    }else{
+                        $cuestions.="
+                        <tr>
+                            <td>¿Ha experimentado cortes o intermitencias en la señal de TV cable?</td>
+                            <td ></td>
+                        </tr>
+                        ";
+                    }
+                    
+                }else{
+                    if(isset($ValidationsJpa->validations['service_status_group'])){
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+                   
+                    if(isset($ValidationsJpa->validations['internet_speed_stability'])){
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Está recibiendo la velocidad contratada de internet y es estable la conexión?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['internet_speed_stability'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['internet_speed_stability']}</td>
+                        </tr>";
+                    }else{
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Está recibiendo la velocidad contratada de internet y es estable la conexión?</td>
+                            <td ></td>
+                        </tr>";
+                    }
+
+                    if(isset($ValidationsJpa->validations['tv_channel_verification_group'])){
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Está recibiendo la cantidad contratada de canales y es estable la calidad de video y audio?</td>
+                            <td style='background-color: " . ($ValidationsJpa->validations['tv_channel_verification_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_channel_verification_group']}</td>
+                        </tr>
+                        ";
+                    }else{
+                        $cuestions .= "
+                        <tr>
+                            <td>¿Está recibiendo la cantidad contratada de canales y es estable la calidad de video y audio?</td>
+                            <td ></td>
+                        </tr>
+                        ";
+                    }
+                 
+                  
+                }
+    
+            }else{
+                $ValidationsJpa = Validations::where('_sale',$request->id)->whereNotNull('status')->first();
+                if(!$ValidationsJpa){
+                    $cuestions = "
+                    <tr>
+                        <td class='bg-red' colspan='2' align='center'>NO SE ENCONTRO VALIDACIÓN</td>
+                    </tr>
+                    ";
+                }else{
+                    $ValidationsJpa->validations = gJSON::parse($ValidationsJpa->validations);
+                }
+            }
+
 
             $bg_validation = "bg-green";
+            
+            if($request->validation){
+                $validation = $request->validation;
+            }else{
+                $validation = 0;
+            }
 
             if($request->validation<10){
-                if($request->validation<=5){
+                if($request->validation<5){
                     $bg_validation = 'bg-red';
                 }else{
-                    $bg_validation = 'bg-yellow';
+                    $bg_validation = 'bg-orange';
                 }
             }
 
@@ -286,6 +490,7 @@ class ValidationController extends Controller
                     '{client}',
                     '{validation}',
                     '{color_validation}',
+                    '{cuestions}'
                 ],
                 [
                     $request->id,
@@ -295,8 +500,9 @@ class ValidationController extends Controller
                     $request->type_operation['operation'],
                     str_replace('_', ' ',$request->type_intallation),
                     $request->client['name'] . ' ' . $request->client['lastname'],
-                    $request->validation,
-                    $bg_validation
+                    $validation,
+                    $bg_validation,
+                    $cuestions
                 ],
                 $template
             );
