@@ -272,7 +272,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
+                            <td align='center' style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
                         </tr>
                         ";
                     }else{
@@ -288,7 +288,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Le ha explicado el técnico la velocidad contratada, la cantidad de megas que recibe y el estado del cableado?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['verification_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['verification_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['verification_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['verification_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -302,7 +302,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Ha realizado pruebas de velocidad para verificar que cumple con lo contratado?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['speed_test_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['speed_test_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['speed_test_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['speed_test_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -316,7 +316,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Se ha conectado a internet en diferentes dispositivos para verificar la cobertura en su hogar?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['coverage_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['coverage_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['coverage_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['coverage_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -330,7 +330,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Ha tenido problemas con la estabilidad de la conexión a internet (cortes, intermitencias)?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['stability_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['stability_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['stability_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['stability_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -344,7 +344,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Ha configurado la red Wi-Fi y ha probado la seguridad de la misma para internet?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['security_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['security_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['security_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['security_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -358,7 +358,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Le ha explicado el técnico la calidad de la señal, la cantidad de canales disponibles y el estado del cableado?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_explanation_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_explanation_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['tv_cable_explanation_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_explanation_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -373,7 +373,7 @@ class ValidationController extends Controller
                         <tr>
                             <td>¿Ha verificado la calidad de la imagen y el sonido en diferentes canales de TV cable?
                             </td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_quality_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_quality_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['tv_cable_quality_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_quality_group']}</td>
                         </tr>";
                     }else{
                         $cuestions.="
@@ -388,7 +388,7 @@ class ValidationController extends Controller
                         $cuestions.="
                         <tr>
                             <td>¿Ha experimentado cortes o intermitencias en la señal de TV cable?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['tv_cable_signal_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_signal_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['tv_cable_signal_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_cable_signal_group']}</td>
                         </tr>
                         ";
                     }else{
@@ -404,7 +404,7 @@ class ValidationController extends Controller
                         $cuestions .= "
                         <tr>
                             <td>¿Su servicio de (internet/TV cable/ambos) funciona correctamente?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['service_status_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['service_status_group']}</td>
                         </tr>";
                     }else{
                         $cuestions .= "
@@ -418,7 +418,7 @@ class ValidationController extends Controller
                         $cuestions .= "
                         <tr>
                             <td>¿Está recibiendo la velocidad contratada de internet y es estable la conexión?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['internet_speed_stability'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['internet_speed_stability']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['internet_speed_stability'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['internet_speed_stability']}</td>
                         </tr>";
                     }else{
                         $cuestions .= "
@@ -432,7 +432,7 @@ class ValidationController extends Controller
                         $cuestions .= "
                         <tr>
                             <td>¿Está recibiendo la cantidad contratada de canales y es estable la calidad de video y audio?</td>
-                            <td style='background-color: " . ($ValidationsJpa->validations['tv_channel_verification_group'] === 'SI' ? '#98FB98' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_channel_verification_group']}</td>
+                            <td align='center'  style='background-color: " . ($ValidationsJpa->validations['tv_channel_verification_group'] === 'SI' ? '#98fb9870' : '#FFC0CB') . "'>{$ValidationsJpa->validations['tv_channel_verification_group']}</td>
                         </tr>
                         ";
                     }else{
@@ -475,6 +475,14 @@ class ValidationController extends Controller
                 }
             }
 
+            $coment ="";
+
+            if(isset($ValidationsJpa->validations['comments'])){
+                $coment = $ValidationsJpa->validations['comments'];
+            }else{
+                $coment = "<i>Sin comentarios</i>";
+            }
+
 
             $template = str_replace(
                 [
@@ -485,8 +493,11 @@ class ValidationController extends Controller
                     '{operation}',
                     '{type_sale}',
                     '{client}',
+                    '{phone}',
+                    '{technical}',
                     '{validation}',
                     '{color_validation}',
+                    '{opinion}',
                     '{cuestions}'
                 ],
                 [
@@ -497,8 +508,11 @@ class ValidationController extends Controller
                     $request->type_operation['operation'],
                     str_replace('_', ' ',$request->type_intallation),
                     $request->client['name'] . ' ' . $request->client['lastname'],
+                    $request->client['phone'],
+                    $request->technical['name'] . ' ' . $request->technical['lastname'],
                     $validation,
                     $bg_validation,
+                    $coment,
                     $cuestions
                 ],
                 $template

@@ -247,27 +247,28 @@
             .bg-secondary {
                 background-color: #6f85a725;
             }
-            
-            .bg-red{
+
+            .bg-red {
                 color: red;
                 border: solid 1px red;
                 background-color: rgb(255, 213, 213);
             }
 
-            .bg-green{
+            .bg-green {
                 color: green;
                 border: solid 1px green;
                 background-color: rgb(183, 255, 183);
             }
 
-            .bg-orange{
+            .bg-orange {
                 color: orange;
-                border:solid 1px orange;
+                border: solid 1px orange;
                 background-color: rgb(255, 235, 198);
             }
 
             .hide {
                 display: none;
+                color: #98fb9870;
             }
 
             @media all {
@@ -368,11 +369,42 @@
                     </tr>
                     <tr>
                         <td>CLIENTE</td>
-                        <td align="center">{client}</td>
+                        <td align="center">
+                            {client} -
+                            <span style="color: #d37f00; font-size: 13px"
+                                >( {phone} )</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>TÉCNICO</td>
+                        <td align="center">{technical}</td>
                     </tr>
                     <tr>
                         <td>VALIDACIÓN</td>
-                        <td align="center" style="font-size: 18px;font-weight: bold;" class="{color_validation}">{validation}</td>
+                        <td
+                            align="center"
+                            style="font-size: 18px; font-weight: bold"
+                            class="{color_validation}"
+                        >
+                            {validation}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            colspan="2"
+                            align="center"
+                            style="
+                                background-color: #c5eefa70;
+                                border: 1px solid #0d6c9cad;
+                                color: #0f6ab4 !important;
+                            "
+                        >
+                            OPINION DEL CLIENTE
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">{opinion}</td>
                     </tr>
                 </tbody>
             </table>
