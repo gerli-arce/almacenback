@@ -118,12 +118,14 @@ class ValidationController extends Controller
             if (
                 !isset($request->validations) ||
                 !isset($request->validation) ||
+                !isset($request->type) ||
                 !isset($request->sale)
             ) {
                 throw new Exception('Error: No deje campos vacíos');
             }
 
             $Validations = new Validations();
+            $Validations->type = $request->type;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
             $Validations->creation_date = gTrace::getDate('mysql');
@@ -204,6 +206,7 @@ class ValidationController extends Controller
             if (
                 !isset($request->validations) ||
                 !isset($request->validation) ||
+                !isset($request->type) ||
                 !isset($request->id) ||
                 !isset($request->sale)
             ) {
@@ -211,6 +214,7 @@ class ValidationController extends Controller
             }
 
             $Validations = Validations::find($request->id);
+            $Validations->type = $request->type;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
             $Validations->update_date = gTrace::getDate('mysql');
