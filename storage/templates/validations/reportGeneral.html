@@ -107,9 +107,9 @@
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #c5eefa;
-                border: 1px solid #0d6d9c;
-                color: #0f6ab4 !important;
+                background-color: #fac5c5;
+                border: 1px solid #9c0d0d;
+                color: #b40f0f !important;
             }
 
             table td {
@@ -118,8 +118,8 @@
             }
 
             table tbody td {
-                border: 1px solid #1786be8c;
-                color: #315d81;
+                border: 1px solid #be17178c;
+                color: #813131;
             }
 
             .title_table_primary {
@@ -322,7 +322,7 @@
                                 border-top-right-radius: 18px;
                                 border-bottom-left-radius: 18px;
                                 border-bottom-right-radius: 30px;
-                                background-color: #80c1ff;
+                                background-color:#80c1ff;
                                 font-size: 30px;
                                 color: white !important;
                                 font-weight: bold;
@@ -335,7 +335,7 @@
                                     font-weight: bold;
                                 "
                             >
-                                VALIDACIÓN
+                                VALIDACIONES
                             </p>
                             <p
                                 style="
@@ -343,19 +343,19 @@
                                     font-weight: bold;
                                 "
                             >
-                                VAL-{id}
+                                GENERALES
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <br />
-            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <!-- <p id="date">{branch_onteraction}, {issue_long_date}</p> -->
 
             <table>
                 <thead>
                     <tr>
-                        <td colspan="2" align="center">VALIDACION</td>
+                        <td colspan="2" align="center">VALIDACIONES GENERALES</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -364,58 +364,36 @@
                         <td align="center">{ejecutive}</td>
                     </tr>
                     <tr>
-                        <td>{operation}</td>
-                        <td align="center">{type_sale}</td>
+                        <td>FECHA INICIO</td>
+                        <td align="center">{date_start}</td>
                     </tr>
                     <tr>
-                        <td>CLIENTE</td>
-                        <td align="center">
-                            {client} -
-                            <span style="color: #d37f00; font-size: 13px"
-                                >( {phone} )</span
-                            >
-                        </td>
+                        <td>FECHA FIN</td>
+                        <td align="center">{date_end}</td>
                     </tr>
                     <tr>
-                        <td>TÉCNICO</td>
-                        <td align="center">{technical}</td>
+                        <td>SUCURSAL</td>
+                        <td align="center">{branch_selected}</td>
                     </tr>
                     <tr>
-                        <td>VALIDACIÓN</td>
-                        <td
-                            align="center"
-                            style="font-size: 18px; font-weight: bold"
-                            class="{color_validation}"
-                        >
-                            {validation}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td
-                            colspan="2"
-                            align="center"
-                            style="
-                                background-color: #c5eefa70;
-                                border: 1px solid #0d6c9cad;
-                                color: #0f6ab4 !important;
-                            "
-                        >
-                            OPINION DEL CLIENTE
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" align="center">{opinion}</td>
+                        <td>CANTIDAD DE VALIDACIONES</td>
+                        <td align="center">{mount_validations}</td>
                     </tr>
                 </tbody>
             </table>
-            <table>
+            <table style="font-size: 9px;">
                 <thead>
                     <tr>
-                        <td colspan="2" align="center">PREGUNTAS</td>
+                        <td align="center">#</td>
+                        <td align="center">CLIENTE</td>
+                        <td align="center">TECNICO</td>
+                        <td align="center">SUCURSAL</td>
+                        <td align="center">VALIDACION</td>
+                        <td align="center">FECHA</td>
                     </tr>
                 </thead>
                 <tbody>
-                    {cuestions}
+                    {summary}
                 </tbody>
             </table>
         </main>

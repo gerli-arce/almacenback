@@ -11,7 +11,7 @@ use App\Models\SalesProducts;
 use App\Models\Validations;
 use App\Models\viewInstallations;
 use App\Models\ViewUsers;
-use App\Models\ViewCalidationsBySale;
+use App\Models\ViewValidationsBySale;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -544,7 +544,7 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportGeneral.html');
+            $template = file_get_contents('../storage/templates/validations/reportGeneral.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -555,17 +555,18 @@ class ValidationController extends Controller
                 'person__lastname',
             ])->where('id', $userid)->first();
 
+        
+
             $minDate = $request->date_start;
             $maxDate = $request->date_end;
 
-            $query = ViewCalidationsBySale::select('*')->whereNotNull('status')->orderBy('id', 'DESC');
+            $query = ViewValidationsBySale::select('*')->whereNotNull('status')->orderBy('creation_date', 'DESC');
 
             if (
-                !isset($request->branch) &&
                 !isset($request->date_start) &&
                 !isset($request->date_end)) {
-                $minDate = $query->whereNotNull('creation_date')->min('date');
-                $maxDate = $query->whereNotNull('creation_date')->max('date');
+                $minDate = $query->whereNotNull('creation_date')->min('creation_date');
+                $maxDate = $query->whereNotNull('creation_date')->max('creation_date');
             } else {
                 {
                     if (isset($request->date_start) && isset($request->date_end)) {
@@ -574,148 +575,76 @@ class ValidationController extends Controller
                     }
                 }
 
-                if (isset($request->branch)) {
-                    $query->where('sale__branch__id', $request->branch);
-                }
             }
 
+            $branchSearch = null;
+
+            if (isset($request->branch)) {
+                $query->where('sale__branch__id', $request->branch);
+                $branchSearch = Branch::find($request->branch);
+            }
             $validationsJpa = $query->get();
 
-            // $claims_strem = "
-            // <tr>
-            //     <td class='title_table_green' colspan='4'>
-            //         <center>TODOS LOS RECLAMOS</center>
-            //     </td>
-            // </tr>
-            // <tr>
-            //     <td class='title_table_brown'><center>Nombres</center></td>
-            //     <td class='title_table_brown'><center>Sucursal</center></td>
-            //     <td class='title_table_brown'><center>Reclamo</center></td>
-            //     <td class='title_table_brown'><center>Fecha</center></td>
-            // </tr>
-            // ";
+            $mount_validations = $query->count();
 
-            // $claimsJpa = $query->get();
+            
+            $validations = array();
+            foreach ($validationsJpa as $validationJpa) {
+                $validation = gJSON::restore($validationJpa->toArray(), '__');
+                $validation['validations']= gJSON::parse($validation['validations']);
+                $validations[] = $validation;
+            }
 
-            // $color = true;
-            // $color_val = "bg-secondary";
-            // $claims = array();
-            // foreach ($claimsJpa as $claimJpa) {
-            //     $claim = gJSON::restore($claimJpa->toArray(), '__');
-            //     $claims_strem .= "
-            //     <tr>
-            //         <td class='{$color_val}'>{$claim['client']['name']} {$claim['client']['name']}</td>
-            //         <td class='{$color_val}'>{$claim['branch']['name']}</td>
-            //         <td class='{$color_val}'>{$claim['claim']['claim']}</td>
-            //         <td class='{$color_val}'><center>{$claim['date']}</center></td>
-            //     </tr>
-            //     ";
-            //     $claims[] = $claim;
+            // SETEO 
+            $summary = '';
+            $count=1;
+            foreach($validations as $validation){
+                $summary .="
+                <tr>
+                    <td align='center'>{$count}</td>
+                    <td>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']} - ({$validation['sale']['client']['phone']})</td>
+                    <td>{$validation['sale']['technical']['name']} {$validation['sale']['technical']['lastname']}</td>
+                    <td align='center'>{$validation['sale']['branch']['name']}</td>
+                    <td align='center'>{$validation['sale']['validation']}</td>
+                    <td align='center'>{$validation['creation_date']}</td>
+                </tr>
+                ";
+                $count++;
+            }
 
-            //     if ($color) {
-            //         $color = false;
-            //         $color_val = "";
-            //     } else {
-            //         $color = true;
-            //         $color_val = "bg-secondary";
-            //     }
+            $branchSelected = 'GENERALES';
+            if($branchSearch){
+                $branchSelected =   $branchSearch->name;
+            }
 
-            // }
+            $template = str_replace(
+                [
+                    '{ejecutive}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{branch_selected}',
+                    '{mount_validations}',
+                    '{summary}',
+                ],
+                [
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $minDate,
+                    $maxDate,
+                    $branchSelected,
+                    $mount_validations,
+                    $summary,
+                ],
+                $template
+            );
 
-            // $finalClaims = [];
-            // $claimsAll = 0;
-            // foreach ($claims as $claim) {
-            //     $branchId = $claim['branch']['id'];
-            //     $claimId = $claim['claim']['id'];
-
-            //     if (!array_key_exists($branchId, $finalClaims)) {
-            //         $finalClaims[$branchId] = [
-            //             "id" => $branchId,
-            //             "name" => $claim['branch']['name'],
-            //             "claims" => [],
-            //         ];
-            //     }
-            //     $existingClaim = isset($finalClaims[$branchId]["claims"][$claimId]) ? $finalClaims[$branchId]["claims"][$claimId] : null;
-            //     if (!$existingClaim) {
-            //         $finalClaims[$branchId]["claims"][$claimId] = [
-            //             "id" => $claimId,
-            //             "claim" => $claim['claim']['claim'],
-            //             "count" => 1,
-            //         ];
-            //     } else {
-            //         $finalClaims[$branchId]["claims"][$claimId]["count"]++;
-            //     }
-            //     $claimsAll++;
-            // }
-
-            // $summary = "";
-
-            // foreach ($finalClaims as $branchId => $branchData) {
-            //     $branchName = $branchData['name'];
-            //     $branchTotal = 0; // Initialize branch total count
-
-            //     $count_claims = count($branchData['claims']);
-            //     $summary .= "<tr><td rowspan='{$count_claims}'>{$branchName}</td>";
-
-            //     $claimsByBranch = 0;
-            //     foreach ($branchData['claims'] as $cl) {
-            //         $claimsByBranch += $cl['count'];
-            //     }
-
-            //     $count = true;
-
-            //     foreach ($branchData['claims'] as $claimData) {
-            //         if (!$count) {
-            //             $summary .= "<tr>";
-            //         }
-            //         $branchTotal += $claimData['count'];
-            //         $summary .= "<td>{$claimData['claim']}</td><td align='cente'>{$claimData['count']}</td>";
-            //         if ($count == 1) {
-            //             $summary .= "<td rowspan='{$count_claims}' align='center'>{$claimsByBranch}</td>";
-            //             $count = false;
-            //         }
-            //         $summary .= "</tr>";
-            //     }
-            // }
-
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{ejecutive}',
-            //         '{date_start}',
-            //         '{date_end}',
-            //         '{claims_all}',
-            //         '{summary}',
-            //         '{claim_strem}',
-            //         '{description}',
-            //         '{date}',
-            //         '{plan}',
-            //         '{model}',
-            //         '{ejcecutive}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $user->person__name . ' ' . $user->person__lastname,
-            //         $minDate,
-            //         $maxDate,
-            //         $claimsAll,
-            //         $summary,
-            //         $claims_strem,
-
-            //     ],
-            //     $template
-            // );
-
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
 
             // $response = new Response();
             // $response->setStatus(200);
             // $response->setMessage("th->getMessage() . ' ln:' . h->getLine()");
-            // $response->setData($claims);
+            // $response->setData($validations);
             // return response(
             //     $response->toArray(),
             //     $response->getStatus()

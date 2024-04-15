@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ViewCalidationsBySale extends Model
+class ViewValidationsBySale extends Model
 {
     static $rules = [];
     public $timestamps = false;
