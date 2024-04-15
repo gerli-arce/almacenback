@@ -69,6 +69,53 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function searchByBranch(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
+            }
+
+            $peopleJpa = ViewPeople::select([
+                'id',
+                'type',
+                'doc_number',
+                'name',
+                'lastname',
+                'branch__correlative',
+            ])
+                ->where('type', 'TECHNICAL') // Apply type filter first
+                ->where('branch__correlative', $branch)
+                ->whereNotNull('status')
+                ->where(function ($query) use ($request) {
+                    $query->whereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                        ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                        ->orWhereRaw("lastname LIKE CONCAT('%', ?, '%')", [$request->term]);
+                })
+                ->orderBy('doc_number', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($peopleJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
     public function store(Request $request)
     {
         $response = new Response();
@@ -1468,7 +1515,7 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
-            if(!isset($request->search['technical'])){
+            if (!isset($request->search['technical'])) {
                 throw new Exception("Para la busqueda deve enviar un tecnico");
             }
 
@@ -1595,10 +1642,9 @@ class TechnicalsController extends Controller
                 throw new Exception('No tienes permisos para listar las salidas');
             }
 
-            if(!isset($request->search['technical'])){
+            if (!isset($request->search['technical'])) {
                 throw new Exception("Para la busqueda deve enviar un tecnico");
             }
-
 
             $query = ViewSales::select([
                 'view_sales.id as id',

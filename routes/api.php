@@ -140,6 +140,7 @@ Route::post('/technicals/takeout/epp', [TechnicalsController::class, 'recordTake
 Route::post('/technicals/stock/add', [TechnicalsController::class, 'addStockTechnicalByProduct']);
 Route::post('/technicals/epp/add', [TechnicalsController::class, 'addEPPTechnicalByProduct']);
 Route::post('/technicals/search', [TechnicalsController::class, 'search']);
+Route::post('/technicals/search/branch', [TechnicalsController::class, 'searchByBranch']);
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
 Route::post('/technicals/products/stock', [TechnicalsController::class, 'getProductsByTechnicalStock']);

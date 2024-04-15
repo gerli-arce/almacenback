@@ -10,6 +10,7 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Validations;
 use App\Models\viewInstallations;
+use App\Models\ViewPeople;
 use App\Models\ViewUsers;
 use App\Models\ViewValidationsBySale;
 use Dompdf\Dompdf;
@@ -267,7 +268,6 @@ class ValidationController extends Controller
             ])->where('id', $userid)->first();
 
             $cuestions = "";
-
             $ValidationsJpa = Validations::find($request->validation_id);
             if ($ValidationsJpa && $ValidationsJpa->validations) {
                 $ValidationsJpa->validations = gJSON::parse($ValidationsJpa->validations);
@@ -478,6 +478,16 @@ class ValidationController extends Controller
                 }
             }
 
+            $validation_type = "NO SELECIONADO";
+
+            if ($ValidationsJpa->type == 'internet') {
+                $validation_type = "INTERNET";
+            } else if ($ValidationsJpa->type == 'cable') {
+                $validation_type = "CABLE";
+            } else if ($ValidationsJpa->type == 'duo') {
+                $validation_type = "DUO (INTERNET Y CABLE)";
+            }
+
             $coment = "";
 
             if (isset($ValidationsJpa->validations['comments'])) {
@@ -497,6 +507,7 @@ class ValidationController extends Controller
                     '{client}',
                     '{phone}',
                     '{technical}',
+                    '{type}',
                     '{validation}',
                     '{color_validation}',
                     '{opinion}',
@@ -512,6 +523,7 @@ class ValidationController extends Controller
                     $request->client['name'] . ' ' . $request->client['lastname'],
                     $request->client['phone'],
                     $request->technical['name'] . ' ' . $request->technical['lastname'],
+                    $validation_type,
                     $validation,
                     $bg_validation,
                     $coment,
@@ -564,7 +576,7 @@ class ValidationController extends Controller
             $minDate = $request->date_start;
             $maxDate = $request->date_end;
 
-            $query = ViewValidationsBySale::select('*')->whereNotNull('status')->orderBy('creation_date', 'DESC');
+            $query = ViewValidationsBySale::select('*')->whereNotNull('status')->whereNotNull('sale__status')->orderBy('creation_date', 'DESC');
 
             if (
                 !isset($request->date_start) &&
@@ -591,19 +603,106 @@ class ValidationController extends Controller
 
             $mount_validations = $query->count();
 
-            
             $validations = array();
             foreach ($validationsJpa as $validationJpa) {
                 $validation = gJSON::restore($validationJpa->toArray(), '__');
-                $validation['validations']= gJSON::parse($validation['validations']);
+                $validation['validations'] = gJSON::parse($validation['validations']);
                 $validations[] = $validation;
             }
 
-            // SETEO 
+            // ORDER BY BRANCH
+            $branch_summary = '';
+
+            $branchesJpa = Branch::get();
+
+            $sucursales = [];
+            foreach ($branchesJpa as $branch) {
+                $branchName = $branch->name;
+                $branId = $branch->id;
+                if ($branId != 8) {
+                    $sucursales[$branId] = [
+                        'id' => $branId,
+                        'name' => $branchName,
+                        'technicals' => [],
+                        'validations' => [],
+                        'mount_validations' => 0,
+                    ];
+                    $technicalsJpa = ViewPeople::select([
+                        'id',
+                        'name',
+                        'lastname',
+                        'type',
+                        'branch__id',
+                        'branch__name',
+                        'branch__correlative',
+                        'status',
+                    ])
+                        ->whereNotNull('status')
+                        ->orderBy('name', 'DESC')
+                        ->where('type', 'TECHNICAL')
+                        ->where('branch__id', $branch->id)->get();
+
+                    foreach ($technicalsJpa as $technical) {
+                        $technicalName = $technical->name . ' ' . $technical->lastname;
+                        $technicalId = $technical->id;
+                        $sucursales[$branId]['technicals'][$technicalId] = [
+                            'id' => $technicalId,
+                            'name' => $technicalName,
+                            'validations' => [],
+                            'installations' => [],
+                            'fauls' => [],
+                        ];
+
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['cable'] = 0;
+
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['cable'] = 0;
+
+                    }
+                }
+            }
+
+            $sucursales = array_values($sucursales);
+
+            foreach ($validations as $val) {
+              
+                $branId = $val['sale']['branch']['id'];
+
+                $sucursales[$branId]['mount_validations']++;
+                if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
+                    $type = $val['type'];
+                    if (!isset($type)) {
+                        $type = 'duo';
+                    }
+                    $technicalId = $val['sale']['technical']['id'];
+                    // Verificar si technicalId existe antes de acceder a sus sub-arreglos
+                    if (isset($sucursales[$branId]['technicals'][$technicalId])) {
+                      $sucursales[$branId]['technicals'][$technicalId]['installations']["duo"]++;
+                    }
+                } else {
+
+                    $type = $val['type'];
+                    if ($type == "") {
+                        $type = 'duo';
+                    }
+
+                    $branId = $val['sale']['branch']['id'];
+                    $technicalId = $val['sale']['technical']['id'];
+
+                    if (isset($sucursales[$branId]['technicals'][$technicalId])) {
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']["duo"]++;
+                      }
+                }
+            }
+
+            // SETEO
             $summary = '';
-            $count=1;
-            foreach($validations as $validation){
-                $summary .="
+            $count = 1;
+            foreach ($validations as $validation) {
+                $summary .= "
                 <tr>
                     <td align='center'>{$count}</td>
                     <td>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']} - ({$validation['sale']['client']['phone']})</td>
@@ -617,8 +716,8 @@ class ValidationController extends Controller
             }
 
             $branchSelected = 'GENERALES';
-            if($branchSearch){
-                $branchSelected =   $branchSearch->name;
+            if ($branchSearch) {
+                $branchSelected = $branchSearch->name;
             }
 
             $template = str_replace(
@@ -641,18 +740,18 @@ class ValidationController extends Controller
                 $template
             );
 
-            $pdf->loadHTML($template);
-            $pdf->render();
-            return $pdf->stream('Reclamo.pdf');
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reclamo.pdf');
 
-            // $response = new Response();
-            // $response->setStatus(200);
-            // $response->setMessage("th->getMessage() . ' ln:' . h->getLine()");
-            // $response->setData($validations);
-            // return response(
-            //     $response->toArray(),
-            //     $response->getStatus()
-            // );
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage("GAAA");
+            $response->setData($sucursales);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
 
         } catch (\Throwable $th) {
             $response = new Response();
