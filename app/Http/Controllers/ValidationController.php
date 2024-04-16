@@ -674,7 +674,7 @@ class ValidationController extends Controller
                 if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
                     $type = $val['type'];
                     if ($type=="") {
-                        $type = 'duo';
+                        $type = 'internet';
                     }
                     $technicalId = $val['sale']['technical']['id'];
                     if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
@@ -687,7 +687,7 @@ class ValidationController extends Controller
 
                     $type = $val['type'];
                     if ($type == "") {
-                        $type = 'duo';
+                        $type = 'internet';
                     }
                     $technicalId = $val['sale']['technical']['id'];
                     if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
@@ -696,6 +696,41 @@ class ValidationController extends Controller
                     } else {
                         $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type]++;
                     }
+                }
+            }
+
+            $sucursales = array_values($sucursales);
+
+            foreach($sucursales as $branch){
+                $branch_summary .="
+                    <tr class='bg-yellow'>
+                        <td>{$branch['name']}</td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                        <td></td> 
+                    </t>
+                ";
+                foreach($branch['technicals'] as $technicals){
+                    $total_faulds =intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
+                    $total_instalation =intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
+                    $branch_summary .="
+                    <tr>
+                        <td>{$technicals['name']}</td> 
+                        <td>{$technicals['fauls']['duo']}</td> 
+                        <td>{$technicals['fauls']['internet']}</td> 
+                        <td>{$technicals['fauls']['cable']}</td> 
+                        <td>{$total_faulds}</td> 
+                        <td>{$technicals['installations']['duo']}</td> 
+                        <td>{$technicals['installations']['internet']}</td> 
+                        <td>{$technicals['installations']['cable']}</td> 
+                        <td>{$total_instalation}</td> 
+                    </t>
+                ";
                 }
             }
 
@@ -728,6 +763,7 @@ class ValidationController extends Controller
                     '{date_end}',
                     '{branch_selected}',
                     '{mount_validations}',
+                    '{branch_summary}',
                     '{summary}',
                 ],
                 [
@@ -736,23 +772,24 @@ class ValidationController extends Controller
                     $maxDate,
                     $branchSelected,
                     $mount_validations,
+                    $branch_summary,
                     $summary,
                 ],
                 $template
             );
 
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
 
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage("GAAA");
-            $response->setData($sucursales);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage("GAAA");
+            // $response->setData($sucursales);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();

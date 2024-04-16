@@ -266,6 +266,13 @@
                 background-color: rgb(255, 235, 198);
             }
 
+            .bg-yellow{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px yellow;
+                background-color: rgb(252, 252, 60);
+            }
+
             .hide {
                 display: none;
                 color: #98fb9870;
@@ -351,6 +358,32 @@
             </div>
             <br />
             <!-- <p id="date">{branch_onteraction}, {issue_long_date}</p> -->
+
+            <table>
+                <thead>
+                    <tr>
+                        <td>TÉCNICOS</td>
+                        <td colspan="3">AVERIA</td>
+                        <td>TOTAL</td>
+                        <td colspan="3">INSTALACION</td>
+                        <td>TOTAL</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>DUO</td>
+                        <td>INTERNET</td>
+                        <td>CABLE</td>
+                        <td></td>
+                        <td>DUO</td>
+                        <td>INTERNET</td>
+                        <td>CABLE</td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {branch_summary}
+                </tbody>
+            </table>
 
             <table>
                 <thead>
