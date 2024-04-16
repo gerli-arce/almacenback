@@ -226,7 +226,7 @@ class ValidationController extends Controller
             $SalesProductsJpa = SalesProducts::find($request->sale);
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
-            // $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
+            $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
             $SalesProductsJpa->save();
 
             $response->setStatus(200);
