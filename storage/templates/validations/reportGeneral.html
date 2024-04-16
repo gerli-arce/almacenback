@@ -245,7 +245,9 @@
                 padding: 10px;
             }
             .bg-secondary {
-                background-color: #6f85a725;
+                border: solid 1px #283c4d96;
+                background-color: #889bac36;
+                color: #2a3a49 !important;
             }
 
             .bg-red {
@@ -254,11 +256,11 @@
                 background-color: rgb(255, 213, 213);
             }
 
-            .bg-green {
+            /* .bg-green {
                 color: green;
                 border: solid 1px green;
                 background-color: rgb(183, 255, 183);
-            }
+            } */
 
             .bg-orange {
                 color: orange;
@@ -272,6 +274,15 @@
                 border: solid 1px yellow;
                 background-color: rgb(252, 252, 60);
             }
+
+            .bg-green{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px green;
+                background-color: rgb(104, 240, 104);
+            }
+
+            
 
             .hide {
                 display: none;
@@ -359,33 +370,7 @@
             <br />
             <!-- <p id="date">{branch_onteraction}, {issue_long_date}</p> -->
 
-            <table>
-                <thead>
-                    <tr>
-                        <td>TÉCNICOS</td>
-                        <td colspan="3">AVERIA</td>
-                        <td>TOTAL</td>
-                        <td colspan="3">INSTALACION</td>
-                        <td>TOTAL</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>DUO</td>
-                        <td>INTERNET</td>
-                        <td>CABLE</td>
-                        <td></td>
-                        <td>DUO</td>
-                        <td>INTERNET</td>
-                        <td>CABLE</td>
-                        <td></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {branch_summary}
-                </tbody>
-            </table>
-
-            <table>
+            <table style="font-size: 9px;">
                 <thead>
                     <tr>
                         <td colspan="2" align="center">VALIDACIONES GENERALES</td>
@@ -410,10 +395,36 @@
                     </tr>
                     <tr>
                         <td>CANTIDAD DE VALIDACIONES</td>
-                        <td align="center">{mount_validations}</td>
+                        <td align="center" class="bg-yellow" style=" border: 1px solid #177bbe8c; font-size: 13px;">{mount_validations}</td>
                     </tr>
                 </tbody>
             </table>
+
+
+            <table style="font-size: 9px;">
+                <thead>
+                    <tr>
+                        <td rowspan="2">TÉCNICOS</td>
+                        <td colspan="3">AVERIA</td>
+                        <td  rowspan="2" >TOTAL</td>
+                        <td colspan="3">INSTALACION</td>
+                        <td  rowspan="2" >TOTAL</td>
+                    </tr>
+                    <tr>
+                        <td>DUO</td>
+                        <td>INTERNET</td>
+                        <td>CABLE</td>
+                        <td>DUO</td>
+                        <td>INTERNET</td>
+                        <td>CABLE</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {branch_summary}
+                </tbody>
+            </table>
+
+           
             <table style="font-size: 9px;">
                 <thead>
                     <tr>

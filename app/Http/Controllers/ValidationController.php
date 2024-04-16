@@ -13,6 +13,7 @@ use App\Models\viewInstallations;
 use App\Models\ViewPeople;
 use App\Models\ViewUsers;
 use App\Models\ViewValidationsBySale;
+use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -582,13 +583,17 @@ class ValidationController extends Controller
                 $minDate = $query->whereNotNull('creation_date')->min('creation_date');
                 $maxDate = $query->whereNotNull('creation_date')->max('creation_date');
             } else {
-                {
-                    if (isset($request->date_start) && isset($request->date_end)) {
-                        $query
-                            ->whereBetween('date', [$request->date_start, $request->date_end]);
-                    }
-                }
 
+                $fechaInicio = Carbon::parse($request->date_start);
+                $fechaFin = Carbon::parse($request->date_end);
+
+                $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
+                $fechaFin->setTime(23, 59, 59); // Establecer la fecha de fin a 23:59:59
+
+                if (isset($request->date_start) && isset($request->date_end)) {
+                    $query
+                        ->whereBetween('creation_date', [$fechaInicio, $fechaFin]);
+                }
             }
 
             $branchSearch = null;
@@ -673,7 +678,7 @@ class ValidationController extends Controller
 
                 if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
                     $type = $val['type'];
-                    if ($type=="") {
+                    if ($type == "") {
                         $type = 'internet';
                     }
                     $technicalId = $val['sale']['technical']['id'];
@@ -701,34 +706,34 @@ class ValidationController extends Controller
 
             $sucursales = array_values($sucursales);
 
-            foreach($sucursales as $branch){
-                $branch_summary .="
+            foreach ($sucursales as $branch) {
+                $branch_summary .= "
                     <tr class='bg-yellow'>
-                        <td>{$branch['name']}</td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
-                        <td></td> 
+                        <td>{$branch['name']}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td ></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td ></td>
                     </t>
                 ";
-                foreach($branch['technicals'] as $technicals){
-                    $total_faulds =intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
-                    $total_instalation =intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
-                    $branch_summary .="
+                foreach ($branch['technicals'] as $technicals) {
+                    $total_faulds = intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
+                    $total_instalation = intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
+                    $branch_summary .= "
                     <tr>
-                        <td>{$technicals['name']}</td> 
-                        <td>{$technicals['fauls']['duo']}</td> 
-                        <td>{$technicals['fauls']['internet']}</td> 
-                        <td>{$technicals['fauls']['cable']}</td> 
-                        <td>{$total_faulds}</td> 
-                        <td>{$technicals['installations']['duo']}</td> 
-                        <td>{$technicals['installations']['internet']}</td> 
-                        <td>{$technicals['installations']['cable']}</td> 
-                        <td>{$total_instalation}</td> 
+                        <td>{$technicals['name']}</td>
+                        <td align='center' class='" . ($technicals['fauls']['duo'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['duo']}</td>
+                        <td align='center'  class='" . ($technicals['fauls']['internet'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['internet']}</td>
+                        <td align='center' class='" . ($technicals['fauls']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['fauls']['cable']}</td>
+                        <td align='center' class='bg-secondary' >{$total_faulds}</td>
+                        <td align='center' class='" . ($technicals['installations']['duo'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['duo']}</td>
+                        <td align='center' class='" . ($technicals['installations']['internet'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['internet']}</td>
+                        <td align='center' class='" . ($technicals['installations']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['cable']}</td>
+                        <td align='center' class='bg-secondary' >{$total_instalation}</td>
                     </t>
                 ";
                 }
