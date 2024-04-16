@@ -571,8 +571,6 @@ class ValidationController extends Controller
                 'person__lastname',
             ])->where('id', $userid)->first();
 
-        
-
             $minDate = $request->date_start;
             $maxDate = $request->date_end;
 
@@ -665,22 +663,25 @@ class ValidationController extends Controller
                 }
             }
 
-            $sucursales = array_values($sucursales);
+            // $sucursales = array_values($sucursales);
 
             foreach ($validations as $val) {
-              
+
                 $branId = $val['sale']['branch']['id'];
 
                 $sucursales[$branId]['mount_validations']++;
+
                 if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
                     $type = $val['type'];
-                    if (!isset($type)) {
+                    if ($type=="") {
                         $type = 'duo';
                     }
                     $technicalId = $val['sale']['technical']['id'];
-                    // Verificar si technicalId existe antes de acceder a sus sub-arreglos
-                    if (isset($sucursales[$branId]['technicals'][$technicalId])) {
-                      $sucursales[$branId]['technicals'][$technicalId]['installations']["duo"]++;
+                    if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
+                        // $sucursales[$branId]['technicals'][$technicalId]['installations'];
+                        $sucursales[$branId]['technicals'][$technicalId]['installations'][$type] = 1;
+                    } else {
+                        $sucursales[$branId]['technicals'][$technicalId]['installations'][$type]++;
                     }
                 } else {
 
@@ -688,13 +689,13 @@ class ValidationController extends Controller
                     if ($type == "") {
                         $type = 'duo';
                     }
-
-                    $branId = $val['sale']['branch']['id'];
                     $technicalId = $val['sale']['technical']['id'];
-
-                    if (isset($sucursales[$branId]['technicals'][$technicalId])) {
-                        $sucursales[$branId]['technicals'][$technicalId]['fauls']["duo"]++;
-                      }
+                    if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
+                        // $sucursales[$branId]['technicals'][$technicalId]['installations'];
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type] = 1;
+                    } else {
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type]++;
+                    }
                 }
             }
 
