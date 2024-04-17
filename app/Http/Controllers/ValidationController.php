@@ -551,9 +551,11 @@ class ValidationController extends Controller
     {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
             if ($status != 200) {
                 throw new Exception($message);
             }
+
             if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
                 throw new Exception('No tienes permisos');
             }
@@ -602,7 +604,7 @@ class ValidationController extends Controller
                 $query->where('sale__branch__id', $request->branch);
                 $branchSearch = Branch::find($request->branch);
             }
-            $validationsJpa = $query->get();
+            $validationsJpa = $query->whereNot("sale__branch__id", 8)->get();
 
             $mount_validations = $query->count();
 
@@ -676,6 +678,8 @@ class ValidationController extends Controller
 
                 $sucursales[$branId]['mount_validations']++;
 
+                $sucursales[$branId]['validations'][] = $val;
+
                 if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
                     $type = $val['type'];
                     if ($type == "") {
@@ -741,19 +745,49 @@ class ValidationController extends Controller
 
             // SETEO
             $summary = '';
-            $count = 1;
-            foreach ($validations as $validation) {
+           
+            foreach ($sucursales as $brach) {
+
                 $summary .= "
-                <tr>
-                    <td align='center'>{$count}</td>
-                    <td>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']} - ({$validation['sale']['client']['phone']})</td>
-                    <td>{$validation['sale']['technical']['name']} {$validation['sale']['technical']['lastname']}</td>
-                    <td align='center'>{$validation['sale']['branch']['name']}</td>
-                    <td align='center'>{$validation['sale']['validation']}</td>
-                    <td align='center'>{$validation['creation_date']}</td>
-                </tr>
+                    <tr class='bg-orange'>
+                        <td colspan='2'>
+                            {$brach['name']}
+                        </td>
+                        <td>
+                            VALIDACIÓNES
+                        </td>
+                        <td style='font-size:13px;text-align:center;'>
+                            {$brach['mount_validations']}
+                        </td>
+                    </tr>
+                    <tr class='bg-secondary'>
+                        <td align='center'>#</td>
+                        <td align='center'>CLIENTE</td>
+                        <td align='center'>TECNICO</td>
+                        <td align='center'>COMENTARIOS</td>
+                    </tr>
                 ";
-                $count++;
+                $count = 1;
+                foreach ($brach['validations'] as $validation) {
+                    $summary .= "
+                        <tr>
+                            <td align='center'>{$count}</td>
+                            <td>
+                                <p>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']}</p>
+                                <p><strong>{$validation['sale']['client']['phone']}</strong> / {$validation['creation_date']}</p>
+                            </td>
+                            <td>
+                                <p><center>{$validation['sale']['technical']['name']} {$validation['sale']['technical']['lastname']}</center></p>
+                                <p><center style='font-size:13px;'>{$validation['sale']['validation']}</center></p>
+                            </td>
+                            <td>
+                                <p>{$validation['validations']['comments']}</p>
+                            </td>
+                        </tr>
+                    ";
+                    $count++;
+                }
+
             }
 
             $branchSelected = 'GENERALES';
