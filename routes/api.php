@@ -623,7 +623,11 @@ Route::post('/validations/get', [ValidationController::class, 'getValidationBySa
 Route::post('/validations/reports/by/validation', [ValidationController::class, 'generateReportByValidation']);
 Route::post('/validations/reports/general', [ValidationController::class, 'generateReportGeneral']);
 Route::post('/validations/search', [ValidationController::class, 'search']);
-
+Route::post('/validations/setimage', [ValidationController::class, 'setImage']);
+Route::get('/validations/image/{id}', [ValidationController::class, 'getImages']);
+Route::delete('/validations/image/{id}', [ValidationController::class, 'deleteImage']);
+Route::get('/validationsimg/{id}/{zize}', [ValidationController::class, 'images']);
+Route::patch('/validations/setimage', [ValidationController::class, 'updateImage']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

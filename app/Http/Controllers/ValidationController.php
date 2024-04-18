@@ -13,6 +13,7 @@ use App\Models\viewInstallations;
 use App\Models\ViewPeople;
 use App\Models\ViewUsers;
 use App\Models\ViewValidationsBySale;
+use App\Models\PhotographsByValidation;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -39,10 +40,12 @@ class ValidationController extends Controller
             $query = viewInstallations::select([
                 '*',
             ])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])->whereNotNull('status');
 
             if (!$request->all) {
-                $query->whereNotNull('status');
+                $query->where('status_sale', 'PENDIENTE');
+            }else{
+                // $query->where('status_sale', 'PENDIENTE');
             }
 
             $query->where(function ($q) use ($request) {
@@ -70,7 +73,7 @@ class ValidationController extends Controller
                     $q->orWhere('date_sale', $type, $value);
                 }
             })
-                ->where('status_sale', 'PENDIENTE');
+              ;
             // ->where('type_operation__operation', 'INSTALACION')
             // ->where('branch__correlative', $branch);
 
@@ -834,6 +837,253 @@ class ValidationController extends Controller
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
+    public function setImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            // if (
+            //     !isset($request->_review) && !isset($request->_car)
+            // ) {
+            //     throw new Exception("Error: No deje campos vacíos");
+            // }
+
+            $PhotographsByValidation = new PhotographsByValidation();
+            $PhotographsByValidation->_validation = $request->_validation;
+            if(isset($request->description)){
+                $PhotographsByValidation->description = $request->description;
+            }
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByValidation->image_type = $request->image_type;
+                    $PhotographsByValidation->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByValidation->image_full = base64_decode($request->image_full);
+                } else {
+                    throw new Exception("Una imagen debe ser cargada.");
+                }
+            } else {
+                throw new Exception("Una imagen debe ser cargada.");
+            }
+
+            $PhotographsByValidation->_creation_user = $userid;
+            $PhotographsByValidation->creation_date = gTrace::getDate('mysql');
+            $PhotographsByValidation->_update_user = $userid;
+            $PhotographsByValidation->update_date = gTrace::getDate('mysql');
+            $PhotographsByValidation->status = "1";
+            $PhotographsByValidation->save();
+
+            $response->setStatus(200);
+            $response->setMessage('');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function updateImage(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByValidationJpa = PhotographsByValidation::find($request->id);
+            $PhotographsByValidationJpa->description = $request->description;
+
+            if (
+                isset($request->image_type) &&
+                isset($request->image_mini) &&
+                isset($request->image_full)
+            ) {
+                if (
+                    $request->image_type != "none" &&
+                    $request->image_mini != "none" &&
+                    $request->image_full != "none"
+                ) {
+                    $PhotographsByValidationJpa->image_type = $request->image_type;
+                    $PhotographsByValidationJpa->image_mini = base64_decode($request->image_mini);
+                    $PhotographsByValidationJpa->image_full = base64_decode($request->image_full);
+                } 
+            } 
+           
+            $PhotographsByValidationJpa->_update_user = $userid;
+            $PhotographsByValidationJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByValidationJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen guardada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function getImages(Request $request, $id)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByValidationJpa = PhotographsByValidation::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
+            ->where('_validation', $id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta.');
+            $response->setData($PhotographsByValidationJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function images($id, $size)
+    {
+        $response = new Response();
+        $content = null;
+        $type = null;
+        try {
+            if ($size != 'full') {
+                $size = 'mini';
+            }
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByValidationJpa = PhotographsByValidation::select([
+                "photographs_by_validation.image_$size as image_content",
+                'photographs_by_validation.image_type',
+
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$PhotographsByValidationJpa) {
+                throw new Exception('No se encontraron datos');
+            }
+
+            if (!$PhotographsByValidationJpa->image_content) {
+                throw new Exception('No existe imagen');
+            }
+
+            $content = $PhotographsByValidationJpa->image_content;
+            $type = $PhotographsByValidationJpa->image_type;
+            $response->setStatus(200);
+        } catch (\Throwable $th) {
+            $ruta = '../storage/images/img-default.jpg';
+            $fp = fopen($ruta, 'r');
+            $datos_image = fread($fp, filesize($ruta));
+            $datos_image = addslashes($datos_image);
+            fclose($fp);
+            $content = stripslashes($datos_image);
+            $type = 'image/jpeg';
+            $response->setStatus(200);
+        } finally {
+            return response(
+                $content,
+                $response->getStatus()
+            )->header('Content-Type', $type);
+        }
+    }
+
+    public function deleteImage(Request $request, $id){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'cars', 'read')) {
+                throw new Exception("No tienes permisos para actualizar");
+            }
+
+            if (
+                !isset($id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $PhotographsByValidationJpa = PhotographsByValidation::find($id);
+            $PhotographsByValidationJpa->_update_user = $userid;
+            $PhotographsByValidationJpa->update_date = gTrace::getDate('mysql');
+            $PhotographsByValidationJpa->status = null;
+            $PhotographsByValidationJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Imagen eliminada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
             return response(
                 $response->toArray(),
                 $response->getStatus()
