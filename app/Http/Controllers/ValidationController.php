@@ -12,6 +12,7 @@ use App\Models\Validations;
 use App\Models\viewInstallations;
 use App\Models\ViewPeople;
 use App\Models\ViewUsers;
+use App\Models\User;
 use App\Models\ViewValidationsBySale;
 use App\Models\PhotographsByValidation;
 use Carbon\Carbon;
@@ -500,6 +501,37 @@ class ValidationController extends Controller
                 $coment = "<i>Sin comentarios</i>";
             }
 
+            $PhotographsByValidationJpa = PhotographsByValidation::select(['id', 'description', '_creation_user', 'creation_date'])
+            ->where('_validation',  $request->validation_id)->whereNotNUll('status')
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $images= '';
+            $count = 1;
+
+            foreach($PhotographsByValidationJpa as $image){
+
+                $userCreation = User::select([
+                    'users.id as id',
+                    'users.username as username',
+                ])
+                    ->where('users.id', $image->_creation_user)->first();
+
+                $images .= "
+                <div style='page-break-before: always;'>
+                    <p><strong>{$count}) {$image->description}</strong></p>
+                    <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
+                    <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
+                    <center>
+                        <img src='http://almacen.fastnetperu.com.pe/api/validationsimg/{$image->id}/full' alt='-' 
+                       class='evidences'
+                    </center>
+                </div>
+                ";
+                $count +=1;
+            }
+
+
             $template = str_replace(
                 [
                     '{id}',
@@ -516,6 +548,7 @@ class ValidationController extends Controller
                     '{color_validation}',
                     '{opinion}',
                     '{cuestions}',
+                    '{images}'
                 ],
                 [
                     $request->id,
@@ -532,6 +565,7 @@ class ValidationController extends Controller
                     $bg_validation,
                     $coment,
                     $cuestions,
+                    $images,
                 ],
                 $template
             );
