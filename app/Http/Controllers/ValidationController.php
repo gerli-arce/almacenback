@@ -142,6 +142,9 @@ class ValidationController extends Controller
             $Validations->save();
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
+            if($SalesProductsJpa->type_pay == "LIQUIDATION"){
+                $SalesProductsJpa->status_sale = 'CULMINADA';
+            }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
             $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
@@ -228,6 +231,9 @@ class ValidationController extends Controller
             $Validations->save();
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
+            if($SalesProductsJpa->type_pay == "LIQUIDATION"){
+                $SalesProductsJpa->status_sale = 'CULMINADA';
+            }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
             $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
