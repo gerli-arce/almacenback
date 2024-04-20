@@ -47,13 +47,15 @@ class TechnicalsController extends Controller
                 'doc_number',
                 'name',
                 'lastname',
-            ])->whereNotNull('status')
-                ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orWhereRaw("lastname LIKE CONCAT('%', ?, '%')", [$request->term])
-                ->orderBy('doc_number', 'asc')
-                ->where('type', 'TECHNICAL')
-                ->get();
+            ])
+            ->whereNotNull('status')
+            ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+            ->orWhere(function ($query) use ($request) {
+                $term = '%' . $request->term . '%'; // Añadir comodines de búsqueda al término
+                $query->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
+            })
+            ->orderBy('doc_number', 'asc')
+            ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -95,8 +97,7 @@ class TechnicalsController extends Controller
                 ->whereNotNull('status')
                 ->where(function ($query) use ($request) {
                     $query->whereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-                        ->orWhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
-                        ->orWhereRaw("lastname LIKE CONCAT('%', ?, '%')", [$request->term]);
+                    ->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
                 })
                 ->orderBy('doc_number', 'asc')
                 ->get();

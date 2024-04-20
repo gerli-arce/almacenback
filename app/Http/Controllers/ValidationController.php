@@ -6,15 +6,15 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\PhotographsByValidation;
 use App\Models\Response;
 use App\Models\SalesProducts;
+use App\Models\User;
 use App\Models\Validations;
 use App\Models\viewInstallations;
 use App\Models\ViewPeople;
 use App\Models\ViewUsers;
-use App\Models\User;
 use App\Models\ViewValidationsBySale;
-use App\Models\PhotographsByValidation;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -45,7 +45,7 @@ class ValidationController extends Controller
 
             if (!$request->all) {
                 $query->where('status_sale', 'PENDIENTE');
-            }else{
+            } else {
                 // $query->where('status_sale', 'PENDIENTE');
             }
 
@@ -56,10 +56,10 @@ class ValidationController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->orWhere('technical__name', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(technical__name, ' ', technical__lastname)"), 'like', $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->orWhere('client__name', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(client__name, ' ', client__lastname)"), 'like', $value);
                 }
                 if ($column == 'user_creation__person__name' || $column == '*') {
                     $q->orWhere('user_creation__person__name', $type, $value);
@@ -74,7 +74,7 @@ class ValidationController extends Controller
                     $q->orWhere('date_sale', $type, $value);
                 }
             })
-              ;
+            ;
             // ->where('type_operation__operation', 'INSTALACION')
             // ->where('branch__correlative', $branch);
 
@@ -142,7 +142,12 @@ class ValidationController extends Controller
             $Validations->save();
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
-            if($SalesProductsJpa->type_pay == "LIQUIDATION"){
+
+            if ($SalesProductsJpa->type_pay == "LIQUIDATION") {
+                $SalesProductsJpa->status_sale = 'CULMINADA';
+            }
+
+            if($request->type_submit == 'liquidation'){
                 $SalesProductsJpa->status_sale = 'CULMINADA';
             }
             $SalesProductsJpa->validation = $request->validation;
@@ -231,7 +236,7 @@ class ValidationController extends Controller
             $Validations->save();
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
-            if($SalesProductsJpa->type_pay == "LIQUIDATION"){
+            if ($SalesProductsJpa->type_pay == "LIQUIDATION") {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
             }
             $SalesProductsJpa->validation = $request->validation;
@@ -508,14 +513,14 @@ class ValidationController extends Controller
             }
 
             $PhotographsByValidationJpa = PhotographsByValidation::select(['id', 'description', '_creation_user', 'creation_date'])
-            ->where('_validation',  $request->validation_id)->whereNotNUll('status')
-            ->orderBy('id', 'desc')
-            ->get();
+                ->where('_validation', $request->validation_id)->whereNotNUll('status')
+                ->orderBy('id', 'desc')
+                ->get();
 
-            $images= '';
+            $images = '';
             $count = 1;
 
-            foreach($PhotographsByValidationJpa as $image){
+            foreach ($PhotographsByValidationJpa as $image) {
 
                 $userCreation = User::select([
                     'users.id as id',
@@ -529,14 +534,13 @@ class ValidationController extends Controller
                     <p style='margin-left:18px'>Fecha: {$image->creation_date}</p>
                     <p style='margin-left:18px'>Usuario: {$userCreation->username}</p>
                     <center>
-                        <img src='http://almacen.fastnetperu.com.pe/api/validationsimg/{$image->id}/full' alt='-' 
+                        <img src='http://almacen.fastnetperu.com.pe/api/validationsimg/{$image->id}/full' alt='-'
                        class='evidences'
                     </center>
                 </div>
                 ";
-                $count +=1;
+                $count += 1;
             }
-
 
             $template = str_replace(
                 [
@@ -554,7 +558,7 @@ class ValidationController extends Controller
                     '{color_validation}',
                     '{opinion}',
                     '{cuestions}',
-                    '{images}'
+                    '{images}',
                 ],
                 [
                     $request->id,
@@ -788,7 +792,7 @@ class ValidationController extends Controller
 
             // SETEO
             $summary = '';
-           
+
             foreach ($sucursales as $brach) {
 
                 $summary .= "
@@ -884,7 +888,6 @@ class ValidationController extends Controller
         }
     }
 
-
     public function setImage(Request $request)
     {
         $response = new Response();
@@ -906,7 +909,7 @@ class ValidationController extends Controller
 
             $PhotographsByValidation = new PhotographsByValidation();
             $PhotographsByValidation->_validation = $request->_validation;
-            if(isset($request->description)){
+            if (isset($request->description)) {
                 $PhotographsByValidation->description = $request->description;
             }
 
@@ -985,9 +988,9 @@ class ValidationController extends Controller
                     $PhotographsByValidationJpa->image_type = $request->image_type;
                     $PhotographsByValidationJpa->image_mini = base64_decode($request->image_mini);
                     $PhotographsByValidationJpa->image_full = base64_decode($request->image_full);
-                } 
-            } 
-           
+                }
+            }
+
             $PhotographsByValidationJpa->_update_user = $userid;
             $PhotographsByValidationJpa->update_date = gTrace::getDate('mysql');
             $PhotographsByValidationJpa->save();
@@ -1025,9 +1028,9 @@ class ValidationController extends Controller
             }
 
             $PhotographsByValidationJpa = PhotographsByValidation::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            ->where('_validation', $id)->whereNotNUll('status')
-            ->orderBy('id', 'desc')
-            ->get();
+                ->where('_validation', $id)->whereNotNUll('status')
+                ->orderBy('id', 'desc')
+                ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta.');
@@ -1094,7 +1097,8 @@ class ValidationController extends Controller
         }
     }
 
-    public function deleteImage(Request $request, $id){
+    public function deleteImage(Request $request, $id)
+    {
         $response = new Response();
         try {
 

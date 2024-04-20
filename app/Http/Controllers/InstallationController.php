@@ -367,14 +367,14 @@ class InstallationController extends Controller
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
 
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->orWhere('technical__name', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(technical__name, ' ', technical__lastname)"), 'like', $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->orWhere('client__name', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(client__name, ' ', client__lastname)"), 'like', $value);
                 }
-                if ($column == 'user_creation__username' || $column == '*') {
-                    $q->orWhere('user_creation__username', $type, $value);
-                }
+                // if ($column == 'user_creation__username' || $column == '*') {
+                //     $q->orWhere('user_creation__username', $type, $value);
+                // }
                 if ($column == 'date_sale' || $column == '*') {
                     $q->orWhere('date_sale', $type, $value);
                 }
