@@ -147,7 +147,7 @@ class ValidationController extends Controller
                 $SalesProductsJpa->status_sale = 'CULMINADA';
             }
 
-            if($request->type_submit == 'liquidation'){
+            if ($request->type_submit == 'liquidation') {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
             }
             $SalesProductsJpa->validation = $request->validation;
@@ -876,6 +876,308 @@ class ValidationController extends Controller
             //     $response->toArray(),
             //     $response->getStatus()
             // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportNotValidations(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/validations/reportGeneral.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $minDate = $request->date_start;
+            $maxDate = $request->date_end;
+
+            $query = viewInstallations::select([
+                '*',
+            ])
+                
+            ->orderBy('date_sale', 'desc')
+            ->whereNotNull('status')
+            ->where('status_sale', 'PENDIENTE')
+            ->whereNull('validation_date');
+           
+            // if (
+            //     !isset($request->date_start) &&
+            //     !isset($request->date_end)) {
+            //     $minDate = $query->whereNotNull('date_sale')->min('date_sale');
+            //     $maxDate = $query->whereNotNull('date_sale')->max('date_sale');
+            // } else {
+
+            //     $fechaInicio = Carbon::parse($request->date_start);
+            //     $fechaFin = Carbon::parse($request->date_end);
+
+            //     $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
+            //     $fechaFin->setTime(23, 59, 59); // Establecer la fecha de fin a 23:59:59
+
+            //     if (isset($request->date_start) && isset($request->date_end)) {
+            //         $query
+            //             ->whereBetween('date_sale', [$fechaInicio, $fechaFin]);
+            //     }
+            // }
+
+            $branchSearch = null;
+
+            if (isset($request->branch)) {
+                $query->where('branch__id', $request->branch);
+                $branchSearch = Branch::find($request->branch);
+            }
+            $validationsJpa = $query->whereNot("branch__id", 8)->get();
+
+            $mount_validations = $query->count();
+
+            
+            // $validations = array();
+            // foreach ($validationsJpa as $validationJpa) {
+            //     $validation = gJSON::restore($validationJpa->toArray(), '__');
+            //     $validation['validations'] = gJSON::parse($validation['validations']);
+            //     $validations[] = $validation;
+            // }
+
+            // // ORDER BY BRANCH
+            // $branch_summary = '';
+
+            // $branchesJpa = Branch::get();
+
+            // $sucursales = [];
+            // foreach ($branchesJpa as $branch) {
+            //     $branchName = $branch->name;
+            //     $branId = $branch->id;
+            //     if ($branId != 8) {
+            //         $sucursales[$branId] = [
+            //             'id' => $branId,
+            //             'name' => $branchName,
+            //             'technicals' => [],
+            //             'validations' => [],
+            //             'mount_validations' => 0,
+            //         ];
+            //         $technicalsJpa = ViewPeople::select([
+            //             'id',
+            //             'name',
+            //             'lastname',
+            //             'type',
+            //             'branch__id',
+            //             'branch__name',
+            //             'branch__correlative',
+            //             'status',
+            //         ])
+            //             ->whereNotNull('status')
+            //             ->orderBy('name', 'DESC')
+            //             ->where('type', 'TECHNICAL')
+            //             ->where('branch__id', $branch->id)->get();
+
+            //         foreach ($technicalsJpa as $technical) {
+            //             $technicalName = $technical->name . ' ' . $technical->lastname;
+            //             $technicalId = $technical->id;
+            //             $sucursales[$branId]['technicals'][$technicalId] = [
+            //                 'id' => $technicalId,
+            //                 'name' => $technicalName,
+            //                 'validations' => [],
+            //                 'installations' => [],
+            //                 'fauls' => [],
+            //             ];
+
+            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['duo'] = 0;
+            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['internet'] = 0;
+            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['cable'] = 0;
+
+            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['duo'] = 0;
+            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['internet'] = 0;
+            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['cable'] = 0;
+
+            //         }
+            //     }
+            // }
+
+            // // $sucursales = array_values($sucursales);
+
+            // foreach ($validations as $val) {
+
+            //     $branId = $val['sale']['branch']['id'];
+
+            //     $sucursales[$branId]['mount_validations']++;
+
+            //     $sucursales[$branId]['validations'][] = $val;
+
+            //     if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
+            //         $type = $val['type'];
+            //         if ($type == "") {
+            //             $type = 'internet';
+            //         }
+            //         $technicalId = $val['sale']['technical']['id'];
+            //         if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
+            //             // $sucursales[$branId]['technicals'][$technicalId]['installations'];
+            //             $sucursales[$branId]['technicals'][$technicalId]['installations'][$type] = 1;
+            //         } else {
+            //             $sucursales[$branId]['technicals'][$technicalId]['installations'][$type]++;
+            //         }
+            //     } else {
+
+            //         $type = $val['type'];
+            //         if ($type == "") {
+            //             $type = 'internet';
+            //         }
+            //         $technicalId = $val['sale']['technical']['id'];
+            //         if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
+            //             // $sucursales[$branId]['technicals'][$technicalId]['installations'];
+            //             $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type] = 1;
+            //         } else {
+            //             $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type]++;
+            //         }
+            //     }
+            // }
+
+            // $sucursales = array_values($sucursales);
+
+            // foreach ($sucursales as $branch) {
+            //     $branch_summary .= "
+            //         <tr class='bg-yellow'>
+            //             <td>{$branch['name']}</td>
+            //             <td></td>
+            //             <td></td>
+            //             <td></td>
+            //             <td ></td>
+            //             <td></td>
+            //             <td></td>
+            //             <td></td>
+            //             <td ></td>
+            //         </t>
+            //     ";
+            //     foreach ($branch['technicals'] as $technicals) {
+            //         $total_faulds = intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
+            //         $total_instalation = intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
+            //         $branch_summary .= "
+            //         <tr>
+            //             <td>{$technicals['name']}</td>
+            //             <td align='center' class='" . ($technicals['fauls']['duo'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['duo']}</td>
+            //             <td align='center'  class='" . ($technicals['fauls']['internet'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['internet']}</td>
+            //             <td align='center' class='" . ($technicals['fauls']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['fauls']['cable']}</td>
+            //             <td align='center' class='bg-secondary' >{$total_faulds}</td>
+            //             <td align='center' class='" . ($technicals['installations']['duo'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['duo']}</td>
+            //             <td align='center' class='" . ($technicals['installations']['internet'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['internet']}</td>
+            //             <td align='center' class='" . ($technicals['installations']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['cable']}</td>
+            //             <td align='center' class='bg-secondary' >{$total_instalation}</td>
+            //         </t>
+            //     ";
+            //     }
+            // }
+
+            // // SETEO
+            // $summary = '';
+
+            // foreach ($sucursales as $brach) {
+
+            //     $summary .= "
+            //         <tr class='bg-orange'>
+            //             <td colspan='2'>
+            //                 {$brach['name']}
+            //             </td>
+            //             <td>
+            //                 VALIDACIÓNES
+            //             </td>
+            //             <td style='font-size:13px;text-align:center;'>
+            //                 {$brach['mount_validations']}
+            //             </td>
+            //         </tr>
+            //         <tr class='bg-secondary'>
+            //             <td align='center'>#</td>
+            //             <td align='center'>CLIENTE</td>
+            //             <td align='center'>TECNICO</td>
+            //             <td align='center'>COMENTARIOS</td>
+            //         </tr>
+            //     ";
+            //     $count = 1;
+            //     foreach ($brach['validations'] as $validation) {
+            //         $summary .= "
+            //             <tr>
+            //                 <td align='center'>{$count}</td>
+            //                 <td>
+            //                     <p>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']}</p>
+            //                     <p><strong>{$validation['sale']['client']['phone']}</strong> / {$validation['creation_date']}</p>
+            //                 </td>
+            //                 <td>
+            //                     <p><center>{$validation['sale']['technical']['name']} {$validation['sale']['technical']['lastname']}</center></p>
+            //                     <p><center style='font-size:13px;'>{$validation['sale']['validation']}</center></p>
+            //                 </td>
+            //                 <td>
+            //                     <p>{$validation['validations']['comments']}</p>
+            //                 </td>
+            //             </tr>
+            //         ";
+            //         $count++;
+            //     }
+
+            // }
+
+            // $branchSelected = 'GENERALES';
+            // if ($branchSearch) {
+            //     $branchSelected = $branchSearch->name;
+            // }
+
+            // $template = str_replace(
+            //     [
+            //         '{ejecutive}',
+            //         '{date_start}',
+            //         '{date_end}',
+            //         '{branch_selected}',
+            //         '{mount_validations}',
+            //         '{branch_summary}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         $user->person__name . ' ' . $user->person__lastname,
+            //         $minDate,
+            //         $maxDate,
+            //         $branchSelected,
+            //         $mount_validations,
+            //         $branch_summary,
+            //         $summary,
+            //     ],
+            //     $template
+            // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reclamo.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage("GAAA");
+            $response->setData($validationsJpa->toArray());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
 
         } catch (\Throwable $th) {
             $response = new Response();
