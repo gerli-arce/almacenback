@@ -107,9 +107,9 @@
             table thead td {
                 text-align: center;
                 font-weight: bold;
-                background-color: #c5eefa;
-                border: 1px solid #0d6d9c;
-                color: #0f6ab4 !important;
+                background-color: #c5e0fa;
+                border: 1px solid #0d579c;
+                color: #0d579c !important;
             }
 
             table td {
@@ -118,8 +118,8 @@
             }
 
             table tbody td {
-                border: 1px solid #1786be8c;
-                color: #315d81;
+                border: 1px solid #177bbe8c;
+                color: #315181;
             }
 
             .title_table_primary {
@@ -244,8 +244,21 @@
                 border-radius: 10px;
                 padding: 10px;
             }
+            
             .bg-secondary {
-                background-color: #6f85a725;
+                text-align: center;
+                font-weight: bold;
+                border: solid 1px #283c4d96;
+                background-color: #889bac36;
+                color: #2a3a49 !important;
+            }
+
+            .bg-blue {
+                text-align: center;
+                font-weight: bold;
+                background-color: #c5e0fa;
+                border: 1px solid #0d579c;
+                color: #0d579c !important;
             }
 
             .bg-red {
@@ -254,17 +267,34 @@
                 background-color: rgb(255, 213, 213);
             }
 
-            .bg-green {
+            /* .bg-green {
                 color: green;
                 border: solid 1px green;
                 background-color: rgb(183, 255, 183);
-            }
+            } */
 
             .bg-orange {
+                font-weight: bold;
                 color: orange;
                 border: solid 1px orange;
                 background-color: rgb(255, 235, 198);
             }
+
+            .bg-yellow{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px yellow;
+                background-color: rgb(252, 252, 60);
+            }
+
+            .bg-green{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px green;
+                background-color: rgb(104, 240, 104);
+            }
+
+            
 
             .hide {
                 display: none;
@@ -322,7 +352,7 @@
                                 border-top-right-radius: 18px;
                                 border-bottom-left-radius: 18px;
                                 border-bottom-right-radius: 30px;
-                                background-color: #80c1ff;
+                                background-color:#80c1ff;
                                 font-size: 30px;
                                 color: white !important;
                                 font-weight: bold;
@@ -335,7 +365,7 @@
                                     font-weight: bold;
                                 "
                             >
-                                VALIDACIÓN
+                                VALIDACIONES
                             </p>
                             <p
                                 style="
@@ -343,19 +373,19 @@
                                     font-weight: bold;
                                 "
                             >
-                                VAL-{id}
+                                GENERALES
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <br />
-            <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <!-- <p id="date">{branch_onteraction}, {issue_long_date}</p> -->
 
-            <table>
+            <table style="font-size: 9px;">
                 <thead>
                     <tr>
-                        <td colspan="2" align="center">VALIDACION</td>
+                        <td colspan="2" align="center">VALIDACIONES GENERALES</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -364,70 +394,35 @@
                         <td align="center">{ejecutive}</td>
                     </tr>
                     <tr>
-                        <td>LIQUIDACION</td>
-                        <td align="center">{liquidation}</td>
+                        <td>FECHA INICIO</td>
+                        <td align="center">{date_start}</td>
                     </tr>
                     <tr>
-                        <td>{operation}</td>
-                        <td align="center">{type_sale}</td>
+                        <td>FECHA FIN</td>
+                        <td align="center">{date_end}</td>
                     </tr>
                     <tr>
-                        <td>CLIENTE</td>
-                        <td align="center">
-                            {client} -
-                            <span style="color: #d37f00; font-size: 13px"
-                                >( {phone} )</span
-                            >
-                        </td>
+                        <td>SUCURSAL</td>
+                        <td align="center">{branch_selected}</td>
                     </tr>
                     <tr>
-                        <td>TÉCNICO</td>
-                        <td align="center">{technical}</td>
+                        <td>CANTIDAD DE VALIDACIONES</td>
+                        <td align="center" class="bg-yellow" style=" border: 1px solid #177bbe8c; font-size: 13px;">{mount_validations}</td>
                     </tr>
-                    <tr>
-                        <td>TIPO DE VALIDACIÓN</td>
-                        <td align="center">{type}</td>
-                    </tr>
-                    <tr>
-                        <td>VALIDACIÓN</td>
-                        <td
-                            align="center"
-                            style="font-size: 18px; font-weight: bold"
-                            class="{color_validation}"
-                        >
-                            {validation}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td
-                            colspan="2"
-                            align="center"
-                            style="
-                                background-color: #c5eefa70;
-                                border: 1px solid #0d6c9cad;
-                                color: #0f6ab4 !important;
-                            "
-                        >
-                            OPINION DEL CLIENTE
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" align="center">{opinion}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <table>
-                <thead>
-                    <tr>
-                        <td colspan="2" align="center">PREGUNTAS</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {cuestions}
                 </tbody>
             </table>
 
-            {images}
+
+            <table style="font-size: 9px;">
+                <thead>
+                    <tr>
+                      <td colspan="5" align="center">NO VALIDADOS</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {summary}
+                </tbody>
+            </table>
         </main>
     </body>
 </html>

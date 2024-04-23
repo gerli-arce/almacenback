@@ -41,7 +41,8 @@ class ValidationController extends Controller
             $query = viewInstallations::select([
                 '*',
             ])
-                ->orderBy($request->order['column'], $request->order['dir'])->whereNotNull('status');
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->orderBy('validation', 'asc')->whereNotNull('status');
 
             if (!$request->all) {
                 $query->where('status_sale', 'PENDIENTE');
@@ -237,6 +238,9 @@ class ValidationController extends Controller
 
             $SalesProductsJpa = SalesProducts::find($request->sale);
             if ($SalesProductsJpa->type_pay == "LIQUIDATION") {
+                $SalesProductsJpa->status_sale = 'CULMINADA';
+            }
+            if ($request->type_submit == 'liquidation') {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
             }
             $SalesProductsJpa->validation = $request->validation;
@@ -548,6 +552,7 @@ class ValidationController extends Controller
                     '{branch_onteraction}',
                     '{issue_long_date}',
                     '{ejecutive}',
+                    '{liquidation}',
                     '{operation}',
                     '{type_sale}',
                     '{client}',
@@ -565,6 +570,7 @@ class ValidationController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     $request->user_creation['person']['name'] . ' ' . $request->user_creation['person']['lastname'],
+                    $request->status_sale,
                     $request->type_operation['operation'],
                     str_replace('_', ' ', $request->type_intallation),
                     $request->client['name'] . ' ' . $request->client['lastname'],
@@ -904,9 +910,9 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/validations/reportGeneral.html');
+            $template = file_get_contents('../storage/templates/validations/reportGeneralNotValidation.html');
 
-            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            // $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
             $user = ViewUsers::select([
                 'id',
@@ -921,30 +927,30 @@ class ValidationController extends Controller
             $query = viewInstallations::select([
                 '*',
             ])
-                
-            ->orderBy('date_sale', 'desc')
-            ->whereNotNull('status')
-            ->where('status_sale', 'PENDIENTE')
-            ->whereNull('validation_date');
-           
-            // if (
-            //     !isset($request->date_start) &&
-            //     !isset($request->date_end)) {
-            //     $minDate = $query->whereNotNull('date_sale')->min('date_sale');
-            //     $maxDate = $query->whereNotNull('date_sale')->max('date_sale');
-            // } else {
+                ->orderBy('date_sale', 'desc')
+                ->whereNotNull('status')
+                ->where('status_sale', 'PENDIENTE')
+                ->whereNull('validation_date');
 
-            //     $fechaInicio = Carbon::parse($request->date_start);
-            //     $fechaFin = Carbon::parse($request->date_end);
+            if (
 
-            //     $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
-            //     $fechaFin->setTime(23, 59, 59); // Establecer la fecha de fin a 23:59:59
+                !isset($request->date_start) &&
+                !isset($request->date_end)) {
+                $minDate = $query->whereNotNull('date_sale')->min('date_sale');
+                $maxDate = $query->whereNotNull('date_sale')->max('date_sale');
+            } else {
 
-            //     if (isset($request->date_start) && isset($request->date_end)) {
-            //         $query
-            //             ->whereBetween('date_sale', [$fechaInicio, $fechaFin]);
-            //     }
-            // }
+                // $fechaInicio = Carbon::parse($request->date_start);
+                // $fechaFin = Carbon::parse($request->date_end);
+
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+
+                if (isset($request->date_start) && isset($request->date_end)) {
+                    $query
+                        ->whereBetween('date_sale', [$dateStart, $dateEnd]);
+                }
+            }
 
             $branchSearch = null;
 
@@ -954,230 +960,106 @@ class ValidationController extends Controller
             }
             $validationsJpa = $query->whereNot("branch__id", 8)->get();
 
-            $mount_validations = $query->count();
+            $mount_sales = $query->count();
 
-            
-            // $validations = array();
-            // foreach ($validationsJpa as $validationJpa) {
-            //     $validation = gJSON::restore($validationJpa->toArray(), '__');
-            //     $validation['validations'] = gJSON::parse($validation['validations']);
-            //     $validations[] = $validation;
-            // }
+            $sales = array();
+            foreach ($validationsJpa as $salesJpa) {
+                $sale = gJSON::restore($salesJpa->toArray(), '__');
+                $sales[] = $sale;
+            }
 
-            // // ORDER BY BRANCH
-            // $branch_summary = '';
+            $branchesJpa = Branch::get();
 
-            // $branchesJpa = Branch::get();
-
-            // $sucursales = [];
-            // foreach ($branchesJpa as $branch) {
-            //     $branchName = $branch->name;
-            //     $branId = $branch->id;
-            //     if ($branId != 8) {
-            //         $sucursales[$branId] = [
-            //             'id' => $branId,
-            //             'name' => $branchName,
-            //             'technicals' => [],
-            //             'validations' => [],
-            //             'mount_validations' => 0,
-            //         ];
-            //         $technicalsJpa = ViewPeople::select([
-            //             'id',
-            //             'name',
-            //             'lastname',
-            //             'type',
-            //             'branch__id',
-            //             'branch__name',
-            //             'branch__correlative',
-            //             'status',
-            //         ])
-            //             ->whereNotNull('status')
-            //             ->orderBy('name', 'DESC')
-            //             ->where('type', 'TECHNICAL')
-            //             ->where('branch__id', $branch->id)->get();
-
-            //         foreach ($technicalsJpa as $technical) {
-            //             $technicalName = $technical->name . ' ' . $technical->lastname;
-            //             $technicalId = $technical->id;
-            //             $sucursales[$branId]['technicals'][$technicalId] = [
-            //                 'id' => $technicalId,
-            //                 'name' => $technicalName,
-            //                 'validations' => [],
-            //                 'installations' => [],
-            //                 'fauls' => [],
-            //             ];
-
-            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['duo'] = 0;
-            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['internet'] = 0;
-            //             $sucursales[$branId]['technicals'][$technicalId]['installations']['cable'] = 0;
-
-            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['duo'] = 0;
-            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['internet'] = 0;
-            //             $sucursales[$branId]['technicals'][$technicalId]['fauls']['cable'] = 0;
-
-            //         }
-            //     }
-            // }
+            $sucursales = [];
+            foreach ($branchesJpa as $branch) {
+                $branchName = $branch->name;
+                $branId = $branch->id;
+                if ($branId != 8) {
+                    $sucursales[$branId] = [
+                        'id' => $branId,
+                        'name' => $branchName,
+                        'validations' => [],
+                        'mount_sales' => 0,
+                    ];
+                }
+            }
 
             // // $sucursales = array_values($sucursales);
 
-            // foreach ($validations as $val) {
+            foreach ($sales as $val) {
+                $branId = $val['branch']['id'];
+                $sucursales[$branId]['mount_sales']++;
+                $sucursales[$branId]['validations'][] = $val;
+            }
 
-            //     $branId = $val['sale']['branch']['id'];
+            $sucursales = array_values($sucursales);
 
-            //     $sucursales[$branId]['mount_validations']++;
+            $summary = '';
 
-            //     $sucursales[$branId]['validations'][] = $val;
+            foreach ($sucursales as $branch) {
+                $summary .= "
+                    <tr  class='bg-blue'>
+                        <td colspan='4' align='center'>{$branch['name']}</td>
+                        <td align='center' >{$branch['mount_sales']}</td>
+                    </t>
+                    <tr>
+                        <td class='bg-secondary'>ID</td>
+                        <td class='bg-secondary'>CLIENTE</td>
+                        <td class='bg-secondary'>TÉCNICO</td>
+                        <td class='bg-secondary'>TIPO</td>
+                        <td class='bg-secondary'>FECHA</td>
+                    </tr>
+                ";
+                foreach ($branch['validations'] as $val) {
+                    $summary .= "
+                    <tr>
+                        <td>{$val['id']}</td>
+                        <td>{$val['client']['name']} {$val['client']['lastname']}</td>
+                        <td>{$val['technical']['name']} {$val['technical']['lastname']}</td>
+                        <td>{$val['type_operation']['operation']}</td>
+                        <td>{$val['date_sale']}</td>
+                    </t>
+                ";
+                }
+            }
 
-            //     if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
-            //         $type = $val['type'];
-            //         if ($type == "") {
-            //             $type = 'internet';
-            //         }
-            //         $technicalId = $val['sale']['technical']['id'];
-            //         if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
-            //             // $sucursales[$branId]['technicals'][$technicalId]['installations'];
-            //             $sucursales[$branId]['technicals'][$technicalId]['installations'][$type] = 1;
-            //         } else {
-            //             $sucursales[$branId]['technicals'][$technicalId]['installations'][$type]++;
-            //         }
-            //     } else {
+            $branchSelected = 'GENERALES';
+            if ($branchSearch) {
+                $branchSelected = $branchSearch->name;
+            }
 
-            //         $type = $val['type'];
-            //         if ($type == "") {
-            //             $type = 'internet';
-            //         }
-            //         $technicalId = $val['sale']['technical']['id'];
-            //         if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
-            //             // $sucursales[$branId]['technicals'][$technicalId]['installations'];
-            //             $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type] = 1;
-            //         } else {
-            //             $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type]++;
-            //         }
-            //     }
-            // }
-
-            // $sucursales = array_values($sucursales);
-
-            // foreach ($sucursales as $branch) {
-            //     $branch_summary .= "
-            //         <tr class='bg-yellow'>
-            //             <td>{$branch['name']}</td>
-            //             <td></td>
-            //             <td></td>
-            //             <td></td>
-            //             <td ></td>
-            //             <td></td>
-            //             <td></td>
-            //             <td></td>
-            //             <td ></td>
-            //         </t>
-            //     ";
-            //     foreach ($branch['technicals'] as $technicals) {
-            //         $total_faulds = intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
-            //         $total_instalation = intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
-            //         $branch_summary .= "
-            //         <tr>
-            //             <td>{$technicals['name']}</td>
-            //             <td align='center' class='" . ($technicals['fauls']['duo'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['duo']}</td>
-            //             <td align='center'  class='" . ($technicals['fauls']['internet'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['internet']}</td>
-            //             <td align='center' class='" . ($technicals['fauls']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['fauls']['cable']}</td>
-            //             <td align='center' class='bg-secondary' >{$total_faulds}</td>
-            //             <td align='center' class='" . ($technicals['installations']['duo'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['duo']}</td>
-            //             <td align='center' class='" . ($technicals['installations']['internet'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['internet']}</td>
-            //             <td align='center' class='" . ($technicals['installations']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['cable']}</td>
-            //             <td align='center' class='bg-secondary' >{$total_instalation}</td>
-            //         </t>
-            //     ";
-            //     }
-            // }
-
-            // // SETEO
-            // $summary = '';
-
-            // foreach ($sucursales as $brach) {
-
-            //     $summary .= "
-            //         <tr class='bg-orange'>
-            //             <td colspan='2'>
-            //                 {$brach['name']}
-            //             </td>
-            //             <td>
-            //                 VALIDACIÓNES
-            //             </td>
-            //             <td style='font-size:13px;text-align:center;'>
-            //                 {$brach['mount_validations']}
-            //             </td>
-            //         </tr>
-            //         <tr class='bg-secondary'>
-            //             <td align='center'>#</td>
-            //             <td align='center'>CLIENTE</td>
-            //             <td align='center'>TECNICO</td>
-            //             <td align='center'>COMENTARIOS</td>
-            //         </tr>
-            //     ";
-            //     $count = 1;
-            //     foreach ($brach['validations'] as $validation) {
-            //         $summary .= "
-            //             <tr>
-            //                 <td align='center'>{$count}</td>
-            //                 <td>
-            //                     <p>{$validation['sale']['client']['name']} {$validation['sale']['client']['lastname']}</p>
-            //                     <p><strong>{$validation['sale']['client']['phone']}</strong> / {$validation['creation_date']}</p>
-            //                 </td>
-            //                 <td>
-            //                     <p><center>{$validation['sale']['technical']['name']} {$validation['sale']['technical']['lastname']}</center></p>
-            //                     <p><center style='font-size:13px;'>{$validation['sale']['validation']}</center></p>
-            //                 </td>
-            //                 <td>
-            //                     <p>{$validation['validations']['comments']}</p>
-            //                 </td>
-            //             </tr>
-            //         ";
-            //         $count++;
-            //     }
-
-            // }
-
-            // $branchSelected = 'GENERALES';
-            // if ($branchSearch) {
-            //     $branchSelected = $branchSearch->name;
-            // }
-
-            // $template = str_replace(
-            //     [
-            //         '{ejecutive}',
-            //         '{date_start}',
-            //         '{date_end}',
-            //         '{branch_selected}',
-            //         '{mount_validations}',
-            //         '{branch_summary}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         $user->person__name . ' ' . $user->person__lastname,
-            //         $minDate,
-            //         $maxDate,
-            //         $branchSelected,
-            //         $mount_validations,
-            //         $branch_summary,
-            //         $summary,
-            //     ],
-            //     $template
-            // );
-
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
-
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage("GAAA");
-            $response->setData($validationsJpa->toArray());
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{ejecutive}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{branch_selected}',
+                    '{mount_validations}',
+                    '{summary}',
+                ],
+                [
+                    $user->person__name . ' ' . $user->person__lastname,
+                    $minDate,
+                    $maxDate,
+                    $branchSelected,
+                    $mount_sales,
+                    $summary,
+                ],
+                $template
             );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage("GAAA");
+            // $response->setData($sucursales);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();
