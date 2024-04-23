@@ -833,16 +833,10 @@ class InstallationController extends Controller
                     $q->where('id', $value);
                 }
                 if ($column == 'technical__name' || $column == '*') {
-                    $q->orWhere('technical__name', $type, $value);
-                }
-                if ($column == 'technical__lastname' || $column == '*') {
-                    $q->orWhere('technical__lastname', $type, $value);
-                }
-                if ($column == 'client__lastname' || $column == '*') {
-                    $q->orWhere('client__lastname', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(technical__name, ' ', technical__lastname)"), 'like', $value);
                 }
                 if ($column == 'client__name' || $column == '*') {
-                    $q->orWhere('client__name', $type, $value);
+                    $q->orWhere(DB::raw("CONCAT(client__name, ' ', client__lastname)"), 'like', $value);
                 }
                 if ($column == 'user_creation__username' || $column == '*') {
                     $q->orWhere('user_creation__username', $type, $value);
