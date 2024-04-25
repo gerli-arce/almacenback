@@ -43,7 +43,6 @@ class NotificationsController extends Controller
                 }else{
                     $NotificationsVerifi->_person = $lend['technical']['id'];
                     $NotificationsVerifi->description = 'Se le presto: <strong>'.$lend['model']['model'].'</strong> El monto de: <strong>'.$lend['mount_new'].'</strong> = Nuevos, <strong>'.$lend['mount_second'].'</strong> = Segunda en la fecha: <strong>'.$lend['sale']["date_sale"].'</strong>';
-
                     $NotificationsVerifi->save();
                 }
                 $lends[] = $lend;

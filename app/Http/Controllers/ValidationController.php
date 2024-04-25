@@ -146,10 +146,14 @@ class ValidationController extends Controller
 
             if ($SalesProductsJpa->type_pay == "LIQUIDATION") {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
+                $SalesProductsJpa->issue_date = gTrace::getDate('mysql');
+                $SalesProductsJpa->_issue_user = $userid;
             }
 
             if ($request->type_submit == 'liquidation') {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
+                $SalesProductsJpa->issue_date = gTrace::getDate('mysql');
+                $SalesProductsJpa->_issue_user = $userid;
             }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
@@ -239,9 +243,13 @@ class ValidationController extends Controller
             $SalesProductsJpa = SalesProducts::find($request->sale);
             if ($SalesProductsJpa->type_pay == "LIQUIDATION") {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
+                $SalesProductsJpa->issue_date = gTrace::getDate('mysql');
+                $SalesProductsJpa->_issue_user = $userid;
             }
             if ($request->type_submit == 'liquidation') {
                 $SalesProductsJpa->status_sale = 'CULMINADA';
+                $SalesProductsJpa->issue_date = gTrace::getDate('mysql');
+                $SalesProductsJpa->_issue_user = $userid;
             }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
