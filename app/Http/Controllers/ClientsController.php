@@ -45,7 +45,7 @@ class ClientsController extends Controller
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($peopleJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -95,7 +95,11 @@ class ClientsController extends Controller
             $peopleJpa->doc_type = $request->doc_type;
             $peopleJpa->doc_number = $request->doc_number;
             $peopleJpa->name = $request->name;
-            $peopleJpa->lastname = $request->lastname;
+            if (isset($request->lastname)) {
+                $peopleJpa->lastname = $request->lastname;
+            } else {
+                $peopleJpa->lastname = '-';
+            }
             $peopleJpa->relative_id = guid::short();
 
             if (
@@ -152,7 +156,7 @@ class ClientsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Cliente agregado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -278,7 +282,7 @@ class ClientsController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewPeople::where('type', 'CLIENT')->count());
             $response->setData($people);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -412,7 +416,7 @@ class ClientsController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('El cliente se a actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {

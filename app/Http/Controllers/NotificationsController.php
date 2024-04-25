@@ -48,8 +48,6 @@ class NotificationsController extends Controller
                 $lends[] = $lend;
             }
 
-
-
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($lends);
@@ -67,18 +65,27 @@ class NotificationsController extends Controller
     public function getNotifications(Request $request){
         $response = new Response();
         try {
-            $ViewNotifications = ViewNotifications::whereNotNull('status')->get();
+            $ViewNotifications = ViewNotifications::whereNotNull('status')->where('status', "!=", 0)->get();
 
             $notifications = array();
             foreach ($ViewNotifications as $nitificationJpa) {
                 $notifi = gJSON::restore($nitificationJpa->toArray(), '__');
-                if($notifi['view']['id'] == 34){
-                    $PeopleJpa = ViewPeople::find($notifi['_person']);
-                    if($PeopleJpa){
-                        $notifi['person'] =gJSON::restore($PeopleJpa->toArray(), '__');
+                $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->where('sale__tipe_installation', 'PRESTAMO')
+                ->where('sale__id', $notifi['_sale'])->where('id', $notifi['_stock'])
+                ->first();
+                if($ViewLendsForNotificationJpa){
+                    if($notifi['view']['id'] == 34){
+                        $PeopleJpa = ViewPeople::find($notifi['_person']);
+                        if($PeopleJpa){
+                            $notifi['person'] =gJSON::restore($PeopleJpa->toArray(), '__');
+                        }
                     }
+                    $notifications[] = $notifi;
+                }else{
+                    $ViewNotificationsVal = ViewNotifications::find($notifi['id']);
+                    $ViewNotificationsVal->status = 0;
+                    $ViewNotificationsVal->save();
                 }
-                $notifications[] = $notifi;
             }
 
             $response->setStatus(200);
