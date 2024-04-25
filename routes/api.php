@@ -634,7 +634,7 @@ Route::patch('/validations/setimage', [ValidationController::class, 'updateImage
 // NOTIFICATIONS
 
 Route::get('/notification/lends/verifi/{date}', [NotificationsController::class, 'setNotificationByLends']);
-
+Route::get('/notification/get', [NotificationsController::class, 'getNotifications']);
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

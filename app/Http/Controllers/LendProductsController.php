@@ -80,12 +80,18 @@ class LendProductsController extends Controller
                 $query->whereNotNull('status');
             }
 
+            // if(isset($request->search['technical'])){
+            //     $query->where('id', $request->search['technical']);
+            // }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
-
+                if ($column == 'id' || $column == '*') {
+                    $q->where('id', $type, $value);
+                }
                 if ($column == 'doc_type' || $column == '*') {
                     $q->orWhere('doc_type', $type, $value);
                 }
