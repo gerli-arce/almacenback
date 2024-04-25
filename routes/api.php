@@ -16,7 +16,7 @@ use App\Http\Controllers\{
     SalesController, connect, SaleController, RoomController, AdminController,LendProductsController,
     PriceController, PartsCarsController, CarsComponentsController, CarsController, ChecklistController,
     ChangesCarController, ReviewTechnicalController, ChargeGasolineController, TravelExpensesController,
-    ClaimsTypeController, PlansController, ClaimsController, ValidationController
+    ClaimsTypeController, PlansController, ClaimsController, ValidationController, NotificationsController
 };
 
 /*
@@ -629,6 +629,12 @@ Route::get('/validations/image/{id}', [ValidationController::class, 'getImages']
 Route::delete('/validations/image/{id}', [ValidationController::class, 'deleteImage']);
 Route::get('/validationsimg/{id}/{zize}', [ValidationController::class, 'images']);
 Route::patch('/validations/setimage', [ValidationController::class, 'updateImage']);
+
+
+// NOTIFICATIONS
+
+Route::get('/notification/lends/verifi/{date}', [NotificationsController::class, 'setNotificationByLends']);
+
 
 Route::post('/excel', [connect::class, 'exportDataToExcel']);
 Route::get('/technicals_produts', [connect::class, 'changeByProductForModel']);

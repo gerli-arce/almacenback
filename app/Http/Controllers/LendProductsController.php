@@ -261,6 +261,7 @@ class LendProductsController extends Controller
 
                 $detailSale = new DetailSale();
                 $detailSale->_product = $productJpa->id;
+                $detailSale->_model = $productJpa->_model;
                 $detailSale->mount_new = $product['mount_new'];
                 $detailSale->mount_second = $product['mount_second'];
                 $detailSale->mount_ill_fated = $product['mount_ill_fated'];
