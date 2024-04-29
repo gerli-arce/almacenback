@@ -739,16 +739,35 @@ class ValidationController extends Controller
 
                 $sucursales[$branId]['mount_validations']++;
 
-                $sucursales[$branId]['validations'][] = $val;
+                // $sucursales[$branId]['validations'][] = $val;
+                $technicalId = $val['sale']['technical']['id'];
+                $technicalName = $val['sale']['technical']['name'] . ' ' . $val['sale']['technical']['lastname'];
 
                 if ($val['sale']['type_operation']['operation'] == 'INSTALACION') {
                     $type = $val['type'];
                     if ($type == "") {
                         $type = 'internet';
                     }
-                    $technicalId = $val['sale']['technical']['id'];
+                    
                     if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
                         // $sucursales[$branId]['technicals'][$technicalId]['installations'];
+                        
+                        $sucursales[$branId]['technicals'][$technicalId] = [
+                            'id' => $technicalId,
+                            'name' => $technicalName,
+                            'validations' => [],
+                            'installations' => [],
+                            'fauls' => [],
+                        ];
+
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['cable'] = 0;
+
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['cable'] = 0;
+
                         $sucursales[$branId]['technicals'][$technicalId]['installations'][$type] = 1;
                     } else {
                         $sucursales[$branId]['technicals'][$technicalId]['installations'][$type]++;
@@ -759,8 +778,22 @@ class ValidationController extends Controller
                     if ($type == "") {
                         $type = 'internet';
                     }
-                    $technicalId = $val['sale']['technical']['id'];
                     if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
+                        $sucursales[$branId]['technicals'][$technicalId] = [
+                            'id' => $technicalId,
+                            'name' => $technicalName,
+                            'validations' => [],
+                            'installations' => [],
+                            'fauls' => [],
+                        ];
+
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['installations']['cable'] = 0;
+
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['duo'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['internet'] = 0;
+                        $sucursales[$branId]['technicals'][$technicalId]['fauls']['cable'] = 0;
                         // $sucursales[$branId]['technicals'][$technicalId]['installations'];
                         $sucursales[$branId]['technicals'][$technicalId]['fauls'][$type] = 1;
                     } else {
@@ -786,22 +819,58 @@ class ValidationController extends Controller
                     </t>
                 ";
                 foreach ($branch['technicals'] as $technicals) {
-                    $total_faulds = intval($technicals['fauls']['duo']) + intval($technicals['fauls']['internet']) + intval($technicals['fauls']['cable']);
-                    $total_instalation = intval($technicals['installations']['duo']) + intval($technicals['installations']['internet']) + intval($technicals['installations']['cable']);
-                    $branch_summary .= "
-                    <tr>
-                        <td>{$technicals['name']}</td>
-                        <td align='center' class='" . ($technicals['fauls']['duo'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['duo']}</td>
-                        <td align='center'  class='" . ($technicals['fauls']['internet'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['internet']}</td>
-                        <td align='center' class='" . ($technicals['fauls']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['fauls']['cable']}</td>
-                        <td align='center' class='bg-secondary' >{$total_faulds}</td>
-                        <td align='center' class='" . ($technicals['installations']['duo'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['duo']}</td>
-                        <td align='center' class='" . ($technicals['installations']['internet'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['internet']}</td>
-                        <td align='center' class='" . ($technicals['installations']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['cable']}</td>
-                        <td align='center' class='bg-secondary' >{$total_instalation}</td>
-                    </t>
-                ";
-                }
+                    if(isset($technicals["id"])){
+                        $faul_duo = 0;
+                        $faul_internet = 0;
+                        $faul_cable = 0;
+                        if(isset($technicals['fauls']['duo'])){
+                            $faul_duo = $technicals['fauls']['duo'];
+                        }
+    
+                        if(isset($technicals['fauls']['internet'])){
+                            $faul_internet = $technicals['fauls']['internet'];
+                        }
+                        if(isset($technicals['fauls']['cable'])){
+                            $faul_cable = $technicals['fauls']['cable'];
+                        }
+                        
+                        $installation__duo = 0;
+                        $installation__internet = 0;
+                        $installation__cable = 0;
+                        if(isset($technicals['installations']['duo'])){
+                            $installation__duo = $technicals['installations']['duo'];
+                        }
+    
+                        if(isset($technicals['installations']['internet'])){
+                            $installation__internet = $technicals['installations']['internet'];
+                        }
+    
+                        if(isset($technicals['installations']['cable'])){
+                            $installation__cable = $technicals['installations']['cable'];
+                        }
+                        
+                        if (!isset($technicals['installations']['duo'])) {
+                            throw new Exception(json_encode($technicals));
+                        }
+    
+                        $total_faulds = intval($faul_duo) + intval($faul_internet) + intval($faul_cable);
+                        $total_instalation = intval($installation__duo) + intval($installation__internet) + intval($installation__cable);
+                        $branch_summary .= "
+                        <tr>
+                            <td>{$technicals['name']}</td>
+                            <td align='center' class='" . ($technicals['fauls']['duo'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['duo']}</td>
+                            <td align='center'  class='" . ($technicals['fauls']['internet'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['fauls']['internet']}</td>
+                            <td align='center' class='" . ($technicals['fauls']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['fauls']['cable']}</td>
+                            <td align='center' class='bg-secondary' >{$total_faulds}</td>
+                            <td align='center' class='" . ($technicals['installations']['duo'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['duo']}</td>
+                            <td align='center' class='" . ($technicals['installations']['internet'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['internet']}</td>
+                            <td align='center' class='" . ($technicals['installations']['cable'] > 0 ? 'bg-green' : ' ') . " '  >{$technicals['installations']['cable']}</td>
+                            <td align='center' class='bg-secondary' >{$total_instalation}</td>
+                        </t>
+                    ";
+                    }
+                    }
+                   
             }
 
             // SETEO
