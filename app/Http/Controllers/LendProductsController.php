@@ -231,6 +231,7 @@ class LendProductsController extends Controller
                         $productByTechnicalJpaNew->_product = $productJpa->id;
                         $productByTechnicalJpaNew->_model = $productJpa->_model;
                         $productByTechnicalJpaNew->type = "LEND";
+                        $productByTechnicalJpaNew->time_lend =  $productJpa->time_lend;
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
@@ -257,6 +258,7 @@ class LendProductsController extends Controller
                     $productByTechnicalJpaNew->_product = $productJpa->id;
                     $productByTechnicalJpaNew->_model = $productJpa->_model;
                     $productByTechnicalJpaNew->type = "LEND";
+                    $productByTechnicalJpaNew->time_lend =  $productJpa->time_lend;
                     $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                     $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                     $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
