@@ -1732,6 +1732,9 @@ class ParcelsCreatedController extends Controller
 
             $parcelJpa = Parcel::find($request->id);
             $parcelJpa->date_entry = gTrace::getDate('mysql');
+            if($parcelJpa->parcel_status == "ENTREGADO"){
+                throw new Exception('Error: Esta encomienda ya fue recepcionada');
+            }
             $parcelJpa->parcel_status = "ENTREGADO";
 
             $entryProductJpa = new EntryProducts();

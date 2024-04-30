@@ -13,6 +13,7 @@ use App\Models\ViewLendsForNotification;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Psy\Command\WhereamiCommand;
 
 class NotificationsController extends Controller
 {
@@ -20,8 +21,14 @@ class NotificationsController extends Controller
         $response = new Response();
         try {
 
-            $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->where('sale__tipe_installation', 'PRESTAMO')
-            ->where('sale__date_sale','<=', $date)
+            $dateSend = str_replace('T',' ', $date);
+
+            $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')
+            ->whereNotNull("date_return")
+            ->where('sale__tipe_installation', 'PRESTAMO')
+            ->orderBy('id', 'desc')
+            ->where('date_return','<=', $dateSend)
+            ->distinct()
             ->get();
 
             $lends = array();
@@ -70,7 +77,7 @@ class NotificationsController extends Controller
             $notifications = array();
             foreach ($ViewNotifications as $nitificationJpa) {
                 $notifi = gJSON::restore($nitificationJpa->toArray(), '__');
-                $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->where('sale__tipe_installation', 'PRESTAMO')
+                $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->whereNotNull('status')->where('status', "!=", 0)->where('sale__tipe_installation', 'PRESTAMO')
                 ->where('sale__id', $notifi['_sale'])->where('id', $notifi['_stock'])
                 ->first();
                 if($ViewLendsForNotificationJpa){
