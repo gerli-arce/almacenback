@@ -25,7 +25,6 @@ class NotificationsController extends Controller
 
             $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')
             ->whereNotNull("date_return")
-            ->where('sale__tipe_installation', 'PRESTAMO')
             ->orderBy('id', 'desc')
             ->where('date_return','<=', $dateSend)
             ->distinct()
@@ -34,22 +33,21 @@ class NotificationsController extends Controller
             $lends = array();
             foreach ($ViewLendsForNotificationJpa as $lendJpa) {
                 $lend = gJSON::restore($lendJpa->toArray(), '__');
-                $NotificationsVerifi = Notifications::where('_view', 34)->where("_sale",$lend['sale']['id'])->where('_stock', $lend['id'])->first();
+                $NotificationsVerifi = Notifications::where('_view', 34)->where('_stock', $lend['id'])->first();
                 if(!$NotificationsVerifi){
                     $NotificationsJpa = new Notifications();
                     $NotificationsJpa->title = "Pendiente devolucion de productos";
                     $NotificationsJpa->name = $lend['technical']['name'].' '.$lend['technical']['lastname'];
-                    $NotificationsJpa->description = 'Se le presto: <strong>'.$lend['model']['model'].'</strong> El monto de: <strong>'.$lend['mount_new'].'</strong> = Nuevos, <strong>'.$lend['mount_second'].'</strong> = Segunda en la fecha: <strong>'.$lend['sale']["date_sale"].'</strong>';
+                    $NotificationsJpa->description = 'Se le presto: <strong>'.$lend['model']['model'].'</strong> El monto de: <strong>'.$lend['mount_new'].'</strong> = Nuevos, <strong>'.$lend['mount_second'].'</strong> = Segunda en la fecha: <strong>'.$lend["date_lend"].'</strong>';
                     $NotificationsJpa->_person = $lend['technical']['id'];
                     $NotificationsJpa->creation_date = gTrace::getDate('mysql');
                     $NotificationsJpa->_view = 34;
-                    $NotificationsJpa->_sale = $lend['sale']['id'];
                     $NotificationsJpa->_stock = $lend['id'];
                     $NotificationsJpa->status = 1;
                     $NotificationsJpa->save();
                 }else{
                     $NotificationsVerifi->_person = $lend['technical']['id'];
-                    $NotificationsVerifi->description = 'Se le presto: <strong>'.$lend['model']['model'].'</strong> El monto de: <strong>'.$lend['mount_new'].'</strong> = Nuevos, <strong>'.$lend['mount_second'].'</strong> = Segunda en la fecha: <strong>'.$lend['sale']["date_sale"].'</strong>';
+                    $NotificationsVerifi->description = 'Se le presto: <strong>'.$lend['model']['model'].'</strong> El monto de: <strong>'.$lend['mount_new'].'</strong> = Nuevos, <strong>'.$lend['mount_second'].'</strong> = Segunda en la fecha: <strong>'.$lend["date_lend"].'</strong>';
                     $NotificationsVerifi->save();
                 }
                 $lends[] = $lend;
@@ -72,13 +70,14 @@ class NotificationsController extends Controller
     public function getNotifications(Request $request){
         $response = new Response();
         try {
-            $ViewNotifications = ViewNotifications::whereNotNull('status')->where('status', "!=", 0)->get();
+            $ViewNotifications = ViewNotifications::whereNotNull('status')->where('status', "!=", 0) ->orderBy('id', 'desc')->get();
 
             $notifications = array();
             foreach ($ViewNotifications as $nitificationJpa) {
                 $notifi = gJSON::restore($nitificationJpa->toArray(), '__');
-                $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->whereNotNull('status')->where('status', "!=", 0)->where('sale__tipe_installation', 'PRESTAMO')
-                ->where('sale__id', $notifi['_sale'])->where('id', $notifi['_stock'])
+                $ViewLendsForNotificationJpa = ViewLendsForNotification::where('type', 'LEND')->whereNotNull('status')
+                ->where('status', "!=", 0)
+                ->where('id', $notifi['_stock'])
                 ->first();
                 if($ViewLendsForNotificationJpa){
                     if($notifi['view']['id'] == 34){
