@@ -132,6 +132,8 @@ class ParcelsRegistersController extends Controller
             }
 
             $parcelJpa->_model = $request->_model;
+            $parcelJpa->_unity = $request->_unity;
+            $parcelJpa->value_unity = $request->value_unity;
             $parcelJpa->currency = $request->currency;
             $parcelJpa->warranty = $request->warranty;
 
