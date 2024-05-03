@@ -149,7 +149,6 @@ class ParcelsRegistersController extends Controller
             }
 
             $parcelJpa->amount = $request->amount;
-            $parcelJpa->value_unity = $request->value_unity;
             $parcelJpa->price_unity = $request->price_unity;
 
             if (isset($request->mr_revenue)) {
