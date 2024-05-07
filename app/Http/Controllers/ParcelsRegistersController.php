@@ -7,6 +7,7 @@ use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
 use App\Models\Branch;
+use App\Models\Unity;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
 use App\Models\Models;
@@ -49,6 +50,7 @@ class ParcelsRegistersController extends Controller
                 !isset($request->price_transport) ||
                 !isset($request->_provider) ||
                 !isset($request->_model) ||
+                !isset($request->_unity) ||
                 !isset($request->currency) ||
                 !isset($request->warranty) ||
                 !isset($request->mount_product) ||
@@ -61,6 +63,7 @@ class ParcelsRegistersController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
             $model_ = Models::select('id', 'model', 'currency', 'price_buy', 'price_sale', 'mr_revenue')->find($request->_model);
+            $UnityJpa = Unity::find($request->_unity);
 
             $entryProductJpa->_user = $userid;
             if (isset($request->_client)) {
@@ -278,6 +281,8 @@ class ParcelsRegistersController extends Controller
                     }
                 }
             } else if ($request->type == "MATERIAL") {
+
+               
                 $productJpa = Product::select([
                     'id',
                     'mount',
@@ -296,11 +301,11 @@ class ParcelsRegistersController extends Controller
                     $productJpa->relative_id = guid::short();
                     $productJpa->_model = $request->_model;
                     $productJpa->_provider = $request->_provider;
-                    $productJpa->mount = $productJpa->mount + $request->mount_product;
+                    $productJpa->mount = $productJpa->mount + ($request->mount_product * $UnityJpa->value) ;
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
-                        $productJpa->price_buy = $request->value_unity;
-                        $productJpa->price_sale = $request->price_buy;
+                        $productJpa->price_buy = $request->value_unity / $UnityJpa->value;
+                        $productJpa->price_sale = $request->price_buy / $UnityJpa->value;
                         $productJpa->mr_revenue = $request->mr_revenue;
                     } else {
                         $productJpa->currency = $model_->currency;
@@ -337,7 +342,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount_new = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product * $UnityJpa->value;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -351,12 +356,12 @@ class ParcelsRegistersController extends Controller
                     $productJpa->_provider = $request->_provider;
                     $productJpa->_model = $request->_model;
                     $productJpa->relative_id = guid::short();
-                    $productJpa->mount = $request->mount_product;
+                    $productJpa->mount = $request->mount_product * $UnityJpa->value;
 
                     if ($request->update_price_sale == "NEW") {
                         $productJpa->currency = $request->currency;
-                        $productJpa->price_buy = $request->value_unity;
-                        $productJpa->price_sale = $request->price_buy;
+                        $productJpa->price_buy = $request->value_unity / $UnityJpa->value;
+                        $productJpa->price_sale = $request->price_buy / $UnityJpa->value;
                         $productJpa->mr_revenue = $request->mr_revenue;
                     } else {
                         $productJpa->currency = $model_->currency;
@@ -393,7 +398,7 @@ class ParcelsRegistersController extends Controller
 
                     $entryDetailJpa = new EntryDetail();
                     $entryDetailJpa->_product = $productJpa->id;
-                    $entryDetailJpa->mount_new = $request->mount_product;
+                    $entryDetailJpa->mount_new = $request->mount_product * $UnityJpa->value;
                     $entryDetailJpa->_entry_product = $entryProductJpa->id;
                     if (isset($product['description'])) {
                         $entryDetailJpa->description = $product['description'];
@@ -405,8 +410,8 @@ class ParcelsRegistersController extends Controller
 
             if ($request->update_price_sale == "NEW") {
                 $model_->currency = $request->currency;
-                $model_->price_buy = $request->value_unity;
-                $model_->price_sale = $request->price_buy;
+                $model_->price_buy = $request->value_unity / $UnityJpa->value;
+                $model_->price_sale = $request->price_buy / $UnityJpa->value;
                 $model_->mr_revenue = $request->mr_revenue;
                 $model_->save();
             }
@@ -414,7 +419,7 @@ class ParcelsRegistersController extends Controller
             $stock = Stock::where('_model', $request->_model)
                 ->where('_branch', $branch_->id)
                 ->first();
-            $stock->mount_new = intval($stock->mount_new) + intval($request->mount_product);
+            $stock->mount_new = intval($stock->mount_new) + intval($request->mount_product * $UnityJpa->value) ;
             $stock->save();
 
             $response->setStatus(200);
