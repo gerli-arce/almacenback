@@ -125,8 +125,11 @@ class PriceController extends Controller
                 foreach ($request->details as $product) {
                     $detailSale = new DetailSale();
                     $detailSale->_model = $product['model']['id'];
+                    $detailSale->_unity = $product['unity']['id'];
                     $detailSale->mount_new = $product['mount_new'];
-                    $detailSale->price_unity = $product['price_unity'];
+                    $detailSale->price_new = $product['model']['price_sale'];
+                    $detailSale->mount_second = $product['mount_second'];
+                    $detailSale->price_second = $product['model']['price_sale_second'] || 0;
                     $detailSale->_sales_product = $salesProduct->id;
                     $detailSale->status = '1';
                     $detailSale->save();
@@ -240,14 +243,18 @@ class PriceController extends Controller
                     if (isset($product['id'])) {
                         $detailSale = DetailSale::find($product['id']);
                         $detailSale->mount_new = $product['mount_new'];
-                        $detailSale->price_unity = $product['price_unity'];
+                        $detailSale->price_new = $product['model']['price_sale'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->price_second = $product['model']['price_sale_second'] || 0;
                         $detailSale->status = '1';
                         $detailSale->save();
                     } else {
                         $detailSale = new DetailSale();
                         $detailSale->_model = $product['model']['id'];
                         $detailSale->mount_new = $product['mount_new'];
-                        $detailSale->price_unity = $product['price_unity'];
+                        $detailSale->price_new = $product['model']['price_sale'];
+                        $detailSale->mount_second = $product['mount_second'];
+                        $detailSale->price_second = $product['model']['price_sale_second'] || 0;
                         $detailSale->_sales_product = $salesProduct->id;
                         $detailSale->status = '1';
                         $detailSale->save();
@@ -451,21 +458,24 @@ class PriceController extends Controller
                 'models.model AS model__model',
                 'models.relative_id AS model__relative_id',
                 'models.price_sale AS model__price_sale',
+                'models.price_sale_second AS model__price_sale_second',
                 'models.currency AS model__currency',
-                'unities.id as  model__unity__id',
-                'unities.name as model__unity__name',
+                'unities.id as  unity__id',
+                'unities.name as unity__name',
+                'unities.value as unity__value',
                 'detail_sales.mount_new as mount_new',
                 'detail_sales.mount_second as mount_second',
-                'detail_sales.mount_ill_fated as mount_ill_fated',
-                'detail_sales.price_unity as price_unity',
+                'detail_sales.price_new as price_sale',
+                'detail_sales.price_second as price_sale_second',
                 'detail_sales.description as description',
+                'detail_sales._unity as _unity',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
             ])
                 ->join('models', 'detail_sales._model', 'models.id')
+                ->join('unities', 'detail_sales._unity', 'unities.id')
                 ->join('brands', 'models._brand', 'brands.id')
                 ->join('categories', 'models._category', 'categories.id')
-                ->join('unities', 'models._unity', 'unities.id')
                 ->whereNotNull('detail_sales.status')
                 ->where('_sales_product', $id)
                 ->get();
@@ -475,6 +485,7 @@ class PriceController extends Controller
                 $detail = gJSON::restore($detailJpa->toArray(), '__');
                 $stockJpa = Stock::where('_model', $detail['model']['id'])->where('_branch', $branch_->id)->whereNotNull('status')->first();
                 $detail['max_new'] = $stockJpa->mount_new;
+                $detail['max_second'] = $stockJpa->mount_second;
                 $details[] = $detail;
             }
 
