@@ -410,11 +410,10 @@ class PriceController extends Controller
                 throw new Exception("Error: Es necesario el ID para esta operación");
             }
 
-
             $detailsSalesJpa = DetailSale::find($request->id);
             $detailsSalesJpa->status = null;
             $detailsSalesJpa->save();
-           
+
             $response->setStatus(200);
             $response->setMessage('Producto eliminado correctamente.');
         } catch (\Throwable $th) {
@@ -488,7 +487,6 @@ class PriceController extends Controller
                 $detail['max_second'] = $stockJpa->mount_second;
                 $details[] = $detail;
             }
-
             $price = gJSON::restore($priceJpa->toArray(), '__');
             $price['products'] = $details;
 
