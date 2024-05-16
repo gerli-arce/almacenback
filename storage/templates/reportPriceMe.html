@@ -250,16 +250,23 @@
         <table>
             <thead>
                 <tr>
-                    <td>Producto o servicio</td>
-                    <td style="width: 80px; text-align: center;">Cantidad</td>
-                    <td style="width: 80px; text-align: center;">Precio unitario</td>
-                    <td style="width: 80px; text-align: center;">Precio total</td>
+                    <td rowspan="2">Producto o servicio</td>
+                    <td rowspan="2"  style="width: 80px; text-align: center;">Unidad</td>
+                    <td colspan="2" style="width: 80px; text-align: center;">Cantidad</td>
+                    <td colspan="2" style="width: 80px; text-align: center;">Precio U.</td>
+                    <td rowspan="2" style="width: 80px; text-align: center;">Precio total</td>
+                </tr>
+                <tr>
+                    <td>Nuevo</td>
+                    <td>Segunda</td>
+                    <td>Nuevo</td>
+                    <td>Segunda</td>
                 </tr>
             </thead>
             <tbody>
                {summary}
                 <tr>
-                    <td colspan="3" style="text-align: center; background-color: #6c757d41;"><strong>TOTAL</strong></td>
+                    <td colspan="6" style="text-align: center; background-color: #6c757d41;"><strong>TOTAL</strong></td>
                     <td style="text-align: center; background-color: #ddff00e2; font-size: 15px;"><strong style="color: #000;">S/{price_all}</strong></td>
                 </tr>
             </tbody>

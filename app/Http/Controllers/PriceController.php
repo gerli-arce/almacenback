@@ -534,20 +534,25 @@ class PriceController extends Controller
                 'models.id AS model__id',
                 'models.model AS model__model',
                 'models.relative_id AS model__relative_id',
-                'unities.id as unity__id',
+                'models.price_sale AS model__price_sale',
+                'models.price_sale_second AS model__price_sale_second',
+                'models.currency AS model__currency',
+                'unities.id as  unity__id',
                 'unities.name as unity__name',
+                'unities.value as unity__value',
                 'detail_sales.mount_new as mount_new',
                 'detail_sales.mount_second as mount_second',
-                'detail_sales.mount_ill_fated as mount_ill_fated',
-                'detail_sales.price_unity as price_unity',
+                'detail_sales.price_new as price_sale',
+                'detail_sales.price_second as price_sale_second',
                 'detail_sales.description as description',
+                'detail_sales._unity as _unity',
                 'detail_sales._sales_product as _sales_product',
                 'detail_sales.status as status',
             ])
                 ->join('models', 'detail_sales._model', 'models.id')
+                ->join('unities', 'detail_sales._unity', 'unities.id')
                 ->join('brands', 'models._brand', 'brands.id')
                 ->join('categories', 'models._category', 'categories.id')
-                ->join('unities', 'models._unity', 'unities.id')
                 ->whereNotNull('detail_sales.status')
                 ->where('_sales_product', $request->id)
                 ->get();
@@ -568,15 +573,20 @@ class PriceController extends Controller
             foreach ($details as $detail) {
 
                 $service = "
-                <p>{$detail['category']['category']} {$detail['brand']['brand']} {$detail['model']['model']}</p>
-             ";
+                <p>{$detail['brand']['brand']} {$detail['model']['model']}</p> ";
+
+                $price_new = (number_format($detail['price_sale'], 2) * number_format($detail['unity']['value'], 2));
+                $price_second = (number_format($detail['price_sale_second'], 2) * number_format($detail['unity']['value'], 2));
 
                 $sumary .= "
                 <tr>
                     <td>{$service}</td>
-                    <td style='text-align: center;'>{$detail['mount_new']}</td>
-                    <td style='text-align: center;'>S/" . number_format($detail['price_unity'], 2) . "</td>
-                    <td style='text-align: center;'>S/" . number_format(($detail['mount_new'] * $detail['price_unity']), 2) . "</td>
+                    <td style='text-align: center;'>" .$detail['unity']['name']. "</td>
+                    <td style='text-align: center;'>" . number_format($detail['mount_new']) . "</td>
+                    <td style='text-align: center;'>" . number_format($detail['mount_second']) . "</td>
+                    <td style='text-align: center;'>S/" . number_format(($price_new), 2) . "</td>
+                    <td style='text-align: center;'>S/" . number_format(($price_second), 2) . "</td>
+                    <td style='text-align: center;'>S/" . number_format(($price_new * $detail['mount_new']) + ($price_second + $detail['mount_second']), 2) . "</td>
                 </tr>
                 ";
             }
@@ -613,6 +623,7 @@ class PriceController extends Controller
                 ],
                 $template
             );
+
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Cotización.pdf');
