@@ -283,6 +283,10 @@ class UnityController extends Controller
                 $unityJpa->description = $request->description;
             }
 
+            if (isset($request->value)) {
+                $unityJpa->value = $request->value;
+            }
+
             if (gValidate::check($role->permissions, $branch, 'unities', 'change_status')) {
                 if (isset($request->status)) {
                     $unityJpa->status = $request->status;

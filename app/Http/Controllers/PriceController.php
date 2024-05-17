@@ -575,8 +575,16 @@ class PriceController extends Controller
                 $service = "
                 <p>{$detail['brand']['brand']} {$detail['model']['model']}</p> ";
 
-                $price_new = (number_format($detail['price_sale'], 2) * number_format($detail['unity']['value'], 2));
-                $price_second = (number_format($detail['price_sale_second'], 2) * number_format($detail['unity']['value'], 2));
+                $price_sale = $detail['price_sale'];
+                $price_sale_second = $detail['price_sale_second'];
+
+                if($detail['model']['currency'] != "SOLES"){
+                    $price_sale = number_format($price_sale * $request->dolar_price_buy, 2 );
+                    $price_sale_second = number_format($price_sale_second * $request->dolar_price_buy, 2 );
+                }
+
+                $price_new = $price_sale * number_format($detail['unity']['value'], 2);
+                $price_second = $price_sale_second* number_format($detail['unity']['value'], 2);
 
                 $sumary .= "
                 <tr>
@@ -586,7 +594,7 @@ class PriceController extends Controller
                     <td style='text-align: center;'>" . number_format($detail['mount_second']) . "</td>
                     <td style='text-align: center;'>S/" . number_format(($price_new), 2) . "</td>
                     <td style='text-align: center;'>S/" . number_format(($price_second), 2) . "</td>
-                    <td style='text-align: center;'>S/" . number_format(($price_new * $detail['mount_new']) + ($price_second + $detail['mount_second']), 2) . "</td>
+                    <td style='text-align: center;'>S/" . number_format(($price_new * $detail['mount_new']) + ($price_second * $detail['mount_second']), 2) . "</td>
                 </tr>
                 ";
             }
