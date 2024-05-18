@@ -251,6 +251,7 @@ class PriceController extends Controller
                     } else {
                         $detailSale = new DetailSale();
                         $detailSale->_model = $product['model']['id'];
+                        $detailSale->_unity = $product['unity']['id'];
                         $detailSale->mount_new = $product['mount_new'];
                         $detailSale->price_new = $product['model']['price_sale'];
                         $detailSale->mount_second = $product['mount_second'];
