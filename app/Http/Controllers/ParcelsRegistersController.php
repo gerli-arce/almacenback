@@ -973,7 +973,7 @@ class ParcelsRegistersController extends Controller
                     <p>Nº Factura: <strong>{$parcel['num_bill']}</strong></p>
                     <hr>
                     <center>
-                        <p><strong>{$parcel['model']['unity']['name']}</strong></p>
+                        <p><strong>{$parcel['unity']['name']}</strong></p>
                         <p><strong>{$parcel['mount_product']}</strong></p>
                     </center>
                 </div>
