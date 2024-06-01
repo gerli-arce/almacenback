@@ -167,6 +167,14 @@ class FauldController extends Controller
                 $query->whereNotNull('status');
             }
 
+            if($request->search['notvalidations']){
+                $query->where('validation_date', null);
+            }
+
+            if($request->search['yesvalidations']){
+                $query->whereNotNull('validation_date');
+            }
+
             $query->where(function ($q) use ($request) {
                 $column = $request->search['column'];
                 $type = $request->search['regex'] ? 'like' : '=';
