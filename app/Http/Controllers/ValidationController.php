@@ -971,6 +971,116 @@ class ValidationController extends Controller
         }
     }
 
+    public function generateReportReitered(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            // $template = file_get_contents('../storage/templates/claims/reportsClaimsReitered.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $summary = "";
+            // $query = ViewClaim::select('*')->whereNotNull('status');
+
+            $GetReitered = ViewValidationsBySale::whereNotNull('status')
+                ->select('sale__client__id', 'sale__id', DB::raw('COUNT(*) as count'))
+                ->groupBy('sale__client__id', 'sale__id')
+                ->havingRaw('COUNT(*) > 1')
+                ->get();
+
+            $rei = array();
+
+            foreach ($GetReitered as $ReiteredJpa) {
+                $GetRecords = ViewValidationsBySale::where('sale__client__id', $ReiteredJpa->sale__client__id)->where('sale__id', $ReiteredJpa->sale__id)->get();
+                $claims = array();
+                foreach ($GetRecords as $record) {
+                    $claims[] = gJSON::restore($record->toArray(), '__');
+                }
+                $rei[] = $claims;
+            }
+
+            // $color = true;
+            // $color_val = "bg-secondary";
+
+            // foreach ($rei as $reiJpa) {
+
+
+            //     foreach ($reiJpa as $record) {
+            //         $summary.="
+            //         <tr>
+            //             <td class='{$color_val}'>{$record['client']['name']}{$record['client']['lastname']}</td>
+            //             <td class='{$color_val}'>{$record['claim']['claim']}</td>
+            //             <td class='{$color_val}'>{$record['branch']['name']}</td>
+            //             <td class='{$color_val}'>{$record['date']}</td>
+            //         </tr>
+            //         ";
+            //     }
+
+
+            //     if($color){
+            //         $color = false;
+            //         $color_val = "";
+            //     }else{
+            //         $color = true;
+            //         $color_val = "bg-secondary";
+            //     }
+
+            // }
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{summary}'
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $summary,
+            //     ],
+            //     $template
+            // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Reclamo.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('O');
+            $response->setData($rei);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function generateReportNotValidations(Request $request)
     {
         try {

@@ -623,6 +623,7 @@ Route::patch('/validations', [ValidationController::class, 'update']);
 Route::post('/validations/get', [ValidationController::class, 'getValidationBySale']);
 Route::post('/validations/reports/by/validation', [ValidationController::class, 'generateReportByValidation']);
 Route::post('/validations/reports/general', [ValidationController::class, 'generateReportGeneral']);
+Route::post('/validations/reports/reitered', [ValidationController::class, 'generateReportReitered']);
 Route::post('/validations/reports/general/notvalidations', [ValidationController::class, 'generateReportNotValidations']);
 Route::post('/validations/search', [ValidationController::class, 'search']);
 Route::post('/validations/setimage', [ValidationController::class, 'setImage']);
