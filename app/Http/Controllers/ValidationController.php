@@ -748,10 +748,10 @@ class ValidationController extends Controller
                     if ($type == "") {
                         $type = 'internet';
                     }
-                    
+
                     if (!isset($sucursales[$branId]['technicals'][$technicalId])) {
                         // $sucursales[$branId]['technicals'][$technicalId]['installations'];
-                        
+
                         $sucursales[$branId]['technicals'][$technicalId] = [
                             'id' => $technicalId,
                             'name' => $technicalName,
@@ -819,40 +819,40 @@ class ValidationController extends Controller
                     </t>
                 ";
                 foreach ($branch['technicals'] as $technicals) {
-                    if(isset($technicals["id"])){
+                    if (isset($technicals["id"])) {
                         $faul_duo = 0;
                         $faul_internet = 0;
                         $faul_cable = 0;
-                        if(isset($technicals['fauls']['duo'])){
+                        if (isset($technicals['fauls']['duo'])) {
                             $faul_duo = $technicals['fauls']['duo'];
                         }
-    
-                        if(isset($technicals['fauls']['internet'])){
+
+                        if (isset($technicals['fauls']['internet'])) {
                             $faul_internet = $technicals['fauls']['internet'];
                         }
-                        if(isset($technicals['fauls']['cable'])){
+                        if (isset($technicals['fauls']['cable'])) {
                             $faul_cable = $technicals['fauls']['cable'];
                         }
-                        
+
                         $installation__duo = 0;
                         $installation__internet = 0;
                         $installation__cable = 0;
-                        if(isset($technicals['installations']['duo'])){
+                        if (isset($technicals['installations']['duo'])) {
                             $installation__duo = $technicals['installations']['duo'];
                         }
-    
-                        if(isset($technicals['installations']['internet'])){
+
+                        if (isset($technicals['installations']['internet'])) {
                             $installation__internet = $technicals['installations']['internet'];
                         }
-    
-                        if(isset($technicals['installations']['cable'])){
+
+                        if (isset($technicals['installations']['cable'])) {
                             $installation__cable = $technicals['installations']['cable'];
                         }
-                        
+
                         if (!isset($technicals['installations']['duo'])) {
                             throw new Exception(json_encode($technicals));
                         }
-    
+
                         $total_faulds = intval($faul_duo) + intval($faul_internet) + intval($faul_cable);
                         $total_instalation = intval($installation__duo) + intval($installation__internet) + intval($installation__cable);
                         $branch_summary .= "
@@ -869,8 +869,8 @@ class ValidationController extends Controller
                         </t>
                     ";
                     }
-                    }
-                   
+                }
+
             }
 
             // SETEO
@@ -971,7 +971,8 @@ class ValidationController extends Controller
         }
     }
 
-    public function generateReportReitered(Request $request){
+    public function generateReportReitered(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -984,7 +985,7 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            // $template = file_get_contents('../storage/templates/claims/reportsClaimsReitered.html');
+            $template = file_get_contents('../storage/templates/validations/reportByValidation.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -996,30 +997,30 @@ class ValidationController extends Controller
             ])->where('id', $userid)->first();
 
             $summary = "";
-            // $query = ViewClaim::select('*')->whereNotNull('status');
-
-            $GetReitered = ViewValidationsBySale::whereNotNull('status')
-                ->select('sale__client__id', 'sale__id', DB::raw('COUNT(*) as count'))
-                ->groupBy('sale__client__id', 'sale__id')
+            $GetReitered = viewInstallations::whereNotNull('status')
+                ->where('type_operation__operation', 'AVERIA')
+                ->whereBetween('date_sale', [$request->date_start, $request->date_end])
+                ->select('client__id', DB::raw('COUNT(*) as count'))
+                ->groupBy('client__id')
                 ->havingRaw('COUNT(*) > 1')
                 ->get();
 
-            $rei = array();
+            $rei = [];
 
             foreach ($GetReitered as $ReiteredJpa) {
-                $GetRecords = ViewValidationsBySale::where('sale__client__id', $ReiteredJpa->sale__client__id)->where('sale__id', $ReiteredJpa->sale__id)->get();
-                $claims = array();
-                foreach ($GetRecords as $record) {
-                    $claims[] = gJSON::restore($record->toArray(), '__');
+                $GetRecords = viewInstallations::where('client__id', $ReiteredJpa->client__id)
+                    ->where('type_operation__operation', 'AVERIA')
+                    ->whereNotNull('status')
+                    ->get();
+                foreach($GetRecords as $av){
+                    $rei[] = gJSON::restore($av->toArray(), '__');
                 }
-                $rei[] = $claims;
             }
 
             // $color = true;
             // $color_val = "bg-secondary";
 
             // foreach ($rei as $reiJpa) {
-
 
             //     foreach ($reiJpa as $record) {
             //         $summary.="
@@ -1031,7 +1032,6 @@ class ValidationController extends Controller
             //         </tr>
             //         ";
             //     }
-
 
             //     if($color){
             //         $color = false;
@@ -1057,18 +1057,18 @@ class ValidationController extends Controller
             //     $template
             // );
 
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Reclamo.pdf');
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Reclamo.pdf');
 
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('O');
-            $response->setData($rei);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
-            );
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('O');
+            // $response->setData($rei);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();
