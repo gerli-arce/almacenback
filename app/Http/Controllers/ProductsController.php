@@ -15,6 +15,8 @@ use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
 use App\Models\ViewProducts;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1275,6 +1277,95 @@ class ProductsController extends Controller
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . $th->getLine());
         } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportProductsByBranch(Request $request)
+    {
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'products', 'read')) {
+                throw new Exception('No tienes permisos para listar productos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/products/allProducts.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $query = ViewProducts::select(['*'])
+                ->orderBy('model__id', 'desc')->whereNotNull('status')
+                ->where('branch__correlative', $branch)
+                ->where('disponibility', '=', 'DISPONIBLE')
+                ->where('type', 'EQUIPO');
+
+            if (isset($request->model)) {
+                $query->where('model__id', $request->model);
+            }
+            $productsJpa = $query->get();
+            $monut_equipment = $query->count();
+
+            $summary = "";
+            $count = 1;
+            $products = array();
+            foreach ($productsJpa as $product_) {
+                $product = gJSON::restore($product_->toArray(), '__');
+                $products[] = $product;
+                $details = "
+                    <div>
+                        <p><strong>MAC:</strong> {$product['mac']}</p>
+                        <p><strong>SERIE: </strong>{$product['serie']}</p>
+                    </div>
+                ";
+                $summary .= "
+                <tr>
+                    <td><center>{$count}</center></td>
+                    <td>{$details}</td>
+                    <td>{$product['model']['model']}</td>
+                    <td>{$product['product_status']}</td>
+                    <td>{$product['description']}</td>
+                </tr>
+                ";
+
+                $count++;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{summary}',
+                    '{mount_equipments}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $summary,
+                    $monut_equipment,
+                ],
+                $template
+            );
+
+            // $response->setStatus(200);
+            // $response->setMessage('Operación correcta');
+            // $response->setData($products);
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('PRODUCTOS.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
             return response(
                 $response->toArray(),
                 $response->getStatus()

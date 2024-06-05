@@ -241,6 +241,7 @@ Route::post('/products/equipment/paginate', [ProductsController::class, 'paginat
 Route::post('/products/all/paginate', [ProductsController::class, 'paginateEquipmentAll']);
 Route::post('/products/epp/paginate', [ProductsController::class, 'paginateEPP']);
 Route::post('/products/search/guia', [ProductsController::class, 'getProductsByNumberGuia']);
+Route::post('/products/report/equipments', [ProductsController::class, 'generateReportProductsByBranch']);
 
 // STOCK
 Route::post('/stock/paginate', [StockController::class, 'paginate']);
