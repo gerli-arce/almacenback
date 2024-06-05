@@ -596,7 +596,7 @@ class ValidationController extends Controller
 
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Reclamo.pdf');
+            return $pdf->stream('VALIDACIONES.pdf');
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);
@@ -949,7 +949,7 @@ class ValidationController extends Controller
 
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Reclamo.pdf');
+            return $pdf->stream('VALIDACIONES.pdf');
 
             // $response = new Response();
             // $response->setStatus(200);
@@ -1027,11 +1027,13 @@ class ValidationController extends Controller
             foreach ($rei as $reiJpa) {
 
                 foreach ($reiJpa as $record) {
+                    $type_intallation = str_replace('_',' ',$record['type_intallation']);
                     $summary.="
                     <tr>
                         <td class='{$color_val}'>{$record['client']['name']} {$record['client']['lastname']}</td>
                         <td class='{$color_val}'>{$record['technical']['name']} {$record['technical']['lastname']}</td>
-                        <td class='{$color_val}'>{$record['type_operation']['operation']} / {$record['type_intallation']} </td>
+                        <td class='{$color_val}'>{$type_intallation} </td>
+                        <td class='{$color_val}'>{$record['branch']['name']}</td>
                         <td class='{$color_val}'>{$record['date_sale']}</td>
                     </tr>
                     ";
@@ -1062,7 +1064,7 @@ class ValidationController extends Controller
 
             $pdf->loadHTML($template);
             $pdf->render();
-            return $pdf->stream('Reclamo.pdf');
+            return $pdf->stream('AVERIAS REITERADAS.pdf');
 
             // $response = new Response();
             // $response->setStatus(200);
