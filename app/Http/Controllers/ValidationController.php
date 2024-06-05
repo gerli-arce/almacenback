@@ -985,7 +985,7 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/validations/reportByValidation.html');
+            $template = file_get_contents('../storage/templates/validations/reportReytered.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -997,6 +997,8 @@ class ValidationController extends Controller
             ])->where('id', $userid)->first();
 
             $summary = "";
+
+
             $GetReitered = viewInstallations::whereNotNull('status')
                 ->where('type_operation__operation', 'AVERIA')
                 ->whereBetween('date_sale', [$request->date_start, $request->date_end])
@@ -1012,50 +1014,51 @@ class ValidationController extends Controller
                     ->where('type_operation__operation', 'AVERIA')
                     ->whereNotNull('status')
                     ->get();
+                $reitered = [];
                 foreach($GetRecords as $av){
-                    $rei[] = gJSON::restore($av->toArray(), '__');
+                    $reitered [] = gJSON::restore($av->toArray(), '__');
+                }
+                $rei[] =  $reitered;
+            }
+
+            $color = true;
+            $color_val = "bg-secondary";
+
+            foreach ($rei as $reiJpa) {
+
+                foreach ($reiJpa as $record) {
+                    $summary.="
+                    <tr>
+                        <td class='{$color_val}'>{$record['client']['name']} {$record['client']['lastname']}</td>
+                        <td class='{$color_val}'>{$record['technical']['name']} {$record['technical']['lastname']}</td>
+                        <td class='{$color_val}'>{$record['type_operation']['operation']} / {$record['type_intallation']} </td>
+                        <td class='{$color_val}'>{$record['date_sale']}</td>
+                    </tr>
+                    ";
+                }
+
+                if($color){
+                    $color = false;
+                    $color_val = "";
+                }else{
+                    $color = true;
+                    $color_val = "bg-secondary";
                 }
             }
 
-            // $color = true;
-            // $color_val = "bg-secondary";
-
-            // foreach ($rei as $reiJpa) {
-
-            //     foreach ($reiJpa as $record) {
-            //         $summary.="
-            //         <tr>
-            //             <td class='{$color_val}'>{$record['client']['name']}{$record['client']['lastname']}</td>
-            //             <td class='{$color_val}'>{$record['claim']['claim']}</td>
-            //             <td class='{$color_val}'>{$record['branch']['name']}</td>
-            //             <td class='{$color_val}'>{$record['date']}</td>
-            //         </tr>
-            //         ";
-            //     }
-
-            //     if($color){
-            //         $color = false;
-            //         $color_val = "";
-            //     }else{
-            //         $color = true;
-            //         $color_val = "bg-secondary";
-            //     }
-
-            // }
-
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{summary}'
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $summary,
-            //     ],
-            //     $template
-            // );
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{summary}'
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $summary,
+                ],
+                $template
+            );
 
             $pdf->loadHTML($template);
             $pdf->render();

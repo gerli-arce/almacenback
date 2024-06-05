@@ -335,7 +335,7 @@
                                     font-weight: bold;
                                 "
                             >
-                                VALIDACIÓN
+                                VALIDACIONES
                             </p>
                             <p
                                 style="
@@ -343,7 +343,7 @@
                                     font-weight: bold;
                                 "
                             >
-                                VAL-{id}
+                                REITERADAS
                             </p>
                         </div>
                     </div>
@@ -355,79 +355,16 @@
             <table>
                 <thead>
                     <tr>
-                        <td colspan="2" align="center">VALIDACION</td>
+                        <td align="center">CLIENTE</td>
+                        <td align="center">TÉCNICO</td>
+                        <td align="center">OPEERACION</td>
+                        <td align="center">FECHA</td>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>EJECUTIVO</td>
-                        <td align="center">{ejecutive}</td>
-                    </tr>
-                    <tr>
-                        <td>LIQUIDACION</td>
-                        <td align="center">{liquidation}</td>
-                    </tr>
-                    <tr>
-                        <td>{operation}</td>
-                        <td align="center">{type_sale}</td>
-                    </tr>
-                    <tr>
-                        <td>CLIENTE</td>
-                        <td align="center">
-                            {client} -
-                            <span style="color: #d37f00; font-size: 13px"
-                                >( {phone} )</span
-                            >
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>TÉCNICO</td>
-                        <td align="center">{technical}</td>
-                    </tr>
-                    <tr>
-                        <td>TIPO DE VALIDACIÓN</td>
-                        <td align="center">{type}</td>
-                    </tr>
-                    <tr>
-                        <td>VALIDACIÓN</td>
-                        <td
-                            align="center"
-                            style="font-size: 18px; font-weight: bold"
-                            class="{color_validation}"
-                        >
-                            {validation}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td
-                            colspan="2"
-                            align="center"
-                            style="
-                                background-color: #c5eefa70;
-                                border: 1px solid #0d6c9cad;
-                                color: #0f6ab4 !important;
-                            "
-                        >
-                            OPINION DEL CLIENTE
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" align="center">{opinion}</td>
-                    </tr>
+                    {summary}
                 </tbody>
             </table>
-            <table>
-                <thead>
-                    <tr>
-                        <td colspan="2" align="center">PREGUNTAS</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {cuestions}
-                </tbody>
-            </table>
-
-            {images}
         </main>
     </body>
 </html>
