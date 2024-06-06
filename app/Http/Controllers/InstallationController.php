@@ -715,6 +715,8 @@ class InstallationController extends Controller
                             $detailSale->mount_second = $product['mount_second'];
                             $detailSale->mount_ill_fated = $product['mount_ill_fated'];
                             $productByTechnicalJpa->save();
+                        }else{
+                            $productJpa->disponibility = "EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
                         }
 
                         $detailSale->description = $product['description'];
@@ -722,11 +724,11 @@ class InstallationController extends Controller
 
                         if (isset($request->status_sale)) {
 
-                            $PeopleJpa = People::where('id', $salesProduct->_client)->first();
+                            // $PeopleJpa = People::where('id', $salesProduct->_client)->first();
 
                             if ($request->status_sale == 'CULMINADA') {
                                 if ($product['product']['type'] == "EQUIPO") {
-                                   $productJpa->disponibility = "-- EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
+                                   $productJpa->disponibility = "EN INSTALACION DEL CLIENTE " . $client->name . " " . $client->lastname . "";
                                 }
                                 if (
                                     isset($request->image_qr)
@@ -776,7 +778,6 @@ class InstallationController extends Controller
                                 $stock->mount_ill_fated = $stock->mount_ill_fated - 1;
                             }
                             $stock->save();
-                            $productJpa->save();
                         }
 
                         $productJpa->save();
