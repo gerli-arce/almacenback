@@ -352,7 +352,7 @@ class KeysesController extends Controller
                 $value = $request->search['value'];
                 $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
                 if ($column == 'name' || $column == '*') {
-                    $q->where('name', $type, $value);
+                    $q->orwhere('name', $type, $value);
                 }
                 if ($column == 'responsible__name' || $column == '*') {
                     $q->orwhere('responsible__name', $type, $value);
@@ -366,6 +366,13 @@ class KeysesController extends Controller
                 if ($column == 'duplicate' || $column == '*') {
                     $q->orwhere('duplicate', $type, $value);
                 }
+                if ($column == 'coordenadas' || $column == '*') {
+                    $q->orWhere(function ($query) use ($request) {
+                        $term = '%' . $request->search['value']. '%'; // Añadir comodines de búsqueda al término
+                        $query->orWhereRaw("CONCAT(latitude, ',',longitude ) LIKE CONCAT('%', ?, '%')", [$term]);
+                    });
+                }
+              
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
