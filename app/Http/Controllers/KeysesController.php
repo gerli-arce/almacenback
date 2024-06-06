@@ -266,6 +266,15 @@ class KeysesController extends Controller
                 $keysesJpa->position_y = $request->position_y;
             }
 
+            if(isset($request->latitude)){
+                $keysesJpa->latitude = $request->latitude;
+            }
+
+            if(isset($request->longitude)){
+                $keysesJpa->longitude = $request->longitude;
+            }
+
+
             if(isset($request->n_duplicates)){
                 $keysesJpa->n_duplicates = $request->n_duplicates;
             }
@@ -439,6 +448,7 @@ class KeysesController extends Controller
             )->header('Content-Type', $type);
         }
     }
+
     public function update(Request $request)
     {
         $response = new Response();
@@ -524,6 +534,14 @@ class KeysesController extends Controller
 
             if(isset($request->position_y)){
                 $keysJpa->position_y = $request->position_y;
+            }
+
+            if(isset($request->latitude)){
+                $keysJpa->latitude = $request->latitude;
+            }
+
+            if(isset($request->longitude)){
+                $keysJpa->longitude = $request->longitude;
             }
 
             if(isset($request->n_duplicates)){
