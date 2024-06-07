@@ -1012,6 +1012,7 @@ class ValidationController extends Controller
             foreach ($GetReitered as $ReiteredJpa) {
                 $GetRecords = viewInstallations::where('client__id', $ReiteredJpa->client__id)
                     ->where('type_operation__operation', 'AVERIA')
+                    ->whereBetween('date_sale', [$request->date_start, $request->date_end])
                     ->whereNotNull('status')
                     ->get();
                 $reitered = [];
