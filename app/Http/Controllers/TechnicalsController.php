@@ -48,14 +48,14 @@ class TechnicalsController extends Controller
                 'name',
                 'lastname',
             ])
-            ->whereNotNull('status')
-            ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-            ->orWhere(function ($query) use ($request) {
-                $term = '%' . $request->term . '%'; // Añadir comodines de búsqueda al término
-                $query->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
-            })
-            ->orderBy('doc_number', 'asc')
-            ->get();
+                ->whereNotNull('status')
+                ->WhereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orWhere(function ($query) use ($request) {
+                    $term = '%' . $request->term . '%'; // Añadir comodines de búsqueda al término
+                    $query->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
+                })
+                ->orderBy('doc_number', 'asc')
+                ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
@@ -97,7 +97,7 @@ class TechnicalsController extends Controller
                 ->whereNotNull('status')
                 ->where(function ($query) use ($request) {
                     $query->whereRaw("doc_number LIKE CONCAT('%', ?, '%')", [$request->term])
-                    ->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
+                        ->orWhereRaw("CONCAT(name, ' ',lastname ) LIKE CONCAT('%', ?, '%')", [$request->term]);
                 })
                 ->orderBy('doc_number', 'asc')
                 ->get();
@@ -115,7 +115,6 @@ class TechnicalsController extends Controller
             );
         }
     }
-
 
     public function store(Request $request)
     {
@@ -1288,9 +1287,9 @@ class TechnicalsController extends Controller
             $salesProduct->_technical = $request->id;
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
-            if(isset($request->date)){
+            if (isset($request->date)) {
                 $salesProduct->date_sale = $request->date;
-            }else{
+            } else {
                 $salesProduct->date_sale = gTrace::getDate('mysql');
             }
             $salesProduct->status_sale = "AGREGADO";
@@ -1412,9 +1411,9 @@ class TechnicalsController extends Controller
             $salesProduct->_technical = $request->id;
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
-            if(isset($request->date)){
+            if (isset($request->date)) {
                 $salesProduct->date_sale = $request->date;
-            }else{
+            } else {
                 $salesProduct->date_sale = gTrace::getDate('mysql');
             }
             $salesProduct->status_sale = "AGREGADO";
@@ -2498,7 +2497,170 @@ class TechnicalsController extends Controller
 
             $dat_technical = People::find($request->id);
 
-            $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
+            if (isset($request->date_start) && isset($request->date_end)) {
+
+                $query = ViewSales::select([
+                    'view_sales.id as id',
+                    'view_sales.client_id as client_id',
+                    'view_sales.technical_id as technical_id',
+                    'view_sales.branch__id as branch__id',
+                    'view_sales.branch__name as branch__name',
+                    'view_sales.branch__correlative	 as branch__correlative',
+                    'view_sales.type_operation__id	 as type_operation__id',
+                    'view_sales.type_operation__operation	 as type_operation__operation',
+                    'view_sales.tower_id as tower_id',
+                    'view_sales.plant_id as plant_id',
+                    'view_sales.room_id as room_id',
+                    'view_sales.type_intallation as type_intallation',
+                    'view_sales.date_sale as date_sale',
+                    'view_sales.issue_date as issue_date',
+                    'view_sales.issue_user_id as issue_user_id',
+                    'view_sales.status_sale as status_sale',
+                    'view_sales.description as description',
+                    'view_sales.user_creation__id as user_creation__id',
+                    'view_sales.user_creation__username as user_creation__username',
+                    'view_sales.user_creation__person__id as user_creation__person__id',
+                    'view_sales.user_creation__person__name as user_creation__person__name',
+                    'view_sales.user_creation__person__lastname as user_creation__person__lastname',
+                    'view_sales.creation_date as creation_date',
+                    'view_sales.update_user_id as update_user_id',
+                    'view_sales.update_date as update_date',
+                    'view_sales.status as status',
+                ])
+                    ->distinct()
+                    ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+                    ->orderBy('id', 'desc')
+                    ->where('technical_id', $request->id)
+                    ->whereNotNUll('view_sales.status')
+                    ->where('type_products', 'EPP');
+
+                $query->where('type_operation__id', '10');
+
+                $dateStart = date('Y-m-d', strtotime($request->date_start));
+                $dateEnd = date('Y-m-d', strtotime($request->date_end));
+                $query->where('date_sale', '>=', $dateStart)
+                    ->where('date_sale', '<=', $dateEnd);
+
+                $records = $query->get();
+
+                $sales = array();
+                $models = [];
+
+                foreach ($records as $saleJpa) {
+                    $sale = gJSON::restore($saleJpa->toArray(), '__');
+                    $detailSalesJpa = ViewDetailsSales::select(['*'])->whereNotNull('status')->where('sale_product_id', $sale['id'])->get();
+                    $details = array();
+                    foreach ($detailSalesJpa as $detailJpa) {
+                        $detail = gJSON::restore($detailJpa->toArray(), '__');
+                        $details[] = $detail;
+                        $relativeId = $detail['product']['model']['relative_id'];
+
+                        // Buscar el modelo existente en $models
+                        $existingModelKey = null;
+                        $add = false;
+                        if($sale['status_sale'] == "AGREGADO"){
+                            $add = true;
+                        }
+                        foreach ($models as $key => $mod) {
+                            if ($mod['model']['relative_id'] == $relativeId) {
+                                $existingModelKey = $key;
+                                break;
+                            }
+                        }
+
+                        if ($existingModelKey !== null) {
+                            // Sumar los montos si el modelo ya existe
+                            if($add){
+                                $models[$existingModelKey]['mount_new'] += $detail['mount_new'];
+                                $models[$existingModelKey]['mount_second'] += $detail['mount_second'];
+                                $models[$existingModelKey]['mount_ill_fated'] += $detail['mount_ill_fated'];
+                            }else{
+                                $models[$existingModelKey]['mount_new'] -= $detail['mount_new'];
+                                $models[$existingModelKey]['mount_second'] -= $detail['mount_second'];
+                                $models[$existingModelKey]['mount_ill_fated'] -= $detail['mount_ill_fated'];
+                            }
+                           
+                        } else {
+                            if($add){
+                                $mod = [
+                                    "model" => [
+                                        "model" => $detail['product']['model']['model'],
+                                        "relative_id" => $relativeId,
+                                    ],
+                                    "unity"=> $detail['product']['model']["unity"],
+                                    "mount_new" => $detail['mount_new'],
+                                    "mount_second" => $detail['mount_second'],
+                                    "mount_ill_fated" => $detail['mount_ill_fated'],
+                                ];
+                                $models[] = $mod;
+                            }
+                        }
+                    }
+                    $sale['details'] = $details;
+                    $sales[] = $sale;
+                }
+                $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
+                ->where('type', 'EPP')
+                ->whereNotNull('status')
+                ->where(function ($q) use ($request) {
+                    $q->where('mount_new', '>', 0);
+                    $q->orWhere('mount_second', '>', 0);
+                    $q->orWhere('mount_ill_fated', '>', 0);
+                })
+                ->whereNot('type', 'LEND')
+                ->get();
+
+            $products = array();
+            foreach ($ViewProductByTechnicalJpa as $productJpa) {
+                $person = gJSON::restore($productJpa->toArray(), '__');
+                $products[] = $person;
+            }
+
+            $count = 1;
+
+            $summary = "";
+
+            foreach ($models as $m) {
+
+                $url = "https://almacen.fastnetperu.com.pe/api/model/{$m['model']['relative_id']}/mini";
+
+                $image = "
+                    <div>
+                        <center>
+                            <img src='{$url}' class='img_stock'>
+                        </center>
+                    </div>
+                    ";
+
+                $product_ = "
+                    <div>
+                        <p><strong>{$m['model']['model']}</strong></p>
+                    </div>
+                    ";
+                $detail = '';
+
+                    $detail =
+                        "
+                    <center>{$m['unity']['name']} </center>
+                    ";
+                
+
+                $summary .= "
+                 <tr>
+                    <td><center>{$count}</center></td>
+                    <td><center>{$image}</center></td>
+                    <td><center>{$product_}</center></td>
+                    <td><center>" . ($m['mount_new'] == floor($m['mount_new']) ? floor($m['mount_new']) : $m['mount_new']) . "</center></td>
+                    <td><center>" . ($m['mount_second'] == floor($m['mount_second']) ? floor($m['mount_second']) : $m['mount_second']) . "</center></td>
+                    <td><center>" . ($m['mount_ill_fated'] == floor($m['mount_ill_fated']) ? floor($m['mount_ill_fated']) : $m['mount_ill_fated']) . "</center></td>
+                    <td>{$detail}</td>
+                </tr>
+
+                 ";
+                $count++;
+            }
+            }else{
+                $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
                 ->where('type', 'EPP')
                 ->whereNotNull('status')
                 ->where(function ($q) use ($request) {
@@ -2566,6 +2728,9 @@ class TechnicalsController extends Controller
                  ";
                 $count++;
             }
+            };
+
+           
 
             $template = str_replace(
                 [
@@ -2593,7 +2758,7 @@ class TechnicalsController extends Controller
 
             // $response = new Response();
             // $response->setStatus(200);
-            // $response->setData($ViewProductByTechnicalJpa->toArray());
+            // $response->setData($models);
             // $response->setMessage('operacion correcta');
             // return response(
             //     $response->toArray(),
