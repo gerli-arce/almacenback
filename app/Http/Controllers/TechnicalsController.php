@@ -1230,13 +1230,13 @@ class TechnicalsController extends Controller
     {
         $response = new Response();
         try {
-            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
-            if ($status != 200) {
-                throw new Exception($message);
-            }
-            if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete')) {
-                throw new Exception('No tienes permisos para eliminar estado de productos');
-            }
+            // [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            // if ($status != 200) {
+            //     throw new Exception($message);
+            // }
+            // if (!gValidate::check($role->permissions, $branch, 'technicals', 'delete')) {
+            //     throw new Exception('No tienes permisos para eliminar estado de productos');
+            // }
 
             if (
                 !isset($request->id)
@@ -1288,7 +1288,11 @@ class TechnicalsController extends Controller
             $salesProduct->_technical = $request->id;
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
-            $salesProduct->date_sale = gTrace::getDate('mysql');
+            if(isset($request->date)){
+                $salesProduct->date_sale = $request->date;
+            }else{
+                $salesProduct->date_sale = gTrace::getDate('mysql');
+            }
             $salesProduct->status_sale = "AGREGADO";
             $salesProduct->_creation_user = $userid;
             $salesProduct->creation_date = gTrace::getDate('mysql');
@@ -1408,7 +1412,11 @@ class TechnicalsController extends Controller
             $salesProduct->_technical = $request->id;
             $salesProduct->_type_operation = "10";
             $salesProduct->type_intallation = "AGREGADO_A_STOCK";
-            $salesProduct->date_sale = gTrace::getDate('mysql');
+            if(isset($request->date)){
+                $salesProduct->date_sale = $request->date;
+            }else{
+                $salesProduct->date_sale = gTrace::getDate('mysql');
+            }
             $salesProduct->status_sale = "AGREGADO";
             $salesProduct->type_products = "EPP";
             $salesProduct->_creation_user = $userid;
