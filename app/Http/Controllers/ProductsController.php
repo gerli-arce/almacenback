@@ -465,7 +465,8 @@ class ProductsController extends Controller
             }
 
             $query = ViewProducts::select(['*'])
-                ->orderBy($request->order['column'], $request->order['dir']);
+                ->orderBy($request->order['column'], $request->order['dir'])
+                ->where('model__category__category',"!=", 'EPP');
 
             if (!$request->all) {
                 $query->whereNotNull('status');
