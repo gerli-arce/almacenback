@@ -2534,7 +2534,8 @@ class TechnicalsController extends Controller
                     ->orderBy('id', 'desc')
                     ->where('technical_id', $request->id)
                     ->whereNotNUll('view_sales.status')
-                    ->where('type_products', 'EPP');
+                // ->where('type_products', 'EPP')
+                ;
 
                 $query->where('type_operation__id', '10');
 
@@ -2558,75 +2559,78 @@ class TechnicalsController extends Controller
                         $relativeId = $detail['product']['model']['relative_id'];
 
                         // Buscar el modelo existente en $models
-                        $existingModelKey = null;
-                        $add = false;
-                        if($sale['status_sale'] == "AGREGADO"){
-                            $add = true;
-                        }
-                        foreach ($models as $key => $mod) {
-                            if ($mod['model']['relative_id'] == $relativeId) {
-                                $existingModelKey = $key;
-                                break;
+                        if ($detail['product']['model']['category']['category'] == "EPP") {
+                            $existingModelKey = null;
+                            $add = false;
+                            if ($sale['status_sale'] == "AGREGADO") {
+                                $add = true;
+                            }
+                            foreach ($models as $key => $mod) {
+                                if ($mod['model']['relative_id'] == $relativeId) {
+                                    $existingModelKey = $key;
+                                    break;
+                                }
+                            }
+
+                            if ($existingModelKey !== null) {
+                                // Sumar los montos si el modelo ya existe
+                                if ($add) {
+                                    $models[$existingModelKey]['mount_new'] += $detail['mount_new'];
+                                    $models[$existingModelKey]['mount_second'] += $detail['mount_second'];
+                                    $models[$existingModelKey]['mount_ill_fated'] += $detail['mount_ill_fated'];
+                                } else {
+                                    $models[$existingModelKey]['mount_new'] -= $detail['mount_new'];
+                                    $models[$existingModelKey]['mount_second'] -= $detail['mount_second'];
+                                    $models[$existingModelKey]['mount_ill_fated'] -= $detail['mount_ill_fated'];
+                                }
+
+                            } else {
+                                if ($add) {
+                                    $mod = [
+                                        "model" => [
+                                            "model" => $detail['product']['model']['model'],
+                                            "relative_id" => $relativeId,
+                                        ],
+                                        "unity" => $detail['product']['model']["unity"],
+                                        "mount_new" => $detail['mount_new'],
+                                        "mount_second" => $detail['mount_second'],
+                                        "mount_ill_fated" => $detail['mount_ill_fated'],
+                                    ];
+                                    $models[] = $mod;
+                                }
                             }
                         }
 
-                        if ($existingModelKey !== null) {
-                            // Sumar los montos si el modelo ya existe
-                            if($add){
-                                $models[$existingModelKey]['mount_new'] += $detail['mount_new'];
-                                $models[$existingModelKey]['mount_second'] += $detail['mount_second'];
-                                $models[$existingModelKey]['mount_ill_fated'] += $detail['mount_ill_fated'];
-                            }else{
-                                $models[$existingModelKey]['mount_new'] -= $detail['mount_new'];
-                                $models[$existingModelKey]['mount_second'] -= $detail['mount_second'];
-                                $models[$existingModelKey]['mount_ill_fated'] -= $detail['mount_ill_fated'];
-                            }
-                           
-                        } else {
-                            if($add){
-                                $mod = [
-                                    "model" => [
-                                        "model" => $detail['product']['model']['model'],
-                                        "relative_id" => $relativeId,
-                                    ],
-                                    "unity"=> $detail['product']['model']["unity"],
-                                    "mount_new" => $detail['mount_new'],
-                                    "mount_second" => $detail['mount_second'],
-                                    "mount_ill_fated" => $detail['mount_ill_fated'],
-                                ];
-                                $models[] = $mod;
-                            }
-                        }
                     }
                     $sale['details'] = $details;
                     $sales[] = $sale;
                 }
                 $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
-                ->where('type', 'EPP')
-                ->whereNotNull('status')
-                ->where(function ($q) use ($request) {
-                    $q->where('mount_new', '>', 0);
-                    $q->orWhere('mount_second', '>', 0);
-                    $q->orWhere('mount_ill_fated', '>', 0);
-                })
-                ->whereNot('type', 'LEND')
-                ->get();
+                    ->where('type', 'EPP')
+                    ->whereNotNull('status')
+                    ->where(function ($q) use ($request) {
+                        $q->where('mount_new', '>', 0);
+                        $q->orWhere('mount_second', '>', 0);
+                        $q->orWhere('mount_ill_fated', '>', 0);
+                    })
+                    ->whereNot('type', 'LEND')
+                    ->get();
 
-            $products = array();
-            foreach ($ViewProductByTechnicalJpa as $productJpa) {
-                $person = gJSON::restore($productJpa->toArray(), '__');
-                $products[] = $person;
-            }
+                $products = array();
+                foreach ($ViewProductByTechnicalJpa as $productJpa) {
+                    $person = gJSON::restore($productJpa->toArray(), '__');
+                    $products[] = $person;
+                }
 
-            $count = 1;
+                $count = 1;
 
-            $summary = "";
+                $summary = "";
 
-            foreach ($models as $m) {
+                foreach ($models as $m) {
 
-                $url = "https://almacen.fastnetperu.com.pe/api/model/{$m['model']['relative_id']}/mini";
+                    $url = "https://almacen.fastnetperu.com.pe/api/model/{$m['model']['relative_id']}/mini";
 
-                $image = "
+                    $image = "
                     <div>
                         <center>
                             <img src='{$url}' class='img_stock'>
@@ -2634,20 +2638,19 @@ class TechnicalsController extends Controller
                     </div>
                     ";
 
-                $product_ = "
+                    $product_ = "
                     <div>
                         <p><strong>{$m['model']['model']}</strong></p>
                     </div>
                     ";
-                $detail = '';
+                    $detail = '';
 
                     $detail =
                         "
                     <center>{$m['unity']['name']} </center>
                     ";
-                
 
-                $summary .= "
+                    $summary .= "
                  <tr>
                     <td><center>{$count}</center></td>
                     <td><center>{$image}</center></td>
@@ -2659,35 +2662,35 @@ class TechnicalsController extends Controller
                 </tr>
 
                  ";
-                $count++;
-            }
-            }else{
+                    $count++;
+                }
+            } else {
                 $ViewProductByTechnicalJpa = ViewProductByTechnical::where('technical__id', $request->id)
-                ->where('type', 'EPP')
-                ->whereNotNull('status')
-                ->where(function ($q) use ($request) {
-                    $q->where('mount_new', '>', 0);
-                    $q->orWhere('mount_second', '>', 0);
-                    $q->orWhere('mount_ill_fated', '>', 0);
-                })
-                ->whereNot('type', 'LEND')
-                ->get();
+                    ->where('type', 'EPP')
+                    ->whereNotNull('status')
+                    ->where(function ($q) use ($request) {
+                        $q->where('mount_new', '>', 0);
+                        $q->orWhere('mount_second', '>', 0);
+                        $q->orWhere('mount_ill_fated', '>', 0);
+                    })
+                    ->whereNot('type', 'LEND')
+                    ->get();
 
-            $products = array();
-            foreach ($ViewProductByTechnicalJpa as $productJpa) {
-                $person = gJSON::restore($productJpa->toArray(), '__');
-                $products[] = $person;
-            }
+                $products = array();
+                foreach ($ViewProductByTechnicalJpa as $productJpa) {
+                    $person = gJSON::restore($productJpa->toArray(), '__');
+                    $products[] = $person;
+                }
 
-            $count = 1;
+                $count = 1;
 
-            $summary = "";
+                $summary = "";
 
-            foreach ($products as $product) {
+                foreach ($products as $product) {
 
-                $url = "https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini";
+                    $url = "https://almacen.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini";
 
-                $image = "
+                    $image = "
                     <div>
                         <center>
                             <img src='{$url}' class='img_stock'>
@@ -2695,28 +2698,28 @@ class TechnicalsController extends Controller
                     </div>
                     ";
 
-                $product_ = "
+                    $product_ = "
                     <div>
                         <p><strong>{$product['product']['model']['model']}</strong></p>
                     </div>
                     ";
-                $detail = '';
+                    $detail = '';
 
-                if ($product['product']['type'] == 'MATERIAL') {
-                    $detail =
-                        "
+                    if ($product['product']['type'] == 'MATERIAL') {
+                        $detail =
+                            "
                     <center>{$product['product']['model']['unity']['name']} </center>
                     ";
-                } else {
-                    $detail = "
+                    } else {
+                        $detail = "
                     <div>
                         <p><strong>Mac:</strong>{$product['product']['mac']}</p>
                         <p><strong>Serie:</strong>{$product['product']['serie']}</p>
                     </div>
                     ";
-                }
+                    }
 
-                $summary .= "
+                    $summary .= "
                  <tr>
                     <td><center>{$count}</center></td>
                     <td><center>{$image}</center></td>
@@ -2728,13 +2731,9 @@ class TechnicalsController extends Controller
                 </tr>
 
                  ";
-                $count++;
-            }
+                    $count++;
+                }
             };
-
-            
-
-           
 
             $template = str_replace(
                 [
