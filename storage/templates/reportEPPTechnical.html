@@ -213,6 +213,9 @@
             padding: 3px;
             border-radius: 5px;
         }
+        .hidden{
+            display: none;
+        }
 
         @media all {
             div.page-break {
@@ -275,6 +278,10 @@
         <p id="date">{branch_interaction}, {issue_long_date}</p>
         <p><strong>Generado por:</strong> {user_generate}</p>
         <p><strong>Nombres:</strong> {people_names}</p>
+        <div class="{vis}">
+            <p><strong>Fecha inicio:</strong> {date_init}</p>
+            <p><strong>Fecha fin:</strong> {date_end}</p>
+        </div>
 
         <center class="text-bold" style="margin-top: 8px">Resumen</center>
         <table style="font-size: 14px;">

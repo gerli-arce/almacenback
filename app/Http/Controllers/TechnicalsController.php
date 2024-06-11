@@ -2497,8 +2497,10 @@ class TechnicalsController extends Controller
 
             $dat_technical = People::find($request->id);
 
-            if (isset($request->date_start) && isset($request->date_end)) {
+            $date_vis = 'hidden';
 
+            if (isset($request->date_start) && isset($request->date_end)) {
+                $date_vis = '';
                 $query = ViewSales::select([
                     'view_sales.id as id',
                     'view_sales.client_id as client_id',
@@ -2730,6 +2732,8 @@ class TechnicalsController extends Controller
             }
             };
 
+            
+
            
 
             $template = str_replace(
@@ -2739,6 +2743,9 @@ class TechnicalsController extends Controller
                     '{user_generate}',
                     '{people}',
                     '{people_names}',
+                    '{vis}',
+                    '{date_init}',
+                    '{date_end}',
                     '{summary}',
                 ],
                 [
@@ -2747,6 +2754,9 @@ class TechnicalsController extends Controller
                     $user->person__name . ' ' . $user->person__lastname,
                     'TÉCNICO',
                     $dat_technical->name . ' ' . $dat_technical->lastname,
+                    $date_vis,
+                    $request->date_start,
+                    $request->date_end,
                     $summary,
                 ],
                 $template
