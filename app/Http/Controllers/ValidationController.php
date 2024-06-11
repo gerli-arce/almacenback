@@ -133,6 +133,7 @@ class ValidationController extends Controller
 
             $Validations = new Validations();
             $Validations->type = $request->type;
+            $Validations->validator = $request->validator;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
             $Validations->creation_date = gTrace::getDate('mysql');
@@ -234,6 +235,7 @@ class ValidationController extends Controller
 
             $Validations = Validations::find($request->id);
             $Validations->type = $request->type;
+            $Validations->validator = $request->validator;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
             $Validations->update_date = gTrace::getDate('mysql');
