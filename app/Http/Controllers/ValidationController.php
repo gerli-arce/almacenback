@@ -1000,7 +1000,6 @@ class ValidationController extends Controller
 
             $summary = "";
 
-
             $GetReitered = viewInstallations::whereNotNull('status')
                 ->where('type_operation__operation', 'AVERIA')
                 ->whereBetween('date_sale', [$request->date_start, $request->date_end])
@@ -1018,10 +1017,10 @@ class ValidationController extends Controller
                     ->whereNotNull('status')
                     ->get();
                 $reitered = [];
-                foreach($GetRecords as $av){
-                    $reitered [] = gJSON::restore($av->toArray(), '__');
+                foreach ($GetRecords as $av) {
+                    $reitered[] = gJSON::restore($av->toArray(), '__');
                 }
-                $rei[] =  $reitered;
+                $rei[] = $reitered;
             }
 
             $color = true;
@@ -1030,8 +1029,8 @@ class ValidationController extends Controller
             foreach ($rei as $reiJpa) {
 
                 foreach ($reiJpa as $record) {
-                    $type_intallation = str_replace('_',' ',$record['type_intallation']);
-                    $summary.="
+                    $type_intallation = str_replace('_', ' ', $record['type_intallation']);
+                    $summary .= "
                     <tr>
                         <td class='{$color_val}'>{$record['client']['name']} {$record['client']['lastname']}</td>
                         <td class='{$color_val}'>{$record['technical']['name']} {$record['technical']['lastname']}</td>
@@ -1042,10 +1041,10 @@ class ValidationController extends Controller
                     ";
                 }
 
-                if($color){
+                if ($color) {
                     $color = false;
                     $color_val = "";
-                }else{
+                } else {
                     $color = true;
                     $color_val = "bg-secondary";
                 }
@@ -1055,7 +1054,7 @@ class ValidationController extends Controller
                 [
                     '{branch_onteraction}',
                     '{issue_long_date}',
-                    '{summary}'
+                    '{summary}',
                 ],
                 [
                     $branch_->name,
@@ -1077,6 +1076,171 @@ class ValidationController extends Controller
             //     $response->toArray(),
             //     $response->getStatus()
             // );
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function generateReportCalls(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'claims', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/validations/reportReytered.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+
+            $user = ViewUsers::select([
+                'id',
+                'username',
+                'person__name',
+                'person__lastname',
+            ])->where('id', $userid)->first();
+
+            $summary = "";
+
+            // ORDER BY BRANCH
+            $branch_summary = '';
+
+            $branchesJpa = Branch::get();
+
+            $sucursales = [];
+            foreach ($branchesJpa as $branch) {
+                $branchName = $branch->name;
+                $branId = $branch->id;
+                if ($branId != 8) {
+                    $sucursales[$branId] = [
+                        'id' => $branId,
+                        'name' => $branchName,
+                        'technicals' => [],
+                    ];
+                    $technicalsJpa = ViewPeople::select([
+                        'id',
+                        'name',
+                        'lastname',
+                        'type',
+                        'branch__id',
+                        'branch__name',
+                        'status',
+                    ])
+                        ->whereNotNull('status')
+                        ->orderBy('name', 'DESC')
+                        ->where('type', 'TECHNICAL')
+                        ->where('branch__id', $branch->id)->get();
+
+                    foreach ($technicalsJpa as $technical) {
+                        $technicalName = $technical->name . ' ' . $technical->lastname;
+                        $technicalId = $technical->id;
+                        $sucursales[$branId]['technicals'][$technicalId] = [
+                            'id' => $technicalId,
+                            'name' => $technicalName,
+                            'calls' => 0,
+                            'falts' => 0,
+                        ];
+                    }
+                }
+            }
+
+            $minDate = $request->date_start;
+            $maxDate = $request->date_end;
+
+            $query = ViewValidationsBySale::select('*')->whereNotNull('status')->whereNotNull('sale__status')->orderBy('creation_date', 'DESC');
+
+            if (
+                !isset($request->date_start) &&
+                !isset($request->date_end)) {
+                $minDate = $query->whereNotNull('creation_date')->min('creation_date');
+                $maxDate = $query->whereNotNull('creation_date')->max('creation_date');
+            } else {
+
+                $fechaInicio = Carbon::parse($request->date_start);
+                $fechaFin = Carbon::parse($request->date_end);
+
+                $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
+                $fechaFin->setTime(23, 59, 59); // Establecer la fecha de fin a 23:59:59
+
+                if (isset($request->date_start) && isset($request->date_end)) {
+                    $query
+                        ->whereBetween('creation_date', [$fechaInicio, $fechaFin]);
+                }
+            }
+
+            $validationsJpa = $query->get();
+
+            $validations = array();
+
+            // foreach($sucursales as $branch){
+                
+            //     foreach($branch['technicals'] as $technical){
+            //         $technicalId = $technical['id'];
+            //         $technicalName = $technical['name'];
+            //         $validationsJpa = ViewValidationsBySale::select('*')->whereNotNull('status')->whereNotNull('sale__status')->orderBy('creation_date', 'DESC')->where('technical__id', $technicalId)->get();
+
+            //         foreach ($validationsJpa as $validationJpa) {
+                    
+            //     }
+            // }
+
+            foreach ($validationsJpa as $validationJpa) {
+                $validation = gJSON::restore($validationJpa->toArray(), '__');
+                $validation['validations'] = gJSON::parse($validation['validations']);
+
+                $branchId = $validation['sale']['branch']['id'];
+                $technicalId = $validation['sale']['technical']['id'];
+                if($sucursales[$branchId]['technicals'][$technicalId]){
+                    if($validation['validator'] == 'EJECUTIVE'){
+                        $sucursales[$branchId]['technicals'][$technicalId]['falts']++;
+                    }else{
+                        $sucursales[$branchId]['technicals'][$technicalId]['calls']++;
+                    }
+                }
+                $validations[] = $validation;
+
+            }
+
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $summary,
+            //     ],
+            //     $template
+            // );
+
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('AVERIAS REITERADAS.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setMessage('O');
+            $response->setData($sucursales);
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
 
         } catch (\Throwable $th) {
             $response = new Response();
