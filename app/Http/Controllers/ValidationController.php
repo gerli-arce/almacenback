@@ -1102,7 +1102,7 @@ class ValidationController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/validations/reportReytered.html');
+            $template = file_get_contents('../storage/templates/validations/reportCalls.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
 
@@ -1185,62 +1185,87 @@ class ValidationController extends Controller
 
             $validations = array();
 
-            // foreach($sucursales as $branch){
-                
-            //     foreach($branch['technicals'] as $technical){
-            //         $technicalId = $technical['id'];
-            //         $technicalName = $technical['name'];
-            //         $validationsJpa = ViewValidationsBySale::select('*')->whereNotNull('status')->whereNotNull('sale__status')->orderBy('creation_date', 'DESC')->where('technical__id', $technicalId)->get();
-
-            //         foreach ($validationsJpa as $validationJpa) {
-                    
-            //     }
-            // }
-
             foreach ($validationsJpa as $validationJpa) {
                 $validation = gJSON::restore($validationJpa->toArray(), '__');
                 $validation['validations'] = gJSON::parse($validation['validations']);
 
                 $branchId = $validation['sale']['branch']['id'];
                 $technicalId = $validation['sale']['technical']['id'];
-                if($sucursales[$branchId]['technicals'][$technicalId]){
-                    if($validation['validator'] == 'EJECUTIVE'){
+                if (isset($sucursales[$branchId]['technicals'][$technicalId])) {
+                    if ($validation['validator'] == 'EJECUTIVE') {
                         $sucursales[$branchId]['technicals'][$technicalId]['falts']++;
-                    }else{
+                    } else {
+                        $sucursales[$branchId]['technicals'][$technicalId]['calls']++;
+                    }
+                } else {
+                    $technicalName = $validation['sale']['technical']['name'] . ' ' . $validation['sale']['technical']['lastname'];
+                    $sucursales[$branchId]['technicals'][$technicalId] = [
+                        'id' => $technicalId,
+                        'name' => $technicalName,
+                        'calls' => 0,
+                        'falts' => 0,
+                    ];
+                    if ($validation['validator'] == 'EJECUTIVE') {
+                        $sucursales[$branchId]['technicals'][$technicalId]['falts']++;
+                    } else {
                         $sucursales[$branchId]['technicals'][$technicalId]['calls']++;
                     }
                 }
                 $validations[] = $validation;
+            }
+            $branch_summary = "";
+            foreach ($sucursales as $branch) {
+                $branch_summary .= "
+                    <tr class='bg-yellow'>
+                        <td>{$branch['name']}</td>
+                        <td></td>
+                        <td></td>
+                    </t>
+                ";
+                foreach ($branch['technicals'] as $technicals) {
+                    if (isset($technicals["id"])) {
 
+                        $branch_summary .= "
+                        <tr>
+                            <td>{$technicals['name']}</td>
+                            <td align='center' class='" . ($technicals['calls'] > 0 ? 'bg-green' : ' ') . " ' >{$technicals['calls']}</td>
+                            <td align='center'  class='" . ($technicals['falts'] > 0 ? 'bg-red' : ' ') . " ' >{$technicals['falts']}</td>
+                        </t>
+                    ";
+                    }
+                }
             }
 
-
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $summary,
-            //     ],
-            //     $template
-            // );
-
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('AVERIAS REITERADAS.pdf');
-
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setMessage('O');
-            $response->setData($sucursales);
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{branch_summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $minDate,
+                    $maxDate,
+                    $branch_summary,
+                ],
+                $template
             );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('AVERIAS REITERADAS.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('O');
+            // $response->setData($sucursales);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();
