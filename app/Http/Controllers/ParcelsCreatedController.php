@@ -571,18 +571,28 @@ class ParcelsCreatedController extends Controller
 
             $rquipments = array();
 
+            $productsByParcel = array();
+
             $detailsByParcelsend = array();
             if (isset($parcels['parcels'])) {
                 foreach ($parcels['parcels'] as $parcelJpa) {
+                    $parcelId = $parcelJpa['id'];
+                    $productsByParcel[$parcelId ]= [
+                        "date_send"=>$parcelJpa['date_send'],
+                        "date_entry"=>$parcelJpa['date_entry'],
+                        "products"=>[]
+                    ];
                     foreach ($parcelJpa['details'] as $detailsJpa) {
                         $detailsByParcelsend[] = $detailsJpa;
                         if ($detailsJpa['product']['type'] === "EQUIPO") {
                             $productJpa = ViewProducts::find($detailsJpa['product']['id']);
                             $product = gJSON::restore($productJpa->toArray(), '__');
+                            $productsByParcel[$parcelId]["products"][]= $product;
                             $rquipments[] = $product;
                         }
                     }
-                }}
+                }
+            }
 
             $products = array();
 
@@ -677,6 +687,40 @@ class ParcelsCreatedController extends Controller
                 $count = $count + 1;
             }
 
+            // SET PRODUCTS BY PARCEL
+            $summary_parcels = "";
+            $count_branch = 1;
+            foreach($productsByParcel AS $parcel){
+                $summary_parcels .="
+                    <tr class='bg-yellow'>
+                        <td>{$count_branch}</td>
+                        <td>{$parcel["date_send"]}</td>
+                        <td>{$parcel["date_entry"]}</td>
+                        <td></td>
+                    </tr>
+                ";
+
+                $count_products = 1;
+                foreach($parcel['products'] as $products){
+                    $details = "
+                        <p>MAC: {$products['mac']}</p>
+                        <p>SERIE: {$products['serie']}</p>
+                    ";
+
+                    $summary_parcels .="
+                        <tr>
+                            <td>{$count_products}</td>
+                            <td>{$products['model']['model']}</td>
+                            <td>{$details}</td>
+                            <td>{$products['product_status']}</td>
+                        </tr>
+                    ";
+
+                    $count_products++;
+                }
+                $count_branch++;
+            }
+
             $template = str_replace(
                 [
                     '{branch_onteraction}',
@@ -687,6 +731,7 @@ class ParcelsCreatedController extends Controller
                     '{date_end}',
                     '{details_send}',
                     '{summary}',
+                    '{summary_parcel}',
                 ],
                 [
                     $branch_->name,
@@ -697,6 +742,8 @@ class ParcelsCreatedController extends Controller
                     $request->date_end,
                     $details_send,
                     $sumary,
+                    $summary_parcels
+                    
                 ],
                 $template
             );
@@ -707,7 +754,7 @@ class ParcelsCreatedController extends Controller
             return $pdf->stream('Guia.pdf');
 
             // $response = new Response();
-            // $response->setData($products);
+            // $response->setData($productsByParcel);
             // $response->setMessage('Operacion correcta');
             // $response->setStatus(200);
 
@@ -818,23 +865,29 @@ class ParcelsCreatedController extends Controller
 
             $rquipments = array();
 
-            $detailsByParcelReceived = array();
+            $productsByParcel = array();
 
+            $detailsByParcelsend = array();
             if (isset($parcels['parcels'])) {
                 foreach ($parcels['parcels'] as $parcelJpa) {
+                    $parcelId = $parcelJpa['id'];
+                    $productsByParcel[$parcelId ]= [
+                        "date_send"=>$parcelJpa['date_send'],
+                        "date_entry"=>$parcelJpa['date_entry'],
+                        "products"=>[]
+                    ];
                     foreach ($parcelJpa['details'] as $detailsJpa) {
-                        $detailsByParcelReceived[] = $detailsJpa;
+                        $detailsByParcelsend[] = $detailsJpa;
                         if ($detailsJpa['product']['type'] === "EQUIPO") {
                             $productJpa = ViewProducts::find($detailsJpa['product']['id']);
                             $product = gJSON::restore($productJpa->toArray(), '__');
+                            $productsByParcel[$parcelId]["products"][]= $product;
                             $rquipments[] = $product;
                         }
                     }
                 }
             }
-
-            $parcels['details'] = $detailsByParcelReceived;
-
+        
             $products = array();
 
             foreach ($rquipments as $productJpa) {
@@ -861,7 +914,7 @@ class ParcelsCreatedController extends Controller
                     );
                 }
             }
-
+            $parcels['details'] = $detailsByParcelsend;
             $details_send = '';
 
             foreach ($products as $productJpa) {
@@ -926,6 +979,41 @@ class ParcelsCreatedController extends Controller
                 $count = $count + 1;
             }
 
+
+            // SET PRODUCTS BY PARCEL
+            $summary_parcels = "";
+            $count_branch = 1;
+            foreach($productsByParcel AS $parcel){
+                $summary_parcels .="
+                    <tr class='bg-yellow'>
+                        <td>{$count_branch}</td>
+                        <td>{$parcel["date_send"]}</td>
+                        <td>{$parcel["date_entry"]}</td>
+                        <td></td>
+                    </tr>
+                ";
+
+                $count_products = 1;
+                foreach($parcel['products'] as $products){
+                    $details = "
+                        <p>MAC: {$products['mac']}</p>
+                        <p>SERIE: {$products['serie']}</p>
+                    ";
+
+                    $summary_parcels .="
+                        <tr>
+                            <td>{$count_products}</td>
+                            <td>{$products['model']['model']}</td>
+                            <td>{$details}</td>
+                            <td>{$products['product_status']}</td>
+                        </tr>
+                    ";
+
+                    $count_products++;
+                }
+                $count_branch++;
+            }
+
             $template = str_replace(
                 [
                     '{branch_onteraction}',
@@ -936,6 +1024,7 @@ class ParcelsCreatedController extends Controller
                     '{date_end}',
                     '{details_send}',
                     '{summary}',
+                    '{summary_parcel}',
                 ],
                 [
                     $branch_->name,
@@ -946,6 +1035,7 @@ class ParcelsCreatedController extends Controller
                     $request->date_end,
                     $details_send,
                     $sumary,
+                    $summary_parcels,
                 ],
                 $template
             );

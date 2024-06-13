@@ -182,6 +182,52 @@
             padding: 0px;
         }
 
+        .bg-secondary {
+                border: solid 1px #283c4d96;
+                background-color: #889bac36;
+                color: #2a3a49 !important;
+            }
+
+            .bg-red {
+                color: red;
+                border: solid 1px red;
+                background-color: rgb(255, 213, 213);
+            }
+
+            /* .bg-green {
+                color: green;
+                border: solid 1px green;
+                background-color: rgb(183, 255, 183);
+            } */
+
+            .bg-orange {
+                font-weight: bold;
+                color: orange;
+                border: solid 1px orange;
+                background-color: rgb(255, 235, 198);
+            }
+
+            .bg-yellow{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px yellow;
+                background-color: rgb(252, 252, 60);
+            }
+
+            .bg-green{
+                color: rgb(0, 0, 0) !important;
+                font-weight: bold;
+                border: solid 1px green;
+                background-color: rgb(104, 240, 104);
+            }
+
+            
+
+            .hide {
+                display: none;
+                color: #98fb9870;
+            }
+
         @media all {
             div.page-break {
                 display: block;
@@ -297,9 +343,9 @@
                 <tr>
                     <td>#</td>
                     <td>DESCRIPCIÓN</td>
-                    <td>NU</td>
-                    <td>SE</td>
-                    <td>MA</td>
+                    <td>NUEVO</td>
+                    <td>SEGUNDA</td>
+                    <td>MALOGRADO</td>
                     <td>UNID.</td>
                 </tr>
             </thead>
@@ -307,7 +353,21 @@
                 {summary}
             </tbody>
         </table>
-       
+        <br>
+        <h3>Productos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <td>#</td>
+                    <td>MODELO</td>
+                    <td>DETALLES</td>
+                    <td>ESTADO</td>
+                </tr>
+            </thead>
+            <tbody>
+                {summary_parcel}
+            </tbody>
+        </table>
        
     </main>
 </body>
