@@ -13,6 +13,8 @@ use App\Models\ProductByTechnical;
 use App\Models\Response;
 use App\Models\SalesProducts;
 use App\Models\Stock;
+use App\Models\ViewDetailsSales;
+use App\Models\Sale;
 use App\Models\viewInstallations;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -960,6 +962,20 @@ class InstallationController extends Controller
                 $installations_format[] = $install;
             }
 
+            $saleJpa = Sale::select('*')->where('client__id', $request->id)->get();
+            $details_sales = array();
+            foreach($saleJpa as $sale){
+                $sale_s = gJSON::restore($sale->toArray(), '__');
+                $viewDetailsSalesJpa = ViewDetailsSales::where('sale_product_id', $sale['id'])->whereNotNUll('status')->get();
+
+                $details = array();
+                foreach ($viewDetailsSalesJpa as $detailsJpa) {
+                    $detail = gJSON::restore($detailsJpa->toArray(), '__');
+                    $details[] = $detail;
+                }
+                $sale_s['details'] =  $details;
+                $installations_format[] = $sale_s;
+            }
 
             $response->setStatus(200);
             $response->setMessage('Instalación atualizada correctamente');
