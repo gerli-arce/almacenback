@@ -704,4 +704,107 @@ class TravelExpensesController extends Controller
         }
     }
 
+    public function GenerateReportGeneralExpencesByTechnical(Request $request){
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            if (
+                !isset($request->date_start) ||
+                !isset($request->date_end)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/technicals/reportExpencesGeneralBytechnical.html');
+
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $images = '';
+            $id_bill = 0;
+
+            $TravelExpenses = ViewTravelExpenses::select('*')->whereNotNull('status')->where('_technical',$request->id)
+            ->whereBetween('date_expense', [$request->date_start, $request->date_end])
+            ->orderBy('id', 'desc')
+            ->get();
+
+
+            $charges_gasoline = array();
+            $mount_all = $TravelExpenses->count();
+            $price_all = 0;
+            foreach ($TravelExpenses as $ChargecarJpa) {
+                $review = gJSON::restore($ChargecarJpa->toArray(), '__');
+                $review['expenses'] = gJSON::parse( $review['expenses']);
+                $charges_gasoline[] = $review;
+                $price_all += $review['price_all'];
+            }
+
+            // $user = ViewUsers::select([
+            //     'id',
+            //     'username',
+            //     'person__name',
+            //     'person__lastname',
+            // ])->where('id', $userid)->first();
+
+            // $summary = '';
+            // $item_transport = '';
+            // $isBill = '';
+
+            $template = str_replace(
+                [
+                    '{id}',
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{technical}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{expence_all}',
+                    '{price_all}',
+                ],
+                [
+                    $request->id,
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    strtoupper($request->technical['name'] . ' ' . $request->technical['lastname']),
+                    $request->date_start,
+                    $request->date_end,
+                    $mount_all,
+                    $price_all 
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+            //  $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('O');
+            // $response->setData($charges_gasoline);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
+
+
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
 }
