@@ -12,6 +12,7 @@ use App\Models\PhotographsByChargeGasoline;
 use App\Models\Response;
 use App\Models\TravelExpenses;
 use App\Models\User;
+use App\Models\ViewPeople;
 use App\Models\ViewTravelExpenses;
 use App\Models\ViewUsers;
 use Dompdf\Dompdf;
@@ -557,7 +558,7 @@ class TravelExpensesController extends Controller
             $item_transport = '';
             $isBill = '';
 
-            if(isset($TravelExpenses['mobility_type'])){
+            if (isset($TravelExpenses['mobility_type'])) {
                 if ($TravelExpenses['mobility_type'] == "MOVILIDAD") {
                     $ChargeGasolineJpa = ChargeGasoline::select([
                         'id',
@@ -576,7 +577,7 @@ class TravelExpensesController extends Controller
                     if (!$CarJpa) {
                         throw new Exception('No se encontro el vehiculo');
                     }
-    
+
                     $item_transport .= "
                     <tr>
                         <td><center >1</center></td>
@@ -587,22 +588,22 @@ class TravelExpensesController extends Controller
                         <td><center >S/{$ChargeGasolineJpa->price_all}</center></td>
                     </tr>
                     ";
-    
+
                     $ImagesByReview = PhotographsByChargeGasoline::select(['id', 'description', '_creation_user', 'creation_date'])
                         ->where('_charge_gasoline', $ChargeGasolineJpa->id)->whereNotNUll('status')
                         ->orderBy('id', 'desc')
                         ->get();
-    
+
                     $count = 1;
-    
+
                     foreach ($ImagesByReview as $image) {
-    
+
                         $userCreation = User::select([
                             'users.id as id',
                             'users.username as username',
                         ])
                             ->where('users.id', $image->_creation_user)->first();
-    
+
                         $images .= "
                         <div style='page-break-before: always;'>
                             <p><strong>{$count}) {$image->description}</strong></p>
@@ -616,7 +617,7 @@ class TravelExpensesController extends Controller
                         ";
                         $count += 1;
                     }
-    
+
                 } else {
                     $id_bill = $TravelExpenses['id'];
                     $item_transport .= "
@@ -630,11 +631,9 @@ class TravelExpensesController extends Controller
                     </tr>
                     ";
                 }
-            }else{
+            } else {
                 $isBill = 'hide';
             }
-
-           
 
             $counter = 1;
             foreach ($TravelExpenses->expenses as $expenses) {
@@ -704,7 +703,8 @@ class TravelExpensesController extends Controller
         }
     }
 
-    public function GenerateReportGeneralExpencesByTechnical(Request $request){
+    public function GenerateReportGeneralExpencesByTechnical(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -726,16 +726,14 @@ class TravelExpensesController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/technicals/reportExpencesGeneralBytechnical.html');
 
-
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $images = '';
             $id_bill = 0;
 
-            $TravelExpenses = ViewTravelExpenses::select('*')->whereNotNull('status')->where('_technical',$request->id)
-            ->whereBetween('date_expense', [$request->date_start, $request->date_end])
-            ->orderBy('id', 'desc')
-            ->get();
-
+            $TravelExpenses = ViewTravelExpenses::select('*')->whereNotNull('status')->where('_technical', $request->id)
+                ->whereBetween('date_expense', [$request->date_start, $request->date_end])
+                ->orderBy('id', 'desc')
+                ->get();
 
             $charges_gasoline = array();
             $mount_all = $TravelExpenses->count();
@@ -743,7 +741,7 @@ class TravelExpensesController extends Controller
             $details_expences = "";
             foreach ($TravelExpenses as $ChargecarJpa) {
                 $review = gJSON::restore($ChargecarJpa->toArray(), '__');
-                $review['expenses'] = gJSON::parse( $review['expenses']);
+                $review['expenses'] = gJSON::parse($review['expenses']);
                 $details_expences .= "
                 <tr>
                     <td class='bg-secondary'>{$review['date_expense']}</td>
@@ -776,7 +774,7 @@ class TravelExpensesController extends Controller
                     '{date_end}',
                     '{expence_all}',
                     '{price_all}',
-                    '{details_expences}'
+                    '{details_expences}',
                 ],
                 [
                     $request->id,
@@ -805,6 +803,164 @@ class TravelExpensesController extends Controller
             //     $response->getStatus()
             // );
 
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function GenerateReportGeneralTravels(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos');
+            }
+
+            if (
+                !isset($request->date_start) ||
+                !isset($request->date_end)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+
+            $template = file_get_contents('../storage/templates/technicals/reportExpencesGeneral.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $images = '';
+            $id_bill = 0;
+            $price_all = 0;
+            $details_expences = "";
+            $peopleJpa = ViewPeople::select([
+                'id',
+                'doc_type',
+                'doc_number',
+                'name',
+                'lastname',
+                'relative_id',
+                'birthdate',
+                'gender',
+                'email',
+                'phone',
+                'ubigeo',
+                'address',
+                'type',
+                'branch__id',
+                'branch__name',
+                'branch__correlative',
+                'branch__ubigeo',
+                'branch__address',
+                'branch__description',
+                'branch__status',
+                'user_creation__username',
+                'user_creation__relative_id',
+                'creation_date',
+                'user_update__id',
+                'user_update__username',
+                'user_update__relative_id',
+                'update_date',
+                'status',
+            ])
+                ->orderBy('id', 'desc')
+                ->where('type', 'TECHNICAL')
+                ->where('branch__correlative', $branch)->get();
+
+            $technicals_all = $peopleJpa->count();
+
+            $people = array();
+            foreach ($peopleJpa as $personJpa) {
+                $person = gJSON::restore($personJpa->toArray(), '__');
+
+                $TravelExpenses = ViewTravelExpenses::select('*')->whereNotNull('status')->where('_technical', $person['id'])
+                    ->whereBetween('date_expense', [$request->date_start, $request->date_end])
+                    ->orderBy('id', 'desc')
+                    ->get();
+
+                $charges_gasoline = array();
+                $mount_all = $TravelExpenses->count();
+
+                foreach ($TravelExpenses as $ChargecarJpa) {
+                    $review = gJSON::restore($ChargecarJpa->toArray(), '__');
+                    $review['expenses'] = gJSON::parse($review['expenses']);
+                    $charges_gasoline[] = $review;
+                }
+                $person['expences'] = $charges_gasoline;
+                $people[] = $person;
+            }
+
+            $summary = "";
+            $count = 1;
+            $mount_all = 0;
+            $price_all = 0;
+            foreach ($people as $person) {
+                $mount_expences = 0;
+                $price_all_expences = 0;
+
+                foreach ($person['expences'] as $expence) {
+                    $mount_expences++;
+                    $price_all_expences += $expence['price_all'];
+                }
+                $mount_all += $mount_expences;
+                $price_all += $price_all_expences;
+                $summary .= "
+                <tr>
+                    <td><center>{$count}</center></td>
+                    <td>{$person['name']} {$person['lastname']}</td>
+                    <td><center>{$mount_expences}</center></td>
+                    <td><center>S/{$price_all_expences}</center></td>
+                </tr>
+            ";
+                $count++;
+            }
+
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{technical_all}',
+                    '{expences_all}',
+                    '{price_all}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->date_start,
+                    $request->date_end,
+                    $technicals_all,
+                    $mount_all,
+                    $price_all,
+                    $summary,
+                ],
+                $template
+            );
+
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Instlación.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setMessage('O');
+            // $response->setData($people);
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
 
         } catch (\Throwable $th) {
             $response = new Response();

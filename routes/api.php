@@ -588,6 +588,7 @@ Route::post('/travel_expenses/paginate', [TravelExpensesController::class, 'pagi
 Route::get('/travel_expensesimg/{id}/{zize}', [TravelExpensesController::class, 'image']);
 Route::post('/travel_expenses/report', [TravelExpensesController::class, 'GenerareReportByExpense']);
 Route::post('/travel_expenses/general/report/technical', [TravelExpensesController::class, 'GenerateReportGeneralExpencesByTechnical']);
+Route::post('/travel_expenses/general/report', [TravelExpensesController::class, 'GenerateReportGeneralTravels']);
 
 
 // CLAIMS TYPE
