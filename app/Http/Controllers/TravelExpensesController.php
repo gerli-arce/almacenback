@@ -740,9 +740,17 @@ class TravelExpensesController extends Controller
             $charges_gasoline = array();
             $mount_all = $TravelExpenses->count();
             $price_all = 0;
+            $details_expences = "";
             foreach ($TravelExpenses as $ChargecarJpa) {
                 $review = gJSON::restore($ChargecarJpa->toArray(), '__');
                 $review['expenses'] = gJSON::parse( $review['expenses']);
+                $details_expences .= "
+                <tr>
+                    <td class='bg-secondary'>{$review['date_expense']}</td>
+                    <td>S/{$review['price_all']}</td>
+                    <td>{$review['description']}</td>
+                </tr>
+                ";
                 $charges_gasoline[] = $review;
                 $price_all += $review['price_all'];
             }
@@ -768,6 +776,7 @@ class TravelExpensesController extends Controller
                     '{date_end}',
                     '{expence_all}',
                     '{price_all}',
+                    '{details_expences}'
                 ],
                 [
                     $request->id,
@@ -777,7 +786,8 @@ class TravelExpensesController extends Controller
                     $request->date_start,
                     $request->date_end,
                     $mount_all,
-                    $price_all 
+                    $price_all,
+                    $details_expences,
                 ],
                 $template
             );
