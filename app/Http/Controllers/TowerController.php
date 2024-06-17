@@ -159,6 +159,8 @@ class TowerController extends Controller
                 'key.name as key__name',
                 'key.latitude as key__latitude',
                 'key.longitude as key__longitude',
+                'key.position_x as key__position_x',
+                'key.position_y as key__position_y',
                 'people.name as people__name',
                 'people.lastname as people__lastname',
 
