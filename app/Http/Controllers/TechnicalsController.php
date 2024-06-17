@@ -1448,13 +1448,14 @@ class TechnicalsController extends Controller
                         $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
                         $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
                         $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->type = "EPP";
                         $productByTechnicalJpa->save();
                     } else {
                         $productByTechnicalJpaNew = new ProductByTechnical();
                         $productByTechnicalJpaNew->_technical = $request->id;
                         $productByTechnicalJpaNew->_product = $productJpa->id;
                         $productByTechnicalJpaNew->_model = $productJpa->_model;
-                        $productByTechnicalJpaNew->type = $request->type;
+                        $productByTechnicalJpaNew->type = "EPP";
                         $productByTechnicalJpaNew->mount_new = $product['mount_new'];
                         $productByTechnicalJpaNew->mount_second = $product['mount_second'];
                         $productByTechnicalJpaNew->mount_ill_fated = $product['mount_ill_fated'];
