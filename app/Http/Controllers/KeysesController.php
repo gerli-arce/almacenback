@@ -6,10 +6,10 @@ use App\gLibraries\gJSON;
 use App\gLibraries\gTrace;
 use App\gLibraries\guid;
 use App\gLibraries\gValidate;
+use App\Models\Branch;
 use App\Models\Keyses;
 use App\Models\OperationKeys;
 use App\Models\People;
-use App\Models\Branch;
 use App\Models\Response;
 use App\Models\ViewKeys;
 use App\Models\ViewUsers;
@@ -21,6 +21,74 @@ use Illuminate\Support\Facades\DB;
 
 class KeysesController extends Controller
 {
+
+    public function search(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
+                throw new Exception('No tienes permisos para listar llaves');
+            }
+
+            $keysJpa = ViewKeys::select([
+                'id',
+                'name',
+            ])->whereNotNull('status')
+                ->WhereRaw("name LIKE CONCAT('%', ?, '%')", [$request->term])
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($keysJpa->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function searchById(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'keys', 'read')) {
+                throw new Exception('No tienes permisos para listar llaves');
+            }
+
+            $keysJpa = ViewKeys::select([
+                '*',
+            ])->find($request->id);
+
+            $key = gJSON::restore($keysJpa->toArray(), '__');
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setData($key);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
 
     public function lendKey(Request $request)
     {
@@ -69,7 +137,7 @@ class KeysesController extends Controller
 
             $response->setStatus(200);
             $response->setMessage("El prestamo de la llave se realizo correctamente");
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -127,7 +195,7 @@ class KeysesController extends Controller
 
             $response->setStatus(200);
             $response->setMessage("La devolución de la llave se realizo correctamente");
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -165,19 +233,19 @@ class KeysesController extends Controller
                 'operation_keys.reazon as reazon',
                 'people.id as person__id',
                 'people.name as person__name',
-                'people.lastname as person__lastname'
+                'people.lastname as person__lastname',
             ])->where('_key', $idkey)
-                            ->join('people','operation_keys._person_operation', 'people.id')
-                              ->where('type_operation', 'LEND')
-                              ->orderByDesc('id')
-                              ->first();
+                ->join('people', 'operation_keys._person_operation', 'people.id')
+                ->where('type_operation', 'LEND')
+                ->orderByDesc('id')
+                ->first();
 
             $keyOperationLen = gJSON::restore($operationKey->toArray(), '__');
 
             $response->setStatus(200);
             $response->setMessage("Operación correcta");
             $response->setData($keyOperationLen);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -236,7 +304,7 @@ class KeysesController extends Controller
             $keysesJpa->_branch = $branch_->id;
             $keysesJpa->price = $request->price;
             $keysesJpa->duplicate = $request->duplicate;
-            if($request->address){
+            if ($request->address) {
                 $keysesJpa->address = $request->address;
             }
             $keysesJpa->relative_id = guid::short();
@@ -258,24 +326,23 @@ class KeysesController extends Controller
                 $keysesJpa->image_full = null;
             }
 
-            if(isset($request->position_x)){
+            if (isset($request->position_x)) {
                 $keysesJpa->position_x = $request->position_x;
             }
 
-            if(isset($request->position_y)){
+            if (isset($request->position_y)) {
                 $keysesJpa->position_y = $request->position_y;
             }
 
-            if(isset($request->latitude)){
+            if (isset($request->latitude)) {
                 $keysesJpa->latitude = $request->latitude;
             }
 
-            if(isset($request->longitude)){
+            if (isset($request->longitude)) {
                 $keysesJpa->longitude = $request->longitude;
             }
 
-
-            if(isset($request->n_duplicates)){
+            if (isset($request->n_duplicates)) {
                 $keysesJpa->n_duplicates = $request->n_duplicates;
             }
 
@@ -292,7 +359,7 @@ class KeysesController extends Controller
 
             $response->setStatus(200);
             $response->setMessage("La llave se a agregado correctamente");
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -324,25 +391,25 @@ class KeysesController extends Controller
                 $query->whereNotNull('status');
             }
 
-            if($request->borrowed){
-                $query->where('status_key','EN USO');
-            }
-            
-            if($request->available){
-                $query->where('status_key','DISPONIBLE');
+            if ($request->borrowed) {
+                $query->where('status_key', 'EN USO');
             }
 
-            if(isset($request->search['position_x'])){
+            if ($request->available) {
+                $query->where('status_key', 'DISPONIBLE');
+            }
+
+            if (isset($request->search['position_x'])) {
                 $query->where('position_x', $request->search['position_x'])
-                ->orderBy('position_y','asc');
-            }else{
+                    ->orderBy('position_y', 'asc');
+            } else {
                 $query->orderBy($request->order['column'], $request->order['dir']);
             }
 
-            if(isset($request->search['position_y'])){
+            if (isset($request->search['position_y'])) {
                 $query->where('position_y', $request->search['position_y'])
-                ->orderBy('position_x','asc');
-            }else{
+                    ->orderBy('position_x', 'asc');
+            } else {
                 $query->orderBy($request->order['column'], $request->order['dir']);
             }
 
@@ -368,11 +435,11 @@ class KeysesController extends Controller
                 }
                 if ($column == 'coordenadas' || $column == '*') {
                     $q->orWhere(function ($query) use ($request) {
-                        $term = '%' . $request->search['value']. '%'; // Añadir comodines de búsqueda al término
+                        $term = '%' . $request->search['value'] . '%'; // Añadir comodines de búsqueda al término
                         $query->orWhereRaw("CONCAT(latitude, ',',longitude ) LIKE CONCAT('%', ?, '%')", [$term]);
                     });
                 }
-              
+
                 if ($column == 'description' || $column == '*') {
                     $q->orWhere('description', $type, $value);
                 }
@@ -396,7 +463,7 @@ class KeysesController extends Controller
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(ViewKeys::where('branch__correlative', $branch)->count());
             $response->setData($keys);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -439,7 +506,7 @@ class KeysesController extends Controller
             $content = $userJpa->image_content;
             $type = $userJpa->image_type;
             $response->setStatus(200);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $ruta = '../storage/images/llaves-default.jpg';
             $fp = fopen($ruta, 'r');
             $datos_image = fread($fp, filesize($ruta));
@@ -481,7 +548,6 @@ class KeysesController extends Controller
             }
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
-
 
             if (isset($request->name)) {
                 $verifyCatJpa = Keyses::select(['id', 'name'])
@@ -534,24 +600,23 @@ class KeysesController extends Controller
                 $keysJpa->date_entry = $request->date_entry;
             }
 
-            
-            if(isset($request->position_x)){
+            if (isset($request->position_x)) {
                 $keysJpa->position_x = $request->position_x;
             }
 
-            if(isset($request->position_y)){
+            if (isset($request->position_y)) {
                 $keysJpa->position_y = $request->position_y;
             }
 
-            if(isset($request->latitude)){
+            if (isset($request->latitude)) {
                 $keysJpa->latitude = $request->latitude;
             }
 
-            if(isset($request->longitude)){
+            if (isset($request->longitude)) {
                 $keysJpa->longitude = $request->longitude;
             }
 
-            if(isset($request->n_duplicates)){
+            if (isset($request->n_duplicates)) {
                 $keysJpa->n_duplicates = $request->n_duplicates;
             }
 
@@ -574,7 +639,7 @@ class KeysesController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('La categoria ha sido actualizado correctamente');
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -617,7 +682,7 @@ class KeysesController extends Controller
             $response->setStatus(200);
             $response->setMessage('La llave a sido eliminada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -659,7 +724,7 @@ class KeysesController extends Controller
             $response->setStatus(200);
             $response->setMessage('La llave a sido restaurada correctamente');
             $response->setData($role->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -670,7 +735,8 @@ class KeysesController extends Controller
         }
     }
 
-    public function RecordKey(Request $request, $idkey){
+    public function RecordKey(Request $request, $idkey)
+    {
         $response = new Response();
         try {
 
@@ -683,13 +749,12 @@ class KeysesController extends Controller
                 throw new Exception('No tienes permisos para listar llaves');
             }
 
-            $operatonsKeyJpa = OperationKeys::where('_key',$idkey)->orderBy('id', 'asc')->get();
+            $operatonsKeyJpa = OperationKeys::where('_key', $idkey)->orderBy('id', 'asc')->get();
 
-          
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setData($operatonsKeyJpa->toArray());
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
         } finally {
@@ -699,7 +764,6 @@ class KeysesController extends Controller
             );
         }
     }
-    
 
     public function generateReport(Request $request)
     {
@@ -716,7 +780,6 @@ class KeysesController extends Controller
             $pdf = new Dompdf($options);
             $template = file_get_contents('../storage/templates/reportKeys.html');
 
-            
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
             $user = ViewUsers::select([
                 'id',
@@ -747,19 +810,19 @@ class KeysesController extends Controller
                 '_update_user',
             ])->where('_branch', $branch_->id)->whereNotNull('status');
 
-            $type= 'GENERAL';
-            if($request->type == 'lends'){
-                $query->where('status_key','EN USO');
+            $type = 'GENERAL';
+            if ($request->type == 'lends') {
+                $query->where('status_key', 'EN USO');
                 $type = 'PRESTADAS';
-            }else if($request->type == 'availables'){
-                $query->where('status_key','DISPONIBLE');
+            } else if ($request->type == 'availables') {
+                $query->where('status_key', 'DISPONIBLE');
                 $type = 'DISPONIBLES';
             }
 
             $KeysesJpa = $query->get();
 
             $summary = '';
-           
+
             $count = 1;
             foreach ($KeysesJpa as $key) {
 
@@ -767,7 +830,7 @@ class KeysesController extends Controller
 
                 $bg_key = 'background-color: #5da0ff30';
 
-                if($key->status_key != 'DISPONIBLE'){
+                if ($key->status_key != 'DISPONIBLE') {
                     $bg_key = 'background-color: #f97d7d2b';
                 }
 
@@ -846,6 +909,5 @@ class KeysesController extends Controller
             );
         }
     }
-
 
 }

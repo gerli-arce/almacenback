@@ -10,6 +10,7 @@ use App\Models\Branch;
 use App\Models\DetailSale;
 use App\Models\EntryDetail;
 use App\Models\EntryProducts;
+use App\Models\PhotographsByTower;
 use App\Models\Product;
 use App\Models\ProductByTower;
 use App\Models\Response;
@@ -18,13 +19,12 @@ use App\Models\Stock;
 use App\Models\Tower;
 use App\Models\User;
 use App\Models\ViewProductsByTower;
-use App\Models\PhotographsByTower;
 use App\Models\ViewStockTower;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class TowerController extends Controller
 {
@@ -57,6 +57,7 @@ class TowerController extends Controller
 
             $towerJpa = new Tower();
             $towerJpa->name = $request->name;
+            $towerJpa->_keys = $request->_keys;
             $towerJpa->description = $request->description;
             $towerJpa->contract_date_start = $request->contract_date_start;
             $towerJpa->contract_date_end = $request->contract_date_end;
@@ -154,13 +155,18 @@ class TowerController extends Controller
                 'towers._creation_user as _creation_user',
                 'towers.creation_date as creation_date',
                 'towers.status as status',
+                'key.id as key__id',
+                'key.name as key__name',
+                'key.latitude as key__latitude',
+                'key.longitude as key__longitude',
                 'people.name as people__name',
                 'people.lastname as people__lastname',
 
             ])
-            ->join('users', 'towers._creation_user', 'users.id')
-            ->join('people', 'users._person', 'people.id')
-                ->orderBy('towers.'.$request->order['column'], $request->order['dir']);
+                ->leftJoin('users', 'towers._creation_user', 'users.id')
+                ->leftJoin('keyses as key', 'towers._keys', 'key.id')
+                ->join('people', 'users._person', 'people.id')
+                ->orderBy('towers.' . $request->order['column'], $request->order['dir']);
 
             if (!$request->all) {
                 $query->whereNotNull('towers.status');
@@ -191,12 +197,18 @@ class TowerController extends Controller
                 ->take($request->length)
                 ->get();
 
+            $towers = [];
+            foreach ($towerJpa as $towerJpa) {
+                $tower = gJSON::restore($towerJpa->toArray(), '__');
+                $towers[] = $tower;
+            }
+
             $response->setStatus(200);
             $response->setMessage('Operación correcta');
             $response->setDraw($request->draw);
             $response->setITotalDisplayRecords($iTotalDisplayRecords);
             $response->setITotalRecords(Tower::count());
-            $response->setData($towerJpa->toArray());
+            $response->setData($towers);
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
@@ -336,14 +348,16 @@ class TowerController extends Controller
 
             if (isset($request->name)) {
                 //$verifyCatJpa = Tower::select(['id', 'name'])
-                 //   ->where('name', $request->name)
-                 //   ->where('id', $request->id)
-                 //   ->first();
+                //   ->where('name', $request->name)
+                //   ->where('id', $request->id)
+                //   ->first();
                 //if ($verifyCatJpa) {
-                 //   throw new Exception("Error: La torre ya existe");
-               // }
+                //   throw new Exception("Error: La torre ya existe");
+                // }
                 $towerJpa->name = $request->name;
             }
+
+            $towerJpa->_keys = $request->_keys;
 
             if (isset($request->latitude)) {
                 $towerJpa->latitude = $request->latitude;
@@ -352,7 +366,6 @@ class TowerController extends Controller
             if (isset($request->longitude)) {
                 $towerJpa->longitude = $request->longitude;
             }
-
 
             if (
                 isset($request->image_type) &&
@@ -374,7 +387,6 @@ class TowerController extends Controller
                 }
             }
 
-            
             if (
                 isset($request->image_contract_type) &&
                 isset($request->image_contract_mini) &&
@@ -447,7 +459,7 @@ class TowerController extends Controller
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
 
-            $towerJpa = Tower::select(['id','name'])->where('id', $request->_tower)->first();
+            $towerJpa = Tower::select(['id', 'name'])->where('id', $request->_tower)->first();
 
             $salesProduct = new SalesProducts();
             if (isset($request->_technical)) {
@@ -482,12 +494,12 @@ class TowerController extends Controller
                         ->where('_branch', $branch_->id)
                         ->first();
                     if ($product['product']['type'] == "MATERIAL") {
-                        $stock->mount_new = $stock->mount_new -  $product['mount_new'];
-                        $stock->mount_second = $stock->mount_second -  $product['mount_second'];
-                        $stock->mount_ill_fated = $stock->mount_ill_fated -  $product['mount_ill_fated'];
-                        $productJpa->mount = $stock->mount_new -   $stock->mount_second;
+                        $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                        $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                        $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+                        $productJpa->mount = $stock->mount_new - $stock->mount_second;
                     } else {
-                        $productJpa->disponibility = "TORRE: ".$towerJpa->name;
+                        $productJpa->disponibility = "TORRE: " . $towerJpa->name;
                         if ($productJpa->product_status == "NUEVO") {
                             $stock->mount_new = $stock->mount_new - 1;
                         } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -815,7 +827,7 @@ class TowerController extends Controller
 
             $salesProduct = SalesProducts::find($request->id);
 
-            $towerJpa = Tower::select(['id','name'])->where('id', $salesProduct->_tower)->first();
+            $towerJpa = Tower::select(['id', 'name'])->where('id', $salesProduct->_tower)->first();
 
             if (isset($request->_technical)) {
                 $salesProduct->_technical = $request->_technical;
@@ -841,7 +853,6 @@ class TowerController extends Controller
                             $stock = Stock::where('_model', $productJpa->_model)
                                 ->where('_branch', $branch_->id)
                                 ->first();
-
 
                             if (intval($detailSale->mount_new) != intval($product['mount_new'])) {
                                 if (intval($detailSale->mount_new) > intval($product['mount_new'])) {
@@ -894,12 +905,12 @@ class TowerController extends Controller
                             ->first();
 
                         if ($product['product']['type'] == "MATERIAL") {
-                            $stock->mount_new =  $stock->mount_new - $product['mount_new'];
-                            $stock->mount_second =  $stock->mount_second - $product['mount_second'];
-                            $stock->mount_ill_fated =  $stock->mount_ill_fated - $product['mount_ill_fated'];
+                            $stock->mount_new = $stock->mount_new - $product['mount_new'];
+                            $stock->mount_second = $stock->mount_second - $product['mount_second'];
+                            $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
                             $productJpa->mount = $stock->mount_new - $stock->mount_second;
                         } else {
-                            $productJpa->disponibility = "TORRE: ".$towerJpa->name;
+                            $productJpa->disponibility = "TORRE: " . $towerJpa->name;
                             if ($productJpa->product_status == "NUEVO") {
                                 $stock->mount_new = $stock->mount_new - 1;
                             } else if ($productJpa->product_status == "SEMINUEVO") {
@@ -1039,8 +1050,7 @@ class TowerController extends Controller
 
             $detailsSalesJpa = DetailSale::where('_sales_product', $saleProductJpa->id)
                 ->get();
-            
-            
+
             $TowerJpa = Tower::find($request->tower['id']);
 
             $branch_ = Branch::select('id', 'correlative')->where('correlative', $branch)->first();
@@ -1061,7 +1071,7 @@ class TowerController extends Controller
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
                 } else {
                     $productJpa->disponibility = 'DISPONIBLE';
-                    $productJpa->condition_product = "REGRESO DE TORRE: ".$TowerJpa->name." POR CANCELACIÓN DE LIQUIDACIÓN";
+                    $productJpa->condition_product = "REGRESO DE TORRE: " . $TowerJpa->name . " POR CANCELACIÓN DE LIQUIDACIÓN";
 
                     if ($productJpa->product_status == "NUEVO") {
                         $stock->mount_new = $stock->mount_new + 1;
@@ -1242,7 +1252,7 @@ class TowerController extends Controller
             $entryProductsJpa->_technical = $request->_technical;
             $entryProductsJpa->_branch = $branch_->id;
             $entryProductsJpa->_type_operation = $request->_type_operation;
-            $entryProductsJpa->description =  $request->description;
+            $entryProductsJpa->description = $request->description;
             $entryProductsJpa->_tower = $request->_tower;
             $entryProductsJpa->type_entry = "DEVOLUCION DE TORRE";
             $entryProductsJpa->entry_date = gTrace::getDate('mysql');
@@ -1526,7 +1536,6 @@ class TowerController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
             $PhotographsByTowerJpa = new PhotographsByTower();
             $PhotographsByTowerJpa->_tower = $request->id;
             $PhotographsByTowerJpa->description = $request->description;
@@ -1606,9 +1615,9 @@ class TowerController extends Controller
                     $PhotographsByTowerJpa->image_type = $request->image_type;
                     $PhotographsByTowerJpa->image_mini = base64_decode($request->image_mini);
                     $PhotographsByTowerJpa->image_full = base64_decode($request->image_full);
-                } 
-            } 
-           
+                }
+            }
+
             $PhotographsByTowerJpa->_update_user = $userid;
             $PhotographsByTowerJpa->update_date = gTrace::getDate('mysql');
             $PhotographsByTowerJpa->save();
@@ -1645,12 +1654,10 @@ class TowerController extends Controller
                 throw new Exception("Error: No deje campos vacíos");
             }
 
-
             $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            ->where('_tower', $id)->whereNotNUll('status')
-            ->orderBy('id', 'desc')
-            ->get();
-
+                ->where('_tower', $id)->whereNotNUll('status')
+                ->orderBy('id', 'desc')
+                ->get();
 
             $response->setStatus(200);
             $response->setMessage('Operación correcta.');
@@ -1717,7 +1724,8 @@ class TowerController extends Controller
         }
     }
 
-    public function deleteImage(Request $request, $id){
+    public function deleteImage(Request $request, $id)
+    {
         $response = new Response();
         try {
 
@@ -1734,7 +1742,6 @@ class TowerController extends Controller
             ) {
                 throw new Exception("Error: No deje campos vacíos");
             }
-
 
             $PhotographsByTowerJpa = PhotographsByTower::find($id);
             $PhotographsByTowerJpa->_update_user = $userid;
@@ -1825,14 +1832,14 @@ class TowerController extends Controller
                 if ($product['product']['type'] == 'EQUIPO') {
                     $details_equipment = '';
                 }
-                $details_product .="
+                $details_product .= "
                     <div style='border: 2px solid #bbc7d1; border-radius: 9px; width: 25%; display: inline-block; padding:8px; font-size:12px; margin-left:10px;'>
                         <center>
                             <p><strong>{$product['product']['model']['model']}</strong></p>
                             <img src='https://almacendev.fastnetperu.com.pe/api/model/{$product['product']['model']['relative_id']}/mini' style='object-fit: cover; object-position: center center; cursor: pointer; height:80px;margin-top:25px;border:solid 2px #2f3a599e;border-radius:8px; padding:5px;'></img>
                             <div style='{$details_equipment}'>
                                 <p>Mac: <strong>{$product['product']['mac']}</strong><p>
-                                <p>Serie: <strong>{$product['product']['serie']}</strong></p>                                 
+                                <p>Serie: <strong>{$product['product']['serie']}</strong></p>
                             </div>
                             <div>
                                 <p style='font-size:20px; color:#2f6593'>Nu:{$product['mount_new']} | Se:{$detailJpa['mount_second']} | Ma:{$detailJpa['mount_ill_fated']}</p>
@@ -1841,16 +1848,15 @@ class TowerController extends Controller
                     </div>
                 ";
 
-
                 $model = $relativeId = $unity = "";
                 if ($product['product']['type'] === "EQUIPO") {
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
-                    $unity =  $product['product']['model']['unity']['name'];
+                    $unity = $product['product']['model']['unity']['name'];
                 } else {
                     $model = $product['product']['model']['model'];
                     $relativeId = $product['product']['model']['relative_id'];
-                    $unity =  $product['product']['model']['unity']['name'];
+                    $unity = $product['product']['model']['unity']['name'];
                 }
                 $mount_new = $product['mount_new'];
                 $mount_second = $product['mount_second'];
@@ -1861,11 +1867,11 @@ class TowerController extends Controller
                     $models[$model]['mount_ill_fated'] += $mount_ill_fated;
                 } else {
                     $models[$model] = array(
-                        'model' => $model, 
-                        'mount_new' => $mount_new, 
-                        'mount_second' => $mount_second, 
-                        'mount_ill_fated' => $mount_ill_fated, 
-                        'relative_id' => $relativeId, 
+                        'model' => $model,
+                        'mount_new' => $mount_new,
+                        'mount_second' => $mount_second,
+                        'mount_ill_fated' => $mount_ill_fated,
+                        'relative_id' => $relativeId,
                         'unity' => $unity);
                 }
             }
@@ -1908,7 +1914,7 @@ class TowerController extends Controller
                     $branch_->name,
                     gTrace::getDate('long'),
                     $request->tower['name'],
-                    $request->technical['name'].' '.$request->technical['lastname'],
+                    $request->technical['name'] . ' ' . $request->technical['lastname'],
                     $request->date_sale,
                     $request->description,
                     $sumary,
@@ -1930,7 +1936,8 @@ class TowerController extends Controller
         }
     }
 
-    public function reportDetailsByTower(Request $request){
+    public function reportDetailsByTower(Request $request)
+    {
         try {
             [$branch, $status, $message, $role, $userid] = gValidate::get($request);
             if ($status != 200) {
@@ -1955,25 +1962,23 @@ class TowerController extends Controller
                 'users.id as id',
                 'users.username as username',
                 'people.name as person__name',
-                'people.lastname as person__lastname'
+                'people.lastname as person__lastname',
             ])
                 ->join('people', 'users._person', 'people.id')
                 ->where('users.id', $userid)->first();
-          
 
             $TowerJpa = Tower::find($request->id);
 
             $PhotographsByTowerJpa = PhotographsByTower::select(['id', 'description', '_creation_user', 'creation_date', '_update_user', 'update_date'])
-            ->where('_tower', $TowerJpa->id)->whereNotNUll('status')
-            ->orderBy('id', 'desc')
-            ->get();
+                ->where('_tower', $TowerJpa->id)->whereNotNUll('status')
+                ->orderBy('id', 'desc')
+                ->get();
 
             $images = '';
 
-
             $count = 1;
 
-            foreach($PhotographsByTowerJpa as $image){
+            foreach ($PhotographsByTowerJpa as $image) {
 
                 $userCreation = User::select([
                     'users.id as id',
@@ -1991,7 +1996,7 @@ class TowerController extends Controller
                     </center>
                 </div>
                 ";
-                $count +=1;
+                $count += 1;
             }
 
             $template = str_replace(
