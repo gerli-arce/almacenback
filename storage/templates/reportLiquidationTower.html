@@ -180,6 +180,20 @@
                 margin: 0px;
                 padding: 0px;
             }
+
+            .bg-secondary {
+                border: solid 1px #283c4d96;
+                background-color: #889bac36;
+                color: #2a3a49 !important;
+                width: 30%;
+            }
+
+            .bg-red {
+                color: red;
+                border: solid 1px red;
+                background-color: rgb(255, 213, 213);
+            }
+
             @media all {
                 div.page-break {
                     display: block;
@@ -245,12 +259,36 @@
             </div>
             <br />
             <p id="date">{branch_onteraction}, {issue_long_date}</p>
-            <p><strong>Torre:</strong>{project_name}</p>
-            <p><strong>Técnico:</strong> {technical}</p>
-            <p><strong>Fecha:</strong> {date_sale}</p>
-            <p style="margin-top: 6px">
-                <strong>Descripción:</strong>{description}
-            </p>
+            <div>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td class="bg-secondary">TORRE</td>
+                            <td>{project_name}</td>
+                        </tr>
+                        <tr>
+                            <td  class="bg-secondary">TÉCNICO</td>
+                            <td>{technical}</td>
+                        </tr>
+                        <tr>
+                            <td  class="bg-secondary">FECHA</td>
+                            <td>{date_sale}</td>
+                        </tr>
+                        <tr>
+                            <td  class="bg-secondary">DESCRIPCIÓN</td>
+                            <td>{description}</td>
+                        </tr>
+                        <tr>
+                            <td  class="bg-secondary">COORDENADAS</td>
+                            <td>{coordinates}</td>
+                        </tr>
+                        <tr>
+                            <td  class="bg-secondary">LLAVE</td>
+                            <td>{key}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <center class="text-bold" style="margin-top: 8px">Resumen</center>
             <table style="height: 370px; font-size: 12px;">
