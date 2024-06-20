@@ -1921,8 +1921,8 @@ class TowerController extends Controller
                     $request->technical['name'] . ' ' . $request->technical['lastname'],
                     $request->date_sale,
                     $request->description,
-                    $request->tower['latitude'].','.$request->tower['longitude'],
-                    $request->tower['key']['name'].'<strong> (X - '.$request->tower['key']['position_x'].') ( Y -'.$request->tower['key']['position_x'].')<strong>',
+                    $request->tower['latitude'] . ',' . $request->tower['longitude'],
+                    $request->tower['key']['name'] . '<strong> (X - ' . $request->tower['key']['position_x'] . ') ( Y -' . $request->tower['key']['position_x'] . ')<strong>',
                     $sumary,
                     $details_product,
                 ],
@@ -2035,6 +2035,96 @@ class TowerController extends Controller
             $pdf->loadHTML($template);
             $pdf->render();
             return $pdf->stream('Torre.pdf');
+        } catch (\Throwable $th) {
+            $response = new Response();
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function reportAllTowers(Request $request)
+    {
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'plant_pending', 'read')) {
+                throw new Exception('No tienes permisos para listar encomiedas creadas');
+            }
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $pdf = new Dompdf($options);
+            $template = file_get_contents('../storage/templates/reportDetailsByTower.html');
+
+            $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
+            $sumary = '';
+
+            $user = User::select([
+                'users.id as id',
+                'users.username as username',
+                'people.name as person__name',
+                'people.lastname as person__lastname',
+            ])
+                ->join('people', 'users._person', 'people.id')
+                ->where('users.id', $userid)->first();
+
+            $TowerJpa = Tower::select([
+                'towers.id as id',
+                'towers.name as name',
+                'towers.description as description',
+                'towers.latitude as latitude',
+                'towers.longitude as longitude',
+                'towers.relative_id as relative_id',
+                'towers.camera as camera',
+                'towers.contract_date_start as contract_date_start',
+                'towers.contract_date_end as contract_date_end',
+                'towers.price_month as price_month',
+                'towers._creation_user as _creation_user',
+                'towers.creation_date as creation_date',
+                'towers.status as status',
+            ])->whereNotNull('status')
+                ->orderBy('id', 'desc')->get();
+
+            $towers = [];
+            foreach ($TowerJpa as $towerJpa) {
+                $tower = gJSON::restore($towerJpa->toArray(), '__');
+                $towers[] = $tower;
+            }
+
+            foreach($towers as $tower){
+                
+            }
+
+            // $template = str_replace(
+            //     [
+            //         '{branch_onteraction}',
+            //         '{issue_long_date}',
+            //         '{summary}',
+            //     ],
+            //     [
+            //         $branch_->name,
+            //         gTrace::getDate('long'),
+            //         $sumary,
+            //     ],
+            //     $template
+            // );
+            // $pdf->loadHTML($template);
+            // $pdf->render();
+            // return $pdf->stream('Torre.pdf');
+
+            $response = new Response();
+            $response->setStatus(200);
+            $response->setData($towers);
+            $response->setMessage('operacion correcta');
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);

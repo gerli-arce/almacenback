@@ -423,6 +423,7 @@ Route::delete('/towers/image/{id}', [TowerController::class, 'deleteImage']);
 Route::get('/towers/image/{id}', [TowerController::class, 'getImages']);
 Route::post('/towers/generate/report/details', [TowerController::class, 'reportDetailsByTower']);
 Route::post('/towers/generate/report/liquidation', [TowerController::class, 'generateReportByLiquidation']);
+Route::post('/towers/generate/report/all', [TowerController::class, 'reportAllTowers']);
 
 // SALE
 Route::post('/sale', [SaleController::class, 'store']);
