@@ -23,6 +23,7 @@ use App\Models\ViewStockTower;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -2059,10 +2060,16 @@ class TowerController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/reportDetailsByTower.html');
+            $template = file_get_contents('../storage/templates/towers/reportAllTowers.html');
 
             $branch_ = Branch::select('id', 'name', 'correlative')->where('correlative', $branch)->first();
-            $sumary = '';
+            $summary = '';
+
+            $fechaInicio = Carbon::parse($request->date_start);
+            $fechaFin = Carbon::parse($request->date_end);
+
+            $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
+            $fechaFin->setTime(23, 59, 59); // Establecer la fecha de fin a 23:59:59
 
             $user = User::select([
                 'users.id as id',
@@ -2088,6 +2095,7 @@ class TowerController extends Controller
                 'towers.creation_date as creation_date',
                 'towers.status as status',
             ])->whereNotNull('status')
+            ->whereBetween('towers.creation_date', [$fechaInicio, $fechaFin])
                 ->orderBy('id', 'desc')->get();
 
             $towers = [];
@@ -2096,35 +2104,54 @@ class TowerController extends Controller
                 $towers[] = $tower;
             }
 
+            $count = 1;
             foreach($towers as $tower){
-                
+                $camera = "SI";
+                if($tower['camera'] == 0){
+                    $camera = "NO";
+                }
+
+                $summary .= "
+                    <tr>
+                        <td>{$count}</td>
+                        <td>{$tower['name']}</td>
+                        <td>{$camera}</td>
+                        <td>{$tower['latitude']},{$tower['longitude']}</td>
+                    </tr>
+                ";
+
+                $count ++;
             }
 
-            // $template = str_replace(
-            //     [
-            //         '{branch_onteraction}',
-            //         '{issue_long_date}',
-            //         '{summary}',
-            //     ],
-            //     [
-            //         $branch_->name,
-            //         gTrace::getDate('long'),
-            //         $sumary,
-            //     ],
-            //     $template
-            // );
-            // $pdf->loadHTML($template);
-            // $pdf->render();
-            // return $pdf->stream('Torre.pdf');
-
-            $response = new Response();
-            $response->setStatus(200);
-            $response->setData($towers);
-            $response->setMessage('operacion correcta');
-            return response(
-                $response->toArray(),
-                $response->getStatus()
+            $template = str_replace(
+                [
+                    '{branch_onteraction}',
+                    '{issue_long_date}',
+                    '{date_start}',
+                    '{date_end}',
+                    '{summary}',
+                ],
+                [
+                    $branch_->name,
+                    gTrace::getDate('long'),
+                    $request->date_start,
+                    $request->date_end,
+                    $summary,
+                ],
+                $template
             );
+            $pdf->loadHTML($template);
+            $pdf->render();
+            return $pdf->stream('Torre.pdf');
+
+            // $response = new Response();
+            // $response->setStatus(200);
+            // $response->setData($towers);
+            // $response->setMessage('operacion correcta');
+            // return response(
+            //     $response->toArray(),
+            //     $response->getStatus()
+            // );
         } catch (\Throwable $th) {
             $response = new Response();
             $response->setStatus(400);

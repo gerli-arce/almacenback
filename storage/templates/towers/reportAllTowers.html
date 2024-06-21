@@ -301,7 +301,7 @@
                     >
                         <span>RUC 20602791816</span>
                         <br />
-                        <span>VIATICOS</span>
+                        <span>TORRES</span>
                         <br />
                         <span>GENERAL</span>
                     </div>
@@ -309,46 +309,23 @@
             </div>
             <br />
             <p id="date">{branch_onteraction}, {issue_long_date}</p>
+            <div>
+                <p>FECHA INICIO: {date_start}</p>
+                <p>FECHA FIN: {date_end}</p>
+            </div>
+           
+            <p><strong>TORRES</strong></p>
             <table>
                 <thead>
                     <tr>
-                        <td colspan="2">
-                            <strong>
-                                <center>{technical}</center>
-                            </strong>
-                        </td>
+                        <td>#</td>
+                        <td>NOMBRE</td>
+                        <td>CAMARA</td>
+                        <td>COORDENADAS</td>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="bg-secondary">FECHA INICIO</td>
-                        <td>{date_start}</td>
-                    </tr>
-                    <tr>
-                        <td class="bg-secondary">FECHA FIN</td>
-                        <td>{date_end}</td>
-                    </tr>
-                    <tr>
-                        <td class="bg-secondary">VIATICOS TOTAL</td>
-                        <td>{expence_all}</td>
-                    </tr>
-                    <tr>
-                        <td class="bg-secondary">MONTO TOTAL</td>
-                        <td class="bg-yellow">S/{price_all}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p><strong>DETALLES:</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <td>FECHA</td>
-                        <td>MONTO</td>
-                        <td>DESCRIPCIÓN</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {details_expences}
+                    {summary}
                 </tbody>
             </table>
         </main>
