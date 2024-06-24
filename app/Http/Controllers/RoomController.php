@@ -240,6 +240,90 @@ class RoomController extends Controller
         }
     }
 
+    public function destroy(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'room', 'delete_restore')) {
+                throw new Exception('No tienes permisos para eliminar ');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $roomJpa = Room::find($request->id);
+            if (!$roomJpa) {
+                throw new Exception('El registro que deseas eliminar no existe');
+            }
+
+            $roomJpa->update_date = gTrace::getDate('mysql');
+            $roomJpa->_update_user = $userid;
+            $roomJpa->status = null;
+            $roomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El registro a sido eliminada correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function restore(Request $request)
+    {
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'room', 'delete_restore')) {
+                throw new Exception('No tienes permisos para restaurar.');
+            }
+
+            if (
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: No deje campos vacíos");
+            }
+
+            $roomJpa = Room::find($request->id);
+            if (!$roomJpa) {
+                throw new Exception('El registro que deseas restaurar no existe');
+            }
+
+            $roomJpa->status = "1";
+            $roomJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('El registro a sido restaurada correctamente');
+            $response->setData($role->toArray());
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function image($relative_id, $size)
     {
         $response = new Response();

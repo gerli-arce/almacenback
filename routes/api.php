@@ -468,6 +468,8 @@ Route::get('/sales/details/{id}', [SalesController::class, 'getDetailsSaleById']
 Route::post('/room', [RoomController::class, 'store']);
 Route::patch('/room', [RoomController::class, 'update']);
 Route::post('/room/paginate', [RoomController::class, 'paginate']);
+Route::delete('/room', [RoomController::class, 'destroy']);
+Route::post('/room/restore', [RoomController::class, 'restore']);
 Route::post('/room/products', [RoomController::class, 'setProductsByRoom']);
 Route::get('/room/get/products/{id}', [RoomController::class, 'getProductsByRoom']);
 Route::post('/room/products/paginate', [RoomController::class, 'getRecordsByRoom']);
