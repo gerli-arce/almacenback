@@ -627,6 +627,7 @@ Route::post('/claims/reports/reitered', [ClaimsController::class, 'generateRepor
 // VALIDATIONS
 Route::post('/validations', [ValidationController::class, 'store']);
 Route::post('/validations/paginate', [ValidationController::class, 'paginate']);
+Route::delete('/validations', [ValidationController::class, 'delete']);
 Route::patch('/validations', [ValidationController::class, 'update']);
 Route::post('/validations/get', [ValidationController::class, 'getValidationBySale']);
 Route::post('/validations/reports/by/validation', [ValidationController::class, 'generateReportByValidation']);

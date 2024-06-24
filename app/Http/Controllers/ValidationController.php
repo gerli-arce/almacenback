@@ -193,7 +193,7 @@ class ValidationController extends Controller
                 throw new Exception('Error: No deje campos vacíos');
             }
 
-            $Validations = Validations::where('_sale', $request->id)->first();
+            $Validations = Validations::where('_sale', $request->id)->whereNotNull('status')->first();
             $Validations->validations = gJSON::parse($Validations->validations);
 
             $response->setStatus(200);
@@ -260,6 +260,48 @@ class ValidationController extends Controller
 
             $response->setStatus(200);
             $response->setMessage('Validacion actializada correctamente');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function delete(request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'validations', 'delete')) {
+                throw new Exception('No tienes permisos para eliminar');
+            }
+
+            if (
+                !isset($request->id) ||
+                !isset($request->validation_id)
+            ) {
+                throw new Exception('Error: No deje campos vacíos');
+            }
+
+            $Validations = Validations::find($request->validation_id);
+            $Validations->status = null;
+            $Validations->save();
+
+            $SalesProductsJpa = SalesProducts::find($request->id);
+            $SalesProductsJpa->validation = null;
+            $SalesProductsJpa->validation_id = null;
+            $SalesProductsJpa->validation_date = null;
+            $SalesProductsJpa->save();
+
+            $response->setStatus(200);
+            $response->setMessage('Validacion eliminada correctamente');
         } catch (\Throwable $th) {
             $response->setStatus(400);
             $response->setMessage($th->getMessage());
