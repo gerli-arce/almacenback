@@ -328,6 +328,32 @@ class TechnicalsController extends Controller
             $salesProduct->status = "1";
             $salesProduct->save();
 
+            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
+                ->whereNot('type', 'LEND')
+                ->whereNotNull('status')
+                ->where('_model', $request->product['model']['id'])->first();
+
+            $productByTechnicalJpa->mount_new += $request->mount_new;
+            $productByTechnicalJpa->mount_second += $request->mount_second;
+            $productByTechnicalJpa->mount_ill_fated += $request->mount_ill_fated;
+
+            $productJpa = Product::find($request->product['id']);
+
+            $stock = Stock::where('_model', $productJpa->_model)
+                ->where('_branch', $branch_->id)
+                ->first();
+
+            $stock->mount_new -= $request->mount_new;
+            $stock->mount_second -= $request->mount_second;
+            $stock->mount_ill_fated -= $request->mount_ill_fated;
+            $stock->save();
+
+            $productJpa->mount = $stock->mount_new + $stock->mount_second;
+
+            $productJpa->save();
+
+            $productByTechnicalJpa->save();
+
             $detailSale = new DetailSale();
             $detailSale->_product = $request->product['id'];
             $detailSale->mount_new = $request->mount_new;
@@ -338,31 +364,6 @@ class TechnicalsController extends Controller
             $detailSale->status = '1';
             $detailSale->save();
 
-            $productByTechnicalJpa = ProductByTechnical::where('_technical', $request->technical['id'])
-                ->whereNot('type', 'LEND')
-                ->whereNotNull('status')
-                ->where('_model', $request->product['model']['id'])->first();
-
-            $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $request->mount_new;
-            $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $request->mount_second;
-            $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $request->mount_ill_fated;
-
-            $productJpa = Product::find($request->product['id']);
-
-            $stock = Stock::where('_model', $productJpa->_model)
-                ->where('_branch', $branch_->id)
-                ->first();
-
-            $stock->mount_new = $stock->mount_new - $request->mount_new;
-            $stock->mount_second = $stock->mount_second - $request->mount_second;
-            $stock->mount_ill_fated = $stock->mount_ill_fated - $request->mount_ill_fated;
-            $stock->save();
-
-            $productJpa->mount = $stock->mount_new + $stock->mount_second;
-
-            $productJpa->save();
-
-            $productByTechnicalJpa->save();
             $response->setStatus(200);
             $response->setMessage('Productos agregados correctamente al stock del técnico');
         } catch (\Throwable $th) {
@@ -1307,9 +1308,9 @@ class TechnicalsController extends Controller
                     ->first();
 
                 if ($productJpa->type == 'MATERIAL') {
-                    $stock->mount_new = $stock->mount_new - $product['mount_new'];
-                    $stock->mount_second = $stock->mount_second - $product['mount_second'];
-                    $stock->mount_ill_fated = $stock->mount_ill_fated - $product['mount_ill_fated'];
+                    $stock->mount_new -= $product['mount_new'];
+                    $stock->mount_second -= $product['mount_second'];
+                    $stock->mount_ill_fated -= $product['mount_ill_fated'];
 
                     $productJpa->mount = $stock->mount_new + $stock->mount_second;
                     $stock->save();
@@ -1320,9 +1321,9 @@ class TechnicalsController extends Controller
                         ->whereNot('type', 'LEND')
                         ->where('_model', $product['product']['model']['id'])->first();
                     if ($productByTechnicalJpa) {
-                        $productByTechnicalJpa->mount_new = $productByTechnicalJpa->mount_new + $product['mount_new'];
-                        $productByTechnicalJpa->mount_second = $productByTechnicalJpa->mount_second + $product['mount_second'];
-                        $productByTechnicalJpa->mount_ill_fated = $productByTechnicalJpa->mount_ill_fated + $product['mount_ill_fated'];
+                        $productByTechnicalJpa->mount_new +=  $product['mount_new'];
+                        $productByTechnicalJpa->mount_second += $product['mount_second'];
+                        $productByTechnicalJpa->mount_ill_fated += $product['mount_ill_fated'];
                         $productByTechnicalJpa->save();
                     } else {
                         $productByTechnicalJpaNew = new ProductByTechnical();
