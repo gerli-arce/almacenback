@@ -144,7 +144,9 @@ Route::post('/technicals/search/branch', [TechnicalsController::class, 'searchBy
 Route::post('/technicals/restore', [TechnicalsController::class, 'restore']);
 Route::post('/technicals/products', [TechnicalsController::class, 'getProductsByTechnical']);
 Route::post('/technicals/products/stock', [TechnicalsController::class, 'getProductsByTechnicalStock']);
+Route::post('/technicals/products/paginate', [TechnicalsController::class, 'paginateProductsByTechnical']);
 Route::post('/technicals/epp/stock', [TechnicalsController::class, 'getEpp']);
+Route::post('/technicals/epp/paginate', [TechnicalsController::class, 'paginateEppByTechnical']);
 Route::post('/technicals/paginate', [TechnicalsController::class, 'paginate']);
 Route::post('/technicals/records', [TechnicalsController::class, 'getRecordProductsByTechnical']);
 Route::post('/technicals/change/status', [TechnicalsController::class, 'changeStatusStockTechnical']);

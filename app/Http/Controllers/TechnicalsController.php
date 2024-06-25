@@ -720,6 +720,152 @@ class TechnicalsController extends Controller
         }
     }
 
+    public function paginateProductsByTechnical(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
+            }
+           
+            $query = ViewProductByTechnical::where('technical__id', $request->technical)
+                ->whereNotNull('status')
+                ->whereNot('type', 'LEND')
+                ->where('type', 'PRODUCTO');
+         
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                // if ($column == 'mount_new' || $column == '*') {
+                //     $q->orWhere('mount_new', $type, $value);
+                // }
+                // if ($column == 'mount_second' || $column == '*') {
+                //     $q->orWhere('mount_second', $type, $value);
+                // }
+                // if ($column == 'mount_ill_fated' || $column == '*') {
+                //     $q->orWhere('mount_ill_fated', $type, $value);
+                // }
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+             
+            });
+            $iTotalDisplayRecords = $query->count();
+
+            $productsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $products = array();
+            foreach ($productsJpa as $ProductJpa) {
+                $product = gJSON::restore($ProductJpa->toArray(), '__');
+                $products[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewProductByTechnical::where('technical__id', $request->technical)
+            ->whereNotNull('status')
+            ->whereNot('type', 'LEND')
+            ->where('type', 'PRODUCTO')->count());
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+    public function paginateEppByTechnical(Request $request){
+        $response = new Response();
+        try {
+
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para listar técnicos');
+            }
+           
+            $query = ViewProductByTechnical::where('technical__id', $request->technical)
+            ->whereNotNull('status')
+            ->whereNot('type', 'LEND')
+            ->where('type', 'EPP');
+         
+            $query->where(function ($q) use ($request) {
+                $column = $request->search['column'];
+                $type = $request->search['regex'] ? 'like' : '=';
+                $value = $request->search['value'];
+                $value = $type == 'like' ? DB::raw("'%{$value}%'") : $value;
+
+                if ($column == 'id' || $column == '*') {
+                    $q->orWhere('id', $type, $value);
+                }
+                // if ($column == 'mount_new' || $column == '*') {
+                //     $q->orWhere('mount_new', $type, $value);
+                // }
+                // if ($column == 'mount_second' || $column == '*') {
+                //     $q->orWhere('mount_second', $type, $value);
+                // }
+                // if ($column == 'mount_ill_fated' || $column == '*') {
+                //     $q->orWhere('mount_ill_fated', $type, $value);
+                // }
+                if ($column == 'product__model__model' || $column == '*') {
+                    $q->orWhere('product__model__model', $type, $value);
+                }
+             
+            });
+            $iTotalDisplayRecords = $query->count();
+
+            $productsJpa = $query
+                ->skip($request->start)
+                ->take($request->length)
+                ->get();
+
+            $products = array();
+            foreach ($productsJpa as $ProductJpa) {
+                $product = gJSON::restore($ProductJpa->toArray(), '__');
+                $products[] = $product;
+            }
+
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+            $response->setDraw($request->draw);
+            $response->setITotalDisplayRecords($iTotalDisplayRecords);
+            $response->setITotalRecords(ViewProductByTechnical::where('technical__id', $request->technical)
+            ->whereNotNull('status')
+            ->whereNot('type', 'LEND')
+            ->where('type', 'EPP')->count());
+            $response->setData($products);
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
     public function getEpp(Request $request)
     {
         $response = new Response();
@@ -1558,7 +1704,7 @@ class TechnicalsController extends Controller
                 'view_sales.status as status',
             ])
                 ->distinct()
-                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
+               
                 ->orderBy('view_sales.' . $request->order['column'], $request->order['dir'])
                 ->where('technical_id', $request->search['technical'])
                 ->whereNotNUll('view_sales.status')
@@ -1567,6 +1713,7 @@ class TechnicalsController extends Controller
 
             if (isset($request->search['model'])) {
                 $query
+                ->leftJoin('view_details_sales', 'view_sales.id', '=', 'view_details_sales.sale_product_id')
                     ->where('view_details_sales.product__model__id', $request->search['model'])
                     ->where('type_intallation', 'AGREGADO_A_STOCK')
                     ->orWhere(function ($q) use ($request) {
