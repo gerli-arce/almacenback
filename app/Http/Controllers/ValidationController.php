@@ -136,7 +136,7 @@ class ValidationController extends Controller
             $Validations->validator = $request->validator;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
-            $Validations->creation_date = gTrace::getDate('mysql');
+            $Validations->creation_date = $request->creation_date;
             $Validations->_creation_user = $userid;
             $Validations->update_date = gTrace::getDate('mysql');
             $Validations->_update_user = $userid;
@@ -158,7 +158,7 @@ class ValidationController extends Controller
             }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
-            $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
+            $SalesProductsJpa->validation_date = $request->creation_date;
             $SalesProductsJpa->save();
 
             $response->setStatus(200);
@@ -238,6 +238,7 @@ class ValidationController extends Controller
             $Validations->validator = $request->validator;
             $Validations->_sale = $request->sale;
             $Validations->validations = gJSON::stringify($request->validations);
+            $Validations->creation_date = $request->creation_date;
             $Validations->update_date = gTrace::getDate('mysql');
             $Validations->_update_user = $userid;
             $Validations->save();
@@ -255,7 +256,7 @@ class ValidationController extends Controller
             }
             $SalesProductsJpa->validation = $request->validation;
             $SalesProductsJpa->validation_id = $Validations->id;
-            $SalesProductsJpa->validation_date = gTrace::getDate('mysql');
+            $SalesProductsJpa->validation_date = $request->creation_date;
             $SalesProductsJpa->save();
 
             $response->setStatus(200);
