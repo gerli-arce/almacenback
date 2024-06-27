@@ -1923,7 +1923,7 @@ class TowerController extends Controller
                     $request->date_sale,
                     $request->description,
                     $request->tower['latitude'] . ',' . $request->tower['longitude'],
-                    $request->tower['key']['name'] . '<strong> (X - ' . $request->tower['key']['position_x'] . ') ( Y -' . $request->tower['key']['position_x'] . ')<strong>',
+                    $request->tower['key']['name'] . '<strong> (X - ' . $request->tower['key']['position_x'] . ') ( Y -' . $request->tower['key']['position_y'] . ')<strong>',
                     $sumary,
                     $details_product,
                 ],
