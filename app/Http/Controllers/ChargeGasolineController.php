@@ -269,6 +269,14 @@ class ChargeGasolineController extends Controller
             $query = ViewChargeGasolineByCar::select('*')
                 ->orderBy($request->order['column'], $request->order['dir']);
 
+            if($request->is_bill){
+                $query->whereNotNull('image_type');
+            }
+
+            if($request->not_bill){
+                $query->where('image_type', null);
+            }
+
             if (!$request->all) {
                 $query->whereNotNull('status');
             }
@@ -798,12 +806,21 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasolineDetails.html');
+            $template = file_get_contents('../storage/templates/reportChargeGasolineDetails.html');
 
 
 
             $query = ViewChargeGasolineByCar::where('_car', $request->car['id'])
                 ->orderBy('date', 'desc');
+            
+                if ($request->is_bills){
+                    $query->whereNotNull('image_type');
+                }
+
+                if ($request->not_bills){
+                    $query->where('image_type', null);
+                }
+                
 
 
             if (isset($request->date_start) && isset($request->date_end)) {
@@ -836,6 +853,10 @@ class ChargeGasolineController extends Controller
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <tr>
+                                        <td class='n'>ID</td>
+                                        <td>{$chargeGasoline['id']}</td>
+                                    </tr>
                                     <tr>
                                         <td class='n'>TÉCNICO</td>
                                         <td>{$chargeGasoline['technical']['name']} {$chargeGasoline['technical']['lastname']}</td>
