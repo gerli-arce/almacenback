@@ -98,6 +98,7 @@ class TravelExpensesController extends Controller
                             $ChargeGasolineJpa->image_type = $request->image_type;
                             $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
                             $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                            $ChargeGasolineJpa->date_image = gTrace::getDate('mysql');
                         } else {
                             $ChargeGasolineJpa->image_type = null;
                             $ChargeGasolineJpa->image_mini = null;
@@ -325,6 +326,7 @@ class TravelExpensesController extends Controller
                                 $ChargeGasolineJpa->image_type = $request->image_type;
                                 $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
                                 $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                                $ChargeGasolineJpa->date_image = gTrace::getDate('mysql');
                             } else {
                                 $ChargeGasolineJpa->image_type = null;
                                 $ChargeGasolineJpa->image_mini = null;

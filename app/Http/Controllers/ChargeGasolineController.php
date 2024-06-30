@@ -71,6 +71,7 @@ class ChargeGasolineController extends Controller
                     $ChargeGasolineJpa->image_type = $request->image_type;
                     $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
                     $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                    $ChargeGasolineJpa->date_image = gTrace::getDate('mysql');
                 } else {
                     $ChargeGasolineJpa->image_type = null;
                     $ChargeGasolineJpa->image_mini = null;
@@ -210,6 +211,7 @@ class ChargeGasolineController extends Controller
                     $ChargeGasolineJpa->image_type = $request->image_type;
                     $ChargeGasolineJpa->image_mini = base64_decode($request->image_mini);
                     $ChargeGasolineJpa->image_full = base64_decode($request->image_full);
+                    $ChargeGasolineJpa->date_image = gTrace::getDate('mysql');
                 } else {
                     $ChargeGasolineJpa->image_type = null;
                     $ChargeGasolineJpa->image_mini = null;
@@ -694,7 +696,7 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasoline.html');
+            $template = file_get_contents('../storage/templates/reportChargeGasoline.html');
 
             $ViewChargeGasolineByCarJpa = ViewChargeGasolineByCar::find($request->id);
 
@@ -748,6 +750,7 @@ class ChargeGasolineController extends Controller
                     '{igv}',
                     '{price_engraved}',
                     '{description}',
+                    '{date_image}',
                     '{summary}',
                     '{images}',
                 ],
@@ -761,6 +764,7 @@ class ChargeGasolineController extends Controller
                     $ViewChargeGasolineByCarJpa->igv,
                     $ViewChargeGasolineByCarJpa->price_engraved,
                     $ViewChargeGasolineByCarJpa->description,
+                    $ViewChargeGasolineByCarJpa->date_image,
                     $summary,
                     $images,
                 ],
