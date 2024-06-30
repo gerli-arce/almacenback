@@ -957,7 +957,7 @@ class ChargeGasolineController extends Controller
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $pdf = new Dompdf($options);
-            $template = file_get_contents('../storage/templates/charge_gasoline/reportChargeGasolineGeneral.html');
+            $template = file_get_contents('../storage/templates/reportChargeGasolineGeneral.html');
 
             $user = ViewUsers::select([
                 'id',
@@ -986,6 +986,15 @@ class ChargeGasolineController extends Controller
                 $viewCar = gJSON::restore($ViewCarJpa->toArray(), '__');
                 $query = ViewChargeGasolineByCar::where('_car', $viewCar['id'])
                     ->orderBy('date', 'desc');
+
+                    if ($request->is_bills){
+                        $query->whereNotNull('image_type');
+                    }
+    
+                    if ($request->not_bills){
+                        $query->where('image_type', null);
+                    }
+                    
 
                 if (isset($request->date_start) && isset($request->date_end)) {
                     $dateStart = date('Y-m-d', strtotime($request->date_start));
