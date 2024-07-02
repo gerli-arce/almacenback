@@ -18,8 +18,10 @@ use App\Models\Stock;
 use App\Models\ViewDetailsSales;
 use App\Models\ViewPeople;
 use App\Models\ViewProductByTechnical;
+use App\Models\viewInstallations;
 use App\Models\ViewSales;
 use App\Models\ViewUsers;
+use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -2927,6 +2929,56 @@ class TechnicalsController extends Controller
             $response = new Response();
             $response->setStatus(400);
             $response->setMessage($th->getMessage() . ' ln:' . $th->getLine());
+            return response(
+                $response->toArray(),
+                $response->getStatus()
+            );
+        }
+    }
+
+
+    public function getLiquidationByDay(Request $request){
+        $response = new Response();
+        try {
+            [$branch, $status, $message, $role, $userid] = gValidate::get($request);
+            if ($status != 200) {
+                throw new Exception($message);
+            }
+
+            if (!gValidate::check($role->permissions, $branch, 'technicals', 'read')) {
+                throw new Exception('No tienes permisos para eliminar técnicos');
+            }
+
+            if (
+                !isset($request->date_now) ||
+                !isset($request->id)
+            ) {
+                throw new Exception("Error: Es necesario el ID para esta operación");
+            }
+
+            $fechaInicio = Carbon::parse($request->date_now);
+            $fechaFin = Carbon::parse($request->date_now);
+
+            $fechaInicio->setTime(0, 0, 0); // Establecer la fecha de inicio a 00:00:00
+            $fechaFin->setTime(23, 59, 59);
+
+            $liquidationsJpa = viewInstallations::where('technical__id', $request->id)->
+            whereNotNull('status')
+            ->whereBetween('creation_date', [$fechaInicio, $fechaFin])->get();
+                
+            $liquidations = array();
+            foreach ($liquidationsJpa as $liquidationJpa) {
+                $liquidation = gJSON::restore($liquidationJpa->toArray(), '__');
+                $liquidations[] = $liquidation;
+            }
+
+            $response->setData($liquidations);
+            $response->setStatus(200);
+            $response->setMessage('Operación correcta');
+        } catch (\Throwable $th) {
+            $response->setStatus(400);
+            $response->setMessage($th->getMessage());
+        } finally {
             return response(
                 $response->toArray(),
                 $response->getStatus()
